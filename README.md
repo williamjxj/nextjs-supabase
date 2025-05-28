@@ -1,0 +1,96 @@
+# Next.js + Supabase 图片库应用
+
+这是一个使用 Next.js 14 和 Supabase 构建的图片上传和管理应用，具有以下功能：
+
+1. 图片上传页面：上传图片到 Supabase 存储，成功后显示缩略图
+2. 图片存储：将图片保存到 Supabase 存储和数据库表中
+3. 图库页面：列出所有上传的图片，提供下载和删除选项
+
+## 技术栈
+
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (存储和数据库)
+
+## 项目设置
+
+### 1. 克隆项目
+
+```bash
+git clone <repository-url>
+cd nextjs-supabase-gallery
+```
+
+### 2. 安装依赖
+
+```bash
+$ npm install
+```
+
+### 3. 配置 Supabase
+
+1. 在 [Supabase](https://supabase.com) 创建一个新项目
+2. 获取项目 URL 和匿名密钥
+3. 在项目根目录创建 `.env.local` 文件并添加以下内容：
+
+```yml
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 4. 运行开发服务器
+
+```bash
+$ npm run dev
+```
+
+应用将在 [http://localhost:3000](http://localhost:3000) 运行。
+
+## 项目结构
+
+```
+/src
+  /app
+    /api
+      /init        - 初始化 Supabase 存储桶和数据库表
+      /supabase    - Supabase 客户端配置
+    /gallery       - 图库页面
+    layout.tsx     - 应用布局和 Supabase 初始化
+    page.tsx       - 主页/上传页面
+  /components
+    ImageUploader.tsx - 图片上传组件
+```
+
+## 功能说明
+
+### 图片上传页面
+
+- 选择图片文件（支持 JPG、PNG、GIF、WebP）
+- 验证文件类型和大小
+- 上传到 Supabase 存储
+- 保存元数据到数据库
+- 上传成功后显示缩略图
+
+### 图库页面
+
+- 显示所有上传的图片列表
+- 提供下载功能
+- 提供删除功能（同时从存储和数据库中删除）
+- 显示图片信息（文件名、大小、上传日期）
+
+## 数据库结构
+
+`images` 表包含以下字段：
+
+- `id`: UUID (主键)
+- `file_name`: 文件名
+- `file_path`: 存储路径
+- `file_size`: 文件大小 (字节)
+- `file_type`: 文件类型 (MIME)
+- `url`: 公共访问 URL
+- `created_at`: 创建时间
+
+## 存储结构
+
+所有图片存储在 `images` 存储桶中，路径格式为：`uploads/{随机ID}_{时间戳}.{扩展名}`
