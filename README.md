@@ -1,6 +1,6 @@
 # Next.js + Supabase 图片库应用
 
-这是一个使用 Next.js 14 和 Supabase 构建的图片上传和管理应用，具有以下功能：
+这是一个使用 Next.js 15 和 Supabase 构建的图片上传和管理应用，具有以下功能：
 
 1. 图片上传页面：上传图片到 Supabase 存储，成功后显示缩略图
 2. 图片存储：将图片保存到 Supabase 存储和数据库表中
@@ -8,10 +8,21 @@
 
 ## 技术栈
 
-- Next.js 14 (App Router)
+- Next.js 15 (App Router)
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS v4
 - Supabase (存储和数据库)
+- Context7 MCP (AI Development Assistant)
+
+## 开发工具
+
+### Context7 MCP
+
+本项目已集成 Context7 MCP 服务器，为 AI 代码助手提供最新的文档和代码示例。
+
+- 配置文件：`.vscode/mcp.json`
+- 使用方式：在与 AI 助手对话时添加 "use @context7" 获得更好的代码建议
+- 详细说明：查看 `docs/context7-setup.md`
 
 ## 项目设置
 
