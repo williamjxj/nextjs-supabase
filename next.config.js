@@ -1,12 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   images: {
     domains: [
       // Add your Supabase storage domain here
-      'your-project-id.supabase.co',
+      'saamqzojqivrumnnnyrf.supabase.co',
+      'localhost',
+      'localhost:3000',
     ],
     formats: ['image/webp', 'image/avif'],
   },

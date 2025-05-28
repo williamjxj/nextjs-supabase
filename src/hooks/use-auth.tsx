@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { AuthState } from '@/types/auth';
+import { AuthState, AuthUser } from '@/types/auth';
 import * as authService from '@/lib/supabase/auth';
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -21,14 +21,14 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
       const session = await authService.getSession();
-      setUser(session?.user ?? null);
+      setUser(session?.user as AuthUser ?? null);
       setLoading(false);
     };
 
@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
+      setUser(session?.user as AuthUser ?? null);
       setLoading(false);
     });
 
@@ -80,5 +80,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

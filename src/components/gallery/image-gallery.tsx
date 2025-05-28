@@ -12,8 +12,7 @@ import { DeleteConfirm } from './delete-confirm';
 import { GalleryFilters, GalleryFilters as FilterType } from './gallery-filters';
 import { useGallery } from '@/hooks/use-gallery';
 import { Image as ImageType } from '@/types/image';
-import { downloadImage, deleteImage as deleteImageFromStorage } from '@/lib/supabase/storage';
-import { deleteImage as deleteImageFromDB } from '@/lib/supabase/database';
+import { downloadImage } from '@/lib/supabase/storage';
 import { cn } from '@/lib/utils/cn';
 
 interface ImageGalleryProps {
@@ -21,7 +20,7 @@ interface ImageGalleryProps {
 }
 
 export function ImageGallery({ className }: ImageGalleryProps) {
-  const { images, loading, error, refetch, setImages } = useGallery();
+  const { images, loading, error, refetch, deleteImage: deleteImageFromHook, downloadImageFile } = useGallery();
   const { showToast } = useToast();
 
   // Modal states
@@ -39,10 +38,9 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     tags: [],
   });
 
-  // Extract all available tags from images
+  // Extract all available tags from images (simplified for now since tags don't exist in the Image type)
   const availableTags = useMemo(() => {
-    const allTags = images.flatMap((image) => image.tags || []);
-    return Array.from(new Set(allTags)).sort();
+    return []; // No tags in the current Image type
   }, [images]);
 
   // Filter and sort images
@@ -54,18 +52,17 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(
         (image) =>
-          image.title.toLowerCase().includes(searchLower) ||
-          (image.description?.toLowerCase().includes(searchLower)) ||
-          (image.tags?.some((tag) => tag.toLowerCase().includes(searchLower)))
+          image.original_name.toLowerCase().includes(searchLower) ||
+          image.filename.toLowerCase().includes(searchLower)
       );
     }
 
-    // Tags filter
-    if (filters.tags.length > 0) {
-      filtered = filtered.filter((image) =>
-        filters.tags.every((tag) => image.tags?.includes(tag))
-      );
-    }
+    // Tags filter (disabled for now since tags don't exist)
+    // if (filters.tags.length > 0) {
+    //   filtered = filtered.filter((image) =>
+    //     filters.tags.every((tag) => image.tags?.includes(tag))
+    //   );
+    // }
 
     // Date range filter
     if (filters.dateRange?.start || filters.dateRange?.end) {
@@ -85,9 +82,9 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       let aValue: any, bValue: any;
 
       switch (filters.sortBy) {
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
+        case 'original_name':
+          aValue = a.original_name.toLowerCase();
+          bValue = b.original_name.toLowerCase();
           break;
         case 'file_size':
           aValue = a.file_size;
@@ -121,14 +118,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const handleDeleteConfirm = async (image: ImageType) => {
     setIsDeleting(true);
     try {
-      // Delete from storage first
-      await deleteImageFromStorage(image.storage_path);
-      // Then delete from database
-      await deleteImageFromDB(image.id);
-      
-      // Update local state
-      setImages((prev) => prev.filter((img) => img.id !== image.id));
-      
+      await deleteImageFromHook(image);
       showToast('Image deleted successfully', 'success');
     } catch (error) {
       console.error('Error deleting image:', error);
@@ -140,7 +130,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
   const handleDownload = async (image: ImageType) => {
     try {
-      await downloadImage(image.storage_path, image.title);
+      await downloadImageFile(image);
       showToast('Image downloaded successfully', 'success');
     } catch (error) {
       console.error('Error downloading image:', error);
@@ -191,12 +181,12 @@ export function ImageGallery({ className }: ImageGalleryProps) {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button asChild>
-            <Link href="/upload">
+          <Link href="/upload">
+            <Button>
               <Upload className="h-4 w-4 mr-2" />
               Upload Images
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -213,12 +203,12 @@ export function ImageGallery({ className }: ImageGalleryProps) {
           {images.length === 0 ? (
             <>
               <p className="text-gray-500 mb-4">No images in your gallery yet</p>
-              <Button asChild>
-                <Link href="/upload">
+              <Link href="/upload">
+                <Button>
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Your First Image
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </>
           ) : (
             <p className="text-gray-500">No images match your current filters</p>
