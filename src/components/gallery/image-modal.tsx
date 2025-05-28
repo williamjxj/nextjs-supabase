@@ -1,0 +1,237 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { X, Download, Trash2, ChevronLeft, ChevronRight, Calendar, User, Tag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import { Image as ImageType } from '@/types/image';
+import { formatDistanceToNow } from 'date-fns';
+
+interface ImageModalProps {
+  image: ImageType | null;
+  images: ImageType[];
+  isOpen: boolean;
+  onClose: () => void;
+  onDelete: (image: ImageType) => void;
+  onDownload: (image: ImageType) => void;
+}
+
+export function ImageModal({
+  image,
+  images,
+  isOpen,
+  onClose,
+  onDelete,
+  onDownload,
+}: ImageModalProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    if (image && images.length > 0) {
+      const index = images.findIndex((img) => img.id === image.id);
+      setCurrentIndex(index >= 0 ? index : 0);
+    }
+  }, [image, images]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      switch (event.key) {
+        case 'Escape':
+          onClose();
+          break;
+        case 'ArrowLeft':
+          event.preventDefault();
+          goToPrevious();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          goToNext();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentIndex, images.length]);
+
+  const currentImage = images[currentIndex] || image;
+
+  const goToPrevious = () => {
+    if (images.length <= 1) return;
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    setImageError(false);
+  };
+
+  const goToNext = () => {
+    if (images.length <= 1) return;
+    setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    setImageError(false);
+  };
+
+  const handleDownload = async () => {
+    if (!currentImage) return;
+    setIsLoading(true);
+    try {
+      await onDownload(currentImage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!currentImage) return;
+    onDelete(currentImage);
+    // If this was the last image, close the modal
+    if (images.length <= 1) {
+      onClose();
+    } else {
+      // Move to next image or previous if at the end
+      if (currentIndex >= images.length - 1) {
+        setCurrentIndex(Math.max(0, currentIndex - 1));
+      }
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  if (!currentImage) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="full">
+      <div className="flex h-full flex-col bg-black">
+        {/* Header */}
+        <div className="flex items-center justify-between bg-black/80 p-4 text-white">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold">{currentImage.title}</h2>
+            {images.length > 1 && (
+              <span className="text-sm text-gray-300">
+                {currentIndex + 1} of {images.length}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDownload}
+              disabled={isLoading}
+              className="text-white hover:bg-white/20"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              className="text-red-400 hover:bg-red-500/20"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-white hover:bg-white/20"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Image Container */}
+        <div className="relative flex-1 flex items-center justify-center">
+          {!imageError ? (
+            <Image
+              src={currentImage.url}
+              alt={currentImage.title}
+              fill
+              className="object-contain"
+              onError={() => setImageError(true)}
+              priority
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-white">
+              <span>Failed to load image</span>
+            </div>
+          )}
+
+          {/* Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToPrevious}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Footer with metadata */}
+        <div className="bg-black/80 p-4 text-white">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              {currentImage.description && (
+                <p className="text-sm text-gray-300">{currentImage.description}</p>
+              )}
+              
+              <div className="flex items-center gap-4 text-xs text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>
+                    {formatDistanceToNow(new Date(currentImage.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+                <span>{formatFileSize(currentImage.file_size)}</span>
+                <span>{currentImage.width}×{currentImage.height}</span>
+              </div>
+            </div>
+
+            {currentImage.tags && currentImage.tags.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <Tag className="h-3 w-3" />
+                  <span>Tags</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {currentImage.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-block px-2 py-1 text-xs bg-blue-600/30 text-blue-300 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
