@@ -51,3 +51,6 @@ $ npm run db:push
 - Upload actual files to the images storage bucket
 - Enforce user-level security for both data and files
 - Support the gallery features in your Next.js app
+
+- https://supabase.com/dashboard/project/saamqzojqivrumnnnyrf/storage/buckets
+- https://supabase.com/docs/guides/database/prisma

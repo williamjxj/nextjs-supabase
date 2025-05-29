@@ -13,7 +13,6 @@
 # next.js
 /.next/
 /out/
-/supabase/.temp
 
 # production
 /build
