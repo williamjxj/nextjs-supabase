@@ -1,19 +1,22 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/images/[id] - Get a specific image
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
+  const supabase = createClient()
 
   try {
     // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { data, error } = await supabase
@@ -21,23 +24,26 @@ export async function GET(
       .select('*')
       .eq('id', params.id)
       .eq('user_id', user.id)
-      .single();
+      .single()
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Image not found' }, { status: 404 })
       }
-      console.error('Database error:', error);
-      return NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 });
+      console.error('Database error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch image' },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ image: data });
+    return NextResponse.json({ image: data })
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -46,18 +52,21 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
+  const supabase = createClient()
 
   try {
     // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json();
-    const { title, description, tags } = body;
+    const body = await request.json()
+    const { title, description, tags } = body
 
     // Update image in database
     const { data, error } = await supabase
@@ -71,23 +80,26 @@ export async function PUT(
       .eq('id', params.id)
       .eq('user_id', user.id)
       .select()
-      .single();
+      .single()
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Image not found' }, { status: 404 })
       }
-      console.error('Database error:', error);
-      return NextResponse.json({ error: 'Failed to update image' }, { status: 500 });
+      console.error('Database error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update image' },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ image: data });
+    return NextResponse.json({ image: data })
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -96,14 +108,17 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
+  const supabase = createClient()
 
   try {
     // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // First get the image to get the storage path
@@ -112,23 +127,26 @@ export async function DELETE(
       .select('storage_path')
       .eq('id', params.id)
       .eq('user_id', user.id)
-      .single();
+      .single()
 
     if (fetchError) {
       if (fetchError.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Image not found' }, { status: 404 })
       }
-      console.error('Database error:', fetchError);
-      return NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 });
+      console.error('Database error:', fetchError)
+      return NextResponse.json(
+        { error: 'Failed to fetch image' },
+        { status: 500 }
+      )
     }
 
     // Delete from storage
     const { error: storageError } = await supabase.storage
       .from('images')
-      .remove([image.storage_path]);
+      .remove([image.storage_path])
 
     if (storageError) {
-      console.error('Storage error:', storageError);
+      console.error('Storage error:', storageError)
       // Continue with database deletion even if storage deletion fails
     }
 
@@ -137,19 +155,22 @@ export async function DELETE(
       .from('images')
       .delete()
       .eq('id', params.id)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
 
     if (deleteError) {
-      console.error('Database error:', deleteError);
-      return NextResponse.json({ error: 'Failed to delete image' }, { status: 500 });
+      console.error('Database error:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete image' },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
-    );
+    )
   }
 }

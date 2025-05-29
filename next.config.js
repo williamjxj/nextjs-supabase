@@ -13,6 +13,6 @@ const nextConfig = {
     MAX_FILE_SIZE: process.env.MAX_FILE_SIZE,
     ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES,
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

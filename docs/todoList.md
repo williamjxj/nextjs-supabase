@@ -1,11 +1,11 @@
 # next-supabase-app
 
-(1) upload image to `Supabase` storage, and display image thumbnail upon succ 
-(2) save the image to `Supabase` storage,  as well as `Supabase` database table
+(1) upload image to `Supabase` storage, and display image thumbnail upon succ
+(2) save the image to `Supabase` storage, as well as `Supabase` database table
 (3) gallery page: list all upload images, with download, delete option
 (4) add login/signup auth, `Supabase` auth.
 (5) deploy the app to Vercel
-(6) add/deploy as Docker image  
+(6) add/deploy as Docker image
 
 ## prd
 
@@ -44,4 +44,3 @@ using latest version, create a nextjs app + supabase to implement:
 for UI improvement
 
 ### 3. colipot
-

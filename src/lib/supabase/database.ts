@@ -1,5 +1,5 @@
-import { supabase } from './client';
-import { Image, ImageMetadata } from '@/types/image';
+import { supabase } from './client'
+import { Image, ImageMetadata } from '@/types/image'
 
 export const saveImageMetadata = async (
   userId: string,
@@ -21,28 +21,28 @@ export const saveImageMetadata = async (
       height: metadata.height,
     })
     .select()
-    .single();
+    .single()
 
   if (error) {
-    throw new Error(`Database insert failed: ${error.message}`);
+    throw new Error(`Database insert failed: ${error.message}`)
   }
 
-  return data;
-};
+  return data
+}
 
 export const getUserImages = async (userId: string): Promise<Image[]> => {
   const { data, error } = await supabase
     .from('images')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
 
   if (error) {
-    throw new Error(`Failed to fetch images: ${error.message}`);
+    throw new Error(`Failed to fetch images: ${error.message}`)
   }
 
-  return data || [];
-};
+  return data || []
+}
 
 export const deleteImageMetadata = async (
   imageId: string,
@@ -52,12 +52,12 @@ export const deleteImageMetadata = async (
     .from('images')
     .delete()
     .eq('id', imageId)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
 
   if (error) {
-    throw new Error(`Failed to delete image metadata: ${error.message}`);
+    throw new Error(`Failed to delete image metadata: ${error.message}`)
   }
-};
+}
 
 export const getImageById = async (
   imageId: string,
@@ -68,14 +68,14 @@ export const getImageById = async (
     .select('*')
     .eq('id', imageId)
     .eq('user_id', userId)
-    .single();
+    .single()
 
   if (error) {
     if (error.code === 'PGRST116') {
-      return null; // No rows returned
+      return null // No rows returned
     }
-    throw new Error(`Failed to fetch image: ${error.message}`);
+    throw new Error(`Failed to fetch image: ${error.message}`)
   }
 
-  return data;
-};
+  return data
+}

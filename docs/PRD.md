@@ -1,11 +1,12 @@
 # Product Requirements Document (PRD)
+
 ## NextJS Supabase Gallery
 
 ### 1. Product Overview
 
 **Product Name:** NextJS Supabase Gallery  
 **Version:** 1.0  
-**Date:** May 28, 2025  
+**Date:** May 28, 2025
 
 A modern web application for image management built with Next.js and Supabase, providing users with seamless image upload, storage, and gallery functionality.
 
@@ -25,6 +26,7 @@ A modern web application for image management built with Next.js and Supabase, p
 ### 4. Core Features
 
 #### 4.1 Image Upload (Priority: High)
+
 - **Description:** Users can upload images to Supabase storage
 - **Acceptance Criteria:**
   - Support common image formats (JPG, PNG, GIF, WEBP)
@@ -34,6 +36,7 @@ A modern web application for image management built with Next.js and Supabase, p
   - Error handling for failed uploads
 
 #### 4.2 Data Persistence (Priority: High)
+
 - **Description:** Store image metadata in Supabase database
 - **Acceptance Criteria:**
   - Save image URL, filename, upload date, file size
@@ -41,6 +44,7 @@ A modern web application for image management built with Next.js and Supabase, p
   - Maintain data integrity between storage and database
 
 #### 4.3 Gallery View (Priority: High)
+
 - **Description:** Display all uploaded images in a responsive gallery
 - **Acceptance Criteria:**
   - Grid layout with responsive design
@@ -50,6 +54,7 @@ A modern web application for image management built with Next.js and Supabase, p
   - Search/filter capabilities
 
 #### 4.4 Authentication (Priority: Medium)
+
 - **Description:** User registration and login system
 - **Acceptance Criteria:**
   - Email/password signup and login
@@ -59,6 +64,7 @@ A modern web application for image management built with Next.js and Supabase, p
   - Logout functionality
 
 #### 4.5 Deployment (Priority: Medium)
+
 - **Description:** Production deployment options
 - **Acceptance Criteria:**
   - Vercel deployment with environment variables
@@ -68,23 +74,27 @@ A modern web application for image management built with Next.js and Supabase, p
 ### 5. Technical Requirements
 
 #### 5.1 Frontend
+
 - **Framework:** Next.js (latest version)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **UI Components:** Custom components with potential shadcn/ui integration
 
 #### 5.2 Backend
+
 - **Database:** Supabase PostgreSQL
 - **Storage:** Supabase Storage
 - **Authentication:** Supabase Auth
 
 #### 5.3 Development Tools
+
 - **Code Quality:** ESLint, Prettier, EditorConfig
 - **Package Manager:** npm/yarn
 
 ### 6. Database Schema
 
 #### 6.1 Images Table
+
 ```sql
 CREATE TABLE images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,6 +111,7 @@ CREATE TABLE images (
 ### 7. User Stories
 
 #### 7.1 As a User
+
 - I want to upload images so that I can store them securely
 - I want to see thumbnails after upload so that I can confirm successful upload
 - I want to view all my images in a gallery so that I can browse my collection
@@ -108,6 +119,7 @@ CREATE TABLE images (
 - I want to delete images so that I can manage my storage
 
 #### 7.2 As a Developer
+
 - I want clean, maintainable code so that the project is easy to extend
 - I want proper error handling so that users have a good experience
 - I want deployment automation so that updates are seamless
@@ -115,16 +127,19 @@ CREATE TABLE images (
 ### 8. Non-Functional Requirements
 
 #### 8.1 Performance
+
 - Page load time < 3 seconds
 - Image upload progress feedback
 - Optimized image thumbnails
 
 #### 8.2 Security
+
 - Secure file upload validation
 - User data isolation
 - Environment variables for sensitive data
 
 #### 8.3 Usability
+
 - Responsive design for mobile and desktop
 - Intuitive user interface
 - Clear error messages
@@ -150,15 +165,15 @@ CREATE TABLE images (
 **Phase 1:** Core functionality (Upload, Storage, Gallery) - 1 week  
 **Phase 2:** Authentication integration - 3 days  
 **Phase 3:** UI/UX improvements - 2 days  
-**Phase 4:** Deployment and Docker - 2 days  
+**Phase 4:** Deployment and Docker - 2 days
 
 ### 12. Risks and Mitigation
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Supabase API limits | High | Implement proper error handling and rate limiting |
-| Large file uploads | Medium | File size validation and compression |
-| Security vulnerabilities | High | Regular security audits and updates |
+| Risk                     | Impact | Mitigation                                        |
+| ------------------------ | ------ | ------------------------------------------------- |
+| Supabase API limits      | High   | Implement proper error handling and rate limiting |
+| Large file uploads       | Medium | File size validation and compression              |
+| Security vulnerabilities | High   | Regular security audits and updates               |
 
 ### 13. Architecture Overview
 
