@@ -58,6 +58,16 @@ $ npm run dev
 
 应用将在 [http://localhost:3000](http://localhost:3000) 运行。
 
+### 5. 🚀 Deploymnet:
+
+```bash
+# NEXTAUTH_SECRET (.env):
+$ openssl rand -base64 32
+
+NEXTAUTH_URL=https://nextjs-supabase-flame.vercel.app
+APP_URL=https://nextjs-supabase-flame.vercel.app
+```
+
 ## 项目结构
 
 ```
@@ -74,6 +84,17 @@ $ npm run dev
 ```
 
 ## 功能说明
+
+### 📝 项目进度
+
+- [x] 确认用户需求
+- [x] 初始化 Next.js + Supabase + Tailwind CSS 项目
+- [x] 实现图片上传与缩略图显示页面
+- [x] 实现后端存储和数据库保存功能
+- [x] 实现图库页面（列表、下载、删除功能）
+- [x] 验证所有功能并清理代码
+- [ ] 向用户报告并发送项目
+
 
 ### 图片上传页面
 
