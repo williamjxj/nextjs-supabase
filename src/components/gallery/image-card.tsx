@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Download, Trash2, Eye, Calendar, User } from 'lucide-react'
+import { Download, Trash2, Eye, Calendar, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Image as ImageType } from '@/types/image'
@@ -14,6 +14,7 @@ interface ImageCardProps {
   onView: (image: ImageType) => void
   onDelete: (image: ImageType) => void
   onDownload: (image: ImageType) => void
+  onCheckout?: (image: ImageType) => void
   className?: string
 }
 
@@ -22,6 +23,7 @@ export function ImageCard({
   onView,
   onDelete,
   onDownload,
+  onCheckout,
   className,
 }: ImageCardProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -55,12 +57,13 @@ export function ImageCard({
       <div className='relative aspect-square overflow-hidden bg-gray-100'>
         {!imageError ? (
           <Image
-            src={image.thumbnail_url || image.url}
-            alt={image.title}
+            src={image.storage_url}
+            alt={image.original_name}
             fill
             className='object-cover transition-transform group-hover:scale-105'
             onError={() => setImageError(true)}
             sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+            loading='lazy'
           />
         ) : (
           <div className='flex h-full items-center justify-center bg-gray-200'>
@@ -68,60 +71,69 @@ export function ImageCard({
           </div>
         )}
 
-        {/* Overlay Actions */}
-        <div className='absolute inset-0 bg-black/0 transition-all group-hover:bg-black/30'>
-          <div className='absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100'>
-            <div className='flex gap-2'>
-              <Button
-                size='sm'
-                variant='secondary'
-                onClick={() => onView(image)}
-                className='h-8 w-8 p-0'
-                title='View full size'
-              >
-                <Eye className='h-4 w-4' />
-              </Button>
-              <Button
-                size='sm'
-                variant='secondary'
-                onClick={handleDownload}
-                disabled={isLoading}
-                className='h-8 w-8 p-0'
-                title='Download'
-              >
-                <Download className='h-4 w-4' />
-              </Button>
-              <Button
-                size='sm'
-                variant='destructive'
-                onClick={() => onDelete(image)}
-                className='h-8 w-8 p-0'
-                title='Delete'
-              >
-                <Trash2 className='h-4 w-4' />
-              </Button>
-            </div>
-          </div>
+        {/* Action Buttons - Always visible with better styling */}
+        <div className='absolute top-2 right-2 flex flex-col gap-1'>
+          <Button
+            size='sm'
+            variant='secondary'
+            onClick={() => onView(image)}
+            className='h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm'
+            title='View full size'
+          >
+            <Eye className='h-4 w-4' />
+          </Button>
+          <Button
+            size='sm'
+            variant='secondary'
+            onClick={handleDownload}
+            disabled={isLoading}
+            className='h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm'
+            title='Download'
+          >
+            <Download className='h-4 w-4' />
+          </Button>
+          <Button
+            size='sm'
+            variant='destructive'
+            onClick={() => onDelete(image)}
+            className='h-8 w-8 p-0 bg-red-500/90 backdrop-blur-sm hover:bg-red-600 shadow-sm'
+            title='Delete'
+          >
+            <Trash2 className='h-4 w-4' />
+          </Button>
+        </div>
+
+        {/* Checkout Button - Bottom overlay */}
+        <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3'>
+          <Button
+            size='sm'
+            onClick={() => onCheckout?.(image)}
+            className='w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2'
+            title='Purchase this image'
+          >
+            <ShoppingCart className='h-4 w-4' />
+            Buy from $5.00
+          </Button>
         </div>
       </div>
 
       {/* Card Content */}
       <div className='p-4'>
         <div className='space-y-2'>
-          {/* Title */}
-          <h3 className='font-semibold truncate' title={image.title}>
-            {image.title}
+          {/* File Name */}
+          <h3 className='font-semibold truncate' title={image.original_name}>
+            {image.original_name}
           </h3>
 
-          {/* Description */}
-          {image.description && (
-            <p
-              className='text-sm text-gray-600 line-clamp-2'
-              title={image.description}
-            >
-              {image.description}
-            </p>
-          )}
+          {/* File Info */}
+          <div className='text-sm text-gray-600'>
+            <p className='truncate'>{image.mime_type}</p>
+            {image.width && image.height && (
+              <p className='text-xs'>
+                {image.width} × {image.height}px
+              </p>
+            )}
+          </div>
 
           {/* Metadata */}
           <div className='flex items-center justify-between text-xs text-gray-500'>
@@ -135,25 +147,6 @@ export function ImageCard({
             </div>
             <span>{formatFileSize(image.file_size)}</span>
           </div>
-
-          {/* Tags */}
-          {image.tags && image.tags.length > 0 && (
-            <div className='flex flex-wrap gap-1'>
-              {image.tags.slice(0, 3).map(tag => (
-                <span
-                  key={tag}
-                  className='inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full'
-                >
-                  {tag}
-                </span>
-              ))}
-              {image.tags.length > 3 && (
-                <span className='inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full'>
-                  +{image.tags.length - 3}
-                </span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </Card>

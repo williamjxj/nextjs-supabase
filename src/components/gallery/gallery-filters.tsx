@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils/cn'
 
 export interface GalleryFilters {
   search: string
-  sortBy: 'created_at' | 'title' | 'file_size'
+  sortBy: 'created_at' | 'original_name' | 'file_size'
   sortOrder: 'asc' | 'desc'
   tags: string[]
   dateRange?: {
@@ -107,13 +107,13 @@ export function GalleryFilters({
           </Button>
 
           <Button
-            variant={filters.sortBy === 'title' ? 'default' : 'outline'}
+            variant={filters.sortBy === 'original_name' ? 'default' : 'outline'}
             size='sm'
-            onClick={() => handleSortChange('title')}
+            onClick={() => handleSortChange('original_name')}
             className='flex items-center gap-1'
           >
-            Title
-            {filters.sortBy === 'title' &&
+            Name
+            {filters.sortBy === 'original_name' &&
               (filters.sortOrder === 'desc' ? (
                 <SortDesc className='h-3 w-3' />
               ) : (

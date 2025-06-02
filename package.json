@@ -15,6 +15,7 @@
     "db:reset": "supabase db reset"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^7.3.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
@@ -26,6 +27,7 @@
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "stripe": "^18.2.0",
     "tailwind-merge": "^2.2.0",
     "uuid": "^11.1.0",
     "zod": "^3.22.4"

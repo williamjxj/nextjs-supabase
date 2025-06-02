@@ -1,11 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      // Add your Supabase storage domain here
-      'saamqzojqivrumnnnyrf.supabase.co',
-      'localhost',
-      'localhost:3000',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'saamqzojqivrumnnnyrf.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
   },
