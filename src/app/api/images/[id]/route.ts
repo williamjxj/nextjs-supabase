@@ -1,12 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/images/[id] - Get a specific image
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient()
+  const resolvedParams = await params
+  const supabase = await createServerSupabaseClient()
 
   try {
     // Check if user is authenticated
@@ -22,7 +23,7 @@ export async function GET(
     const { data, error } = await supabase
       .from('images')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
       .single()
 
@@ -50,9 +51,10 @@ export async function GET(
 // PUT /api/images/[id] - Update an image
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient()
+  const resolvedParams = await params
+  const supabase = await createServerSupabaseClient()
 
   try {
     // Check if user is authenticated
@@ -77,7 +79,7 @@ export async function PUT(
         tags: tags || [],
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
       .select()
       .single()
@@ -106,9 +108,10 @@ export async function PUT(
 // DELETE /api/images/[id] - Delete an image
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient()
+  const resolvedParams = await params
+  const supabase = await createServerSupabaseClient()
 
   try {
     // Check if user is authenticated
@@ -125,7 +128,7 @@ export async function DELETE(
     const { data: image, error: fetchError } = await supabase
       .from('images')
       .select('storage_path')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
       .single()
 
@@ -154,7 +157,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('images')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
 
     if (deleteError) {

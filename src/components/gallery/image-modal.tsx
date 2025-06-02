@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Calendar,
   User,
-  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
@@ -122,7 +121,9 @@ export function ImageModal({
         {/* Header */}
         <div className='flex items-center justify-between bg-black/80 p-4 text-white'>
           <div className='flex items-center gap-4'>
-            <h2 className='text-lg font-semibold'>{currentImage.title}</h2>
+            <h2 className='text-lg font-semibold'>
+              {currentImage.original_name}
+            </h2>
             {images.length > 1 && (
               <span className='text-sm text-gray-300'>
                 {currentIndex + 1} of {images.length}
@@ -164,8 +165,8 @@ export function ImageModal({
         <div className='relative flex-1 flex items-center justify-center'>
           {!imageError ? (
             <Image
-              src={currentImage.url}
-              alt={currentImage.title}
+              src={currentImage.storage_url}
+              alt={currentImage.original_name}
               fill
               className='object-contain'
               onError={() => setImageError(true)}
@@ -202,48 +203,23 @@ export function ImageModal({
 
         {/* Footer with metadata */}
         <div className='bg-black/80 p-4 text-white'>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              {currentImage.description && (
-                <p className='text-sm text-gray-300'>
-                  {currentImage.description}
-                </p>
-              )}
-
-              <div className='flex items-center gap-4 text-xs text-gray-400'>
-                <div className='flex items-center gap-1'>
-                  <Calendar className='h-3 w-3' />
-                  <span>
-                    {formatDistanceToNow(new Date(currentImage.created_at), {
-                      addSuffix: true,
-                    })}
-                  </span>
-                </div>
-                <span>{formatFileSize(currentImage.file_size)}</span>
+          <div className='space-y-2'>
+            <div className='flex items-center gap-4 text-xs text-gray-400'>
+              <div className='flex items-center gap-1'>
+                <Calendar className='h-3 w-3' />
+                <span>
+                  {formatDistanceToNow(new Date(currentImage.created_at), {
+                    addSuffix: true,
+                  })}
+                </span>
+              </div>
+              <span>{formatFileSize(currentImage.file_size)}</span>
+              {currentImage.width && currentImage.height && (
                 <span>
                   {currentImage.width}×{currentImage.height}
                 </span>
-              </div>
+              )}
             </div>
-
-            {currentImage.tags && currentImage.tags.length > 0 && (
-              <div className='space-y-2'>
-                <div className='flex items-center gap-1 text-xs text-gray-400'>
-                  <Tag className='h-3 w-3' />
-                  <span>Tags</span>
-                </div>
-                <div className='flex flex-wrap gap-1'>
-                  {currentImage.tags.map(tag => (
-                    <span
-                      key={tag}
-                      className='inline-block px-2 py-1 text-xs bg-blue-600/30 text-blue-300 rounded-full'
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

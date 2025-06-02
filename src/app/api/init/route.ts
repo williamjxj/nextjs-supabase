@@ -31,30 +31,19 @@ export async function GET() {
       }
     }
 
-    // 检查数据库表是否存在
+    // Check if database table exists (migrations should handle table creation)
     const { data, error } = await supabase.from('images').select('id').limit(1)
 
+    // Note: Table creation should be handled by migrations, not programmatically
     if (error && error.code === '42P01') {
-      // 表不存在的错误代码
-      // 创建 images 表
-      const { error: createTableError } = await supabase.query(`
-        CREATE TABLE IF NOT EXISTS images (
-          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-          file_name TEXT NOT NULL,
-          file_path TEXT NOT NULL,
-          file_size INTEGER NOT NULL,
-          file_type TEXT NOT NULL,
-          url TEXT NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-      `)
-
-      if (createTableError) {
-        return NextResponse.json(
-          { error: createTableError.message },
-          { status: 500 }
-        )
-      }
+      return NextResponse.json(
+        {
+          error:
+            'Images table does not exist. Please run database migrations: supabase db push',
+          code: 'TABLE_NOT_FOUND',
+        },
+        { status: 500 }
+      )
     } else if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }

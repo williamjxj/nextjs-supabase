@@ -30,25 +30,16 @@ export async function initSupabase() {
       if (createBucketError) throw createBucketError
     }
 
-    // 检查并创建 images 数据库表
-    const { error: tableError } = await supabase.rpc(
-      'create_images_table_if_not_exists'
-    )
-    if (tableError) {
-      // 如果 RPC 不存在，尝试直接创建表
-      const { error: createTableError } = await supabase.query(`
-        CREATE TABLE IF NOT EXISTS images (
-          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-          file_name TEXT NOT NULL,
-          file_path TEXT NOT NULL,
-          file_size INTEGER NOT NULL,
-          file_type TEXT NOT NULL,
-          url TEXT NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-      `)
+    // Check if images table exists (migrations should handle table creation)
+    const { data: testData, error: tableError } = await supabase
+      .from('images')
+      .select('id')
+      .limit(1)
 
-      if (createTableError) throw createTableError
+    if (tableError && tableError.code === '42P01') {
+      throw new Error(
+        'Images table does not exist. Please run database migrations: supabase db push'
+      )
     }
 
     return { success: true }

@@ -14,7 +14,7 @@ interface LogoutButtonProps {
     | 'secondary'
     | 'ghost'
     | 'link'
-  size?: 'default' | 'sm' | 'lg' | 'icon'
+  size?: 'default' | 'sm' | 'lg'
   className?: string
   children?: React.ReactNode
   redirectTo?: string

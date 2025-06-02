@@ -48,8 +48,11 @@ export function DeleteConfirm({
         <div className='mb-6'>
           <p className='text-sm text-gray-700'>
             Are you sure you want to delete{' '}
-            <span className='font-medium'>&quot;{image.title}&quot;</span>? This
-            will permanently remove the image from your gallery and storage.
+            <span className='font-medium'>
+              &quot;{image.original_name}&quot;
+            </span>
+            ? This will permanently remove the image from your gallery and
+            storage.
           </p>
         </div>
 
