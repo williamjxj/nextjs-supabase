@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
@@ -257,32 +257,34 @@ const UploadProgress = ({
 
 export const ImageUploader = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [justAddedFiles, setJustAddedFiles] = useState(false)
   const { uploadFiles, uploading, progress, error, resetUploadState } =
     useUpload()
   const { addToast } = useToast()
 
-  // Debug logging
-  console.log(
-    'ImageUploader render - selectedFiles:',
-    selectedFiles.length,
-    'uploading:',
-    uploading
-  )
+  // Reset the bounce animation after a short delay
+  useEffect(() => {
+    if (justAddedFiles) {
+      const timer = setTimeout(() => setJustAddedFiles(false), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [justAddedFiles])
 
   const handleFileSelect = useCallback(
     (files: FileList) => {
-      console.log('handleFileSelect called with files:', files.length)
-      const validFiles: File[] = []
-      const errors: string[] = []
-
-      Array.from(files).forEach(file => {
-        const validation = validateFile(file)
-        if (validation.valid) {
-          validFiles.push(file)
-        } else {
-          errors.push(`${file.name}: ${validation.error}`)
-        }
-      })
+      // Batch all validation and filtering first
+      const { validFiles, errors } = Array.from(files).reduce(
+        (acc, file) => {
+          const validation = validateFile(file)
+          if (validation.valid) {
+            acc.validFiles.push(file)
+          } else {
+            acc.errors.push(`${file.name}: ${validation.error}`)
+          }
+          return acc
+        },
+        { validFiles: [] as File[], errors: [] as string[] }
+      )
 
       if (errors.length > 0) {
         addToast({
@@ -293,15 +295,10 @@ export const ImageUploader = () => {
       }
 
       if (validFiles.length > 0) {
-        console.log(
-          'Adding valid files to selectedFiles:',
-          validFiles.map(f => f.name)
-        )
-        setSelectedFiles(prev => {
-          const newFiles = [...prev, ...validFiles]
-          console.log('New selectedFiles count:', newFiles.length)
-          return newFiles
-        })
+        // Only update state once with all valid files
+        setSelectedFiles(prev => [...prev, ...validFiles])
+        // Trigger bounce animation for the upload button
+        setJustAddedFiles(true)
       }
     },
     [addToast]
@@ -312,11 +309,7 @@ export const ImageUploader = () => {
   }, [])
 
   const handleUpload = useCallback(async () => {
-    console.log('handleUpload called with selectedFiles:', selectedFiles.length)
-    console.log('uploadFiles function:', typeof uploadFiles)
-
     if (selectedFiles.length === 0) {
-      console.log('No files selected, showing toast')
       addToast({
         type: 'error',
         title: 'No files selected',
@@ -325,13 +318,8 @@ export const ImageUploader = () => {
       return
     }
 
-    console.log(
-      'Starting upload process for files:',
-      selectedFiles.map(f => f.name)
-    )
     try {
       await uploadFiles(selectedFiles)
-      console.log('Upload completed successfully')
       addToast({
         type: 'success',
         title: 'Upload successful',
@@ -340,7 +328,6 @@ export const ImageUploader = () => {
       setSelectedFiles([])
       resetUploadState()
     } catch (err) {
-      console.error('Upload failed:', err)
       addToast({
         type: 'error',
         title: 'Upload failed',
@@ -394,21 +381,78 @@ export const ImageUploader = () => {
 
         <div className='flex gap-3'>
           <Button
-            onClick={() => {
-              console.log(
-                'Upload button clicked, selectedFiles:',
-                selectedFiles.length,
-                'uploading:',
-                uploading
-              )
-              handleUpload()
+            onClick={async e => {
+              e.preventDefault()
+              await handleUpload()
             }}
             disabled={selectedFiles.length === 0 || uploading}
-            className='flex-1'
+            className={cn(
+              'flex-1 transition-all duration-300 relative overflow-hidden',
+              selectedFiles.length > 0 && !uploading
+                ? [
+                    'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600',
+                    'hover:from-blue-700 hover:via-purple-700 hover:to-blue-700',
+                    'shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-purple-500/40',
+                    'ring-2 ring-blue-500/30 hover:ring-purple-500/50',
+                    'scale-[1.02] hover:scale-[1.03]',
+                    'font-semibold text-white',
+                    'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
+                    'before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700',
+                    'animate-pulse',
+                    justAddedFiles && 'animate-bounce',
+                  ]
+                : [
+                    // Default button styles when no files selected
+                    'bg-muted text-muted-foreground',
+                  ]
+            )}
+            style={{
+              backgroundSize: '200% 100%',
+            }}
           >
-            {uploading
-              ? 'Uploading...'
-              : `Upload ${selectedFiles.length} file(s)`}
+            <span className='flex items-center gap-2'>
+              {uploading ? (
+                <>
+                  <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                  Uploading...
+                </>
+              ) : selectedFiles.length > 0 ? (
+                <>
+                  <svg
+                    className='w-5 h-5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5'
+                    />
+                  </svg>
+                  Upload {selectedFiles.length} file
+                  {selectedFiles.length !== 1 ? 's' : ''}
+                </>
+              ) : (
+                <>
+                  <svg
+                    className='w-4 h-4'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M12 4.5v15m7.5-7.5h-15'
+                    />
+                  </svg>
+                  Select files to upload
+                </>
+              )}
+            </span>
           </Button>
 
           {selectedFiles.length > 0 && !uploading && (

@@ -17,15 +17,26 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file')
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    if (!file || !(file instanceof Blob)) {
+      return NextResponse.json(
+        { error: 'No valid file provided' },
+        { status: 400 }
+      )
     }
+
+    // Convert to File if needed
+    const uploadFile =
+      file instanceof File
+        ? file
+        : new File([file], 'upload', {
+            type: (file as Blob).type || 'application/octet-stream',
+          })
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedTypes.includes(uploadFile.type)) {
       return NextResponse.json(
         {
           error:
@@ -37,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file size (10MB max)
     const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
+    if (uploadFile.size > maxSize) {
       return NextResponse.json(
         { error: 'File size too large. Maximum 10MB allowed.' },
         { status: 400 }
@@ -45,14 +56,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique filename
-    const fileExtension = file.name.split('.').pop() || 'jpg'
+    const fileExtension =
+      uploadFile.name.split('.').pop() ||
+      (uploadFile.type === 'image/jpeg'
+        ? 'jpg'
+        : uploadFile.type === 'image/png'
+          ? 'png'
+          : uploadFile.type === 'image/gif'
+            ? 'gif'
+            : 'webp')
     const fileName = `${uuidv4()}.${fileExtension}`
     const storagePath = `${user.id}/${fileName}`
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('images')
-      .upload(storagePath, file, {
+      .upload(storagePath, uploadFile, {
         cacheControl: '3600',
         upsert: false,
       })
@@ -80,11 +99,11 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         filename: fileName,
-        original_name: file.name,
+        original_name: uploadFile.name,
         storage_path: storagePath,
         storage_url: urlData.publicUrl,
-        file_size: file.size,
-        mime_type: file.type,
+        file_size: uploadFile.size,
+        mime_type: uploadFile.type,
         width: width,
         height: height,
       })

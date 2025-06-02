@@ -52,6 +52,38 @@ body {
   color: hsl(var(--foreground));
 }
 
+/* Custom animations for upload button */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes gradient-x {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.bg-size-200 {
+  background-size: 200% 100%;
+}
+
+.bg-pos-0 {
+  background-position: 0% 50%;
+}
+
+.bg-pos-100 {
+  background-position: 100% 50%;
+}
+
 .container {
   width: 100%;
   max-width: 80rem;

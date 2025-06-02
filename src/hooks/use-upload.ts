@@ -25,17 +25,7 @@ export const useUpload = () => {
 
   const uploadFile = useCallback(
     async (file: File) => {
-      console.log(
-        'uploadFile called for:',
-        file.name,
-        'size:',
-        file.size,
-        'type:',
-        file.type
-      )
-
       if (!user) {
-        console.error('User not authenticated in uploadFile')
         throw new Error('User must be authenticated to upload files')
       }
 
@@ -63,7 +53,6 @@ export const useUpload = () => {
       // Create FormData
       const formData = new FormData()
       formData.append('file', file)
-      console.log('Making POST request to /api/upload')
 
       // Upload via API
       const response = await fetch('/api/upload', {
@@ -76,12 +65,10 @@ export const useUpload = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('Upload failed with error:', errorData)
         throw new Error(errorData.error || 'Upload failed')
       }
 
       const result = await response.json()
-      console.log('Upload successful, result:', result)
       return result.image
     },
     [user]
@@ -89,11 +76,7 @@ export const useUpload = () => {
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
-      console.log('uploadFiles called with:', files.length, 'files')
-      console.log('User authenticated:', !!user)
-
       if (!user) {
-        console.error('User not authenticated')
         throw new Error('User must be authenticated to upload files')
       }
 
@@ -108,49 +91,46 @@ export const useUpload = () => {
       })
 
       const results = []
-
-      try {
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i]
-          console.log(`Uploading file ${i + 1}/${files.length}:`, file.name)
-
+      const uploadPromises = files.map(async (file, i) => {
+        try {
           // Update progress for current file
           setUploadState(prev => ({
             ...prev,
             progress: prev.progress.map((item, index) =>
               index === i
-                ? { ...item, progress: 50, status: 'uploading' as const }
+                ? { ...item, progress: 10, status: 'uploading' as const }
                 : item
             ),
           }))
 
-          try {
-            const result = await uploadFile(file)
-            results.push(result)
+          const result = await uploadFile(file)
 
-            // Mark file as successful
-            setUploadState(prev => ({
-              ...prev,
-              progress: prev.progress.map((item, index) =>
-                index === i
-                  ? { ...item, progress: 100, status: 'success' as const }
-                  : item
-              ),
-            }))
-          } catch (error) {
-            // Mark file as error
-            setUploadState(prev => ({
-              ...prev,
-              progress: prev.progress.map((item, index) =>
-                index === i ? { ...item, status: 'error' as const } : item
-              ),
-            }))
-            throw error
-          }
+          // Update progress to complete
+          setUploadState(prev => ({
+            ...prev,
+            progress: prev.progress.map((item, index) =>
+              index === i
+                ? { ...item, progress: 100, status: 'success' as const }
+                : item
+            ),
+          }))
+
+          return result
+        } catch (error) {
+          setUploadState(prev => ({
+            ...prev,
+            progress: prev.progress.map((item, index) =>
+              index === i ? { ...item, status: 'error' as const } : item
+            ),
+          }))
+          throw error
         }
+      })
 
+      try {
+        const uploadResults = await Promise.all(uploadPromises)
         setUploadState(prev => ({ ...prev, uploading: false }))
-        return results
+        return uploadResults
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Upload failed'
