@@ -4,15 +4,19 @@ const ALLOWED_TYPES = (
 ).split(',')
 
 export interface FileValidationResult {
-  isValid: boolean
+  valid: boolean
   error?: string
+}
+
+export const validateFile = (file: File): FileValidationResult => {
+  return validateImageFile(file)
 }
 
 export const validateImageFile = (file: File): FileValidationResult => {
   // Check file size
   if (file.size > MAX_FILE_SIZE) {
     return {
-      isValid: false,
+      valid: false,
       error: `File size must be less than ${formatFileSize(MAX_FILE_SIZE)}`,
     }
   }
@@ -20,12 +24,12 @@ export const validateImageFile = (file: File): FileValidationResult => {
   // Check file type
   if (!ALLOWED_TYPES.includes(file.type)) {
     return {
-      isValid: false,
+      valid: false,
       error: `File type not supported. Allowed types: ${ALLOWED_TYPES.join(', ')}`,
     }
   }
 
-  return { isValid: true }
+  return { valid: true }
 }
 
 export const formatFileSize = (bytes: number): string => {

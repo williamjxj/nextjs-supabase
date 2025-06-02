@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { useUpload } from '@/hooks/use-upload'
-import { validateImageFile } from '@/lib/utils/file-validation'
+import { validateFile } from '@/lib/utils/file-validation'
 import { cn } from '@/lib/utils/cn'
 
 interface DragDropZoneProps {
@@ -257,17 +257,27 @@ const UploadProgress = ({
 
 export const ImageUploader = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const { uploadFile, uploadState, resetUploadState } = useUpload()
+  const { uploadFiles, uploading, progress, error, resetUploadState } =
+    useUpload()
   const { addToast } = useToast()
+
+  // Debug logging
+  console.log(
+    'ImageUploader render - selectedFiles:',
+    selectedFiles.length,
+    'uploading:',
+    uploading
+  )
 
   const handleFileSelect = useCallback(
     (files: FileList) => {
+      console.log('handleFileSelect called with files:', files.length)
       const validFiles: File[] = []
       const errors: string[] = []
 
       Array.from(files).forEach(file => {
-        const validation = validateImageFile(file)
-        if (validation.isValid) {
+        const validation = validateFile(file)
+        if (validation.valid) {
           validFiles.push(file)
         } else {
           errors.push(`${file.name}: ${validation.error}`)
@@ -283,7 +293,15 @@ export const ImageUploader = () => {
       }
 
       if (validFiles.length > 0) {
-        setSelectedFiles(prev => [...prev, ...validFiles])
+        console.log(
+          'Adding valid files to selectedFiles:',
+          validFiles.map(f => f.name)
+        )
+        setSelectedFiles(prev => {
+          const newFiles = [...prev, ...validFiles]
+          console.log('New selectedFiles count:', newFiles.length)
+          return newFiles
+        })
       }
     },
     [addToast]
@@ -294,7 +312,11 @@ export const ImageUploader = () => {
   }, [])
 
   const handleUpload = useCallback(async () => {
+    console.log('handleUpload called with selectedFiles:', selectedFiles.length)
+    console.log('uploadFiles function:', typeof uploadFiles)
+
     if (selectedFiles.length === 0) {
+      console.log('No files selected, showing toast')
       addToast({
         type: 'error',
         title: 'No files selected',
@@ -303,11 +325,13 @@ export const ImageUploader = () => {
       return
     }
 
+    console.log(
+      'Starting upload process for files:',
+      selectedFiles.map(f => f.name)
+    )
     try {
-      // Upload files one by one
-      for (const file of selectedFiles) {
-        await uploadFile(file)
-      }
+      await uploadFiles(selectedFiles)
+      console.log('Upload completed successfully')
       addToast({
         type: 'success',
         title: 'Upload successful',
@@ -316,13 +340,14 @@ export const ImageUploader = () => {
       setSelectedFiles([])
       resetUploadState()
     } catch (err) {
+      console.error('Upload failed:', err)
       addToast({
         type: 'error',
         title: 'Upload failed',
-        description: uploadState.error || 'An error occurred during upload',
+        description: error || 'An error occurred during upload',
       })
     }
-  }, [selectedFiles, uploadFile, uploadState.error, addToast, resetUploadState])
+  }, [selectedFiles, uploadFiles, error, addToast, resetUploadState])
 
   return (
     <Card className='w-full max-w-2xl mx-auto'>
@@ -332,7 +357,7 @@ export const ImageUploader = () => {
       <CardContent className='space-y-6'>
         <DragDropZone
           onFileSelect={handleFileSelect}
-          disabled={uploadState.uploading}
+          disabled={uploading}
           multiple
         />
 
@@ -353,35 +378,40 @@ export const ImageUploader = () => {
           </div>
         )}
 
-        {uploadState.uploading && (
+        {uploading && progress.length > 0 && (
           <div className='space-y-2'>
             <h3 className='text-sm font-medium'>Upload Progress</h3>
-            <UploadProgress
-              fileName={selectedFiles[0]?.name || 'Uploading...'}
-              progress={uploadState.progress}
-              status={
-                uploadState.uploading
-                  ? 'uploading'
-                  : uploadState.error
-                    ? 'error'
-                    : 'success'
-              }
-            />
+            {progress.map((item, index) => (
+              <UploadProgress
+                key={index}
+                fileName={item.fileName}
+                progress={item.progress}
+                status={item.status}
+              />
+            ))}
           </div>
         )}
 
         <div className='flex gap-3'>
           <Button
-            onClick={handleUpload}
-            disabled={selectedFiles.length === 0 || uploadState.uploading}
+            onClick={() => {
+              console.log(
+                'Upload button clicked, selectedFiles:',
+                selectedFiles.length,
+                'uploading:',
+                uploading
+              )
+              handleUpload()
+            }}
+            disabled={selectedFiles.length === 0 || uploading}
             className='flex-1'
           >
-            {uploadState.uploading
+            {uploading
               ? 'Uploading...'
               : `Upload ${selectedFiles.length} file(s)`}
           </Button>
 
-          {selectedFiles.length > 0 && !uploadState.uploading && (
+          {selectedFiles.length > 0 && !uploading && (
             <Button variant='outline' onClick={() => setSelectedFiles([])}>
               Clear
             </Button>

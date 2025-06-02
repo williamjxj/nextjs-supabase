@@ -1,5 +1,7 @@
 # next-supabase-app
 
+## 1. Basic Requirements
+
 (1) upload image to `Supabase` storage, and display image thumbnail upon succ
 (2) save the image to `Supabase` storage, as well as `Supabase` database table
 (3) gallery page: list all upload images, with download, delete option
@@ -7,29 +9,9 @@
 (5) deploy the app to Vercel
 (6) add/deploy as Docker image
 
-## prd
+## 2. Implementation Steps
 
-## prisma
-
-## supabase
-
-### storage
-
-### database
-
-### auth
-
-## contribution.md
-
-## eslint, prettier, editorConfig
-
-## deployment
-
-Deploy to free cloud service such as Vercel
-
-## workflow
-
-### 1. manus.im
+### 2.1. manus.im
 
 ```text
 using latest version, create a nextjs app + supabase to implement:
@@ -39,8 +21,38 @@ using latest version, create a nextjs app + supabase to implement:
 (4) codes are as simple and straightforward as possible, neat and clean, no duplicated, deprecated codes.
 ```
 
-### 2. v0.dev
+### 2.2. v0.dev (vercel for UI)
 
-for UI improvement
+### 2.3. colipot (Claude Sonnet 4)
 
-### 3. colipot
+## prd (Product Requirements Document)
+
+`Copilot|Gemini`: Based on requirements, create a PRD
+
+## prisma
+
+`prisma` is an ORM for `PostgreSQL`
+
+## supabase
+
+Supabase is a cloud service that provides a full stack of tools for building web applications, including authentication, storage, and databases.
+
+### 1. storage
+
+Supabase provides a simple and fast way to store and retrieve files and images.
+
+### 2. database
+
+PostgreSQL + Prisma + Supabase
+
+### 3. auth
+
+nextauth + supabase
+
+## eslint, prettier, editorConfig
+
+## deployment
+
+Deploy to free cloud service such as Vercel
+
+

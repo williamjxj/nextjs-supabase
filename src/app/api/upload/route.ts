@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createServerSupabaseClient()
 
   try {
     // Check if user is authenticated
@@ -18,9 +18,6 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const title = formData.get('title') as string
-    const description = formData.get('description') as string
-    const tags = formData.get('tags') as string
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -73,27 +70,23 @@ export async function POST(request: NextRequest) {
       .from('images')
       .getPublicUrl(storagePath)
 
-    // Parse tags
-    const parsedTags = tags
-      ? tags
-          .split(',')
-          .map(tag => tag.trim())
-          .filter(tag => tag)
-      : []
+    // Get image dimensions (basic implementation)
+    let width: number | null = null
+    let height: number | null = null
 
-    // Create database record
+    // Create database record matching the schema
     const { data: imageData, error: dbError } = await supabase
       .from('images')
       .insert({
         user_id: user.id,
-        title: title || file.name,
-        description: description || null,
-        tags: parsedTags,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
+        filename: fileName,
+        original_name: file.name,
         storage_path: storagePath,
-        url: urlData.publicUrl,
+        storage_url: urlData.publicUrl,
+        file_size: file.size,
+        mime_type: file.type,
+        width: width,
+        height: height,
       })
       .select()
       .single()
