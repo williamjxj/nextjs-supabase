@@ -1,7 +1,7 @@
 
 ## 📋 Questions for Optimization Strategy
 
-### T1
+### docs/*.md Optimization
 
 Can you please category, adjustment, optimize the docs/*.md?
 
@@ -17,3 +17,7 @@ Can you please category, adjustment, optimize the docs/*.md?
 ├── 🛠️ DEVELOPMENT.md      # Setup, tools, contributions
 └── 📋 CHANGELOG.md        # Project progress & improvements
 ```
+
+## ☁️ cloudinary APIs
+
+## 💰 CyberCurrency API integration

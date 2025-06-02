@@ -14,6 +14,3 @@
 
 ## 🌊 Windsurf (codeium)
 
-## ☁️ cloudinary APIs
-
-## 💰 cyberCurrency API integration
