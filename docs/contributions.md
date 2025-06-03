@@ -14,3 +14,9 @@
 
 ## 🌊 Windsurf (codeium)
 
+## Youtube (YouTube)
+
+- [context7]() `use context7`
+- [claude-task-master](https://github.com/eyaltoledano/claude-task-master?tab=readme-ov-file)
+  `Initialize taskmaster-ai in my project`
+- [`Tavily` API Key](https://app.tavily.com/home)

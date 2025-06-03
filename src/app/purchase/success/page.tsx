@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { CheckCircle, Download, ArrowLeft } from 'lucide-react'
 
 interface PurchaseDetails {
@@ -132,9 +133,11 @@ function PurchaseSuccessContent() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {/* Image Preview */}
               <div>
-                <img
+                <Image
                   src={purchaseDetails.imageUrl}
                   alt={purchaseDetails.imageName}
+                  width={400}
+                  height={192}
                   className='w-full h-48 object-cover rounded-lg border'
                 />
               </div>

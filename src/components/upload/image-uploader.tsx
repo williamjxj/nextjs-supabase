@@ -149,12 +149,13 @@ const ThumbnailPreview = ({ file, onRemove }: ThumbnailPreviewProps) => {
         URL.revokeObjectURL(preview)
       }
     }
-  }, [file])
+  }, [file, preview])
 
   return (
     <div className='relative group'>
       <div className='aspect-square w-24 h-24 rounded-lg overflow-hidden border border-border'>
         {preview && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={preview}
             alt={file.name}

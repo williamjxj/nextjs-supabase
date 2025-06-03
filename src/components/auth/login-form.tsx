@@ -127,7 +127,9 @@ export const LoginForm = ({
         </form>
 
         <div className='mt-4 text-center text-sm'>
-          <span className='text-muted-foreground'>Don't have an account? </span>
+          <span className='text-muted-foreground'>
+            Don&apos;t have an account?{' '}
+          </span>
           <Button
             variant='link'
             className='p-0 h-auto font-normal'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Search,
   Filter,
@@ -39,13 +39,30 @@ export function GalleryFilters({
   className,
 }: GalleryFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [searchValue, setSearchValue] = useState(filters.search)
+
+  // Debounce search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchValue !== filters.search) {
+        onFiltersChange({ ...filters, search: searchValue })
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timeoutId)
+  }, [searchValue, filters, onFiltersChange])
+
+  // Update local search value when filters change from outside
+  useEffect(() => {
+    setSearchValue(filters.search)
+  }, [filters.search])
 
   const updateFilters = (updates: Partial<GalleryFilters>) => {
     onFiltersChange({ ...filters, ...updates })
   }
 
   const handleSearchChange = (value: string) => {
-    updateFilters({ search: value })
+    setSearchValue(value) // Update local state immediately for UI responsiveness
   }
 
   const handleSortChange = (sortBy: GalleryFilters['sortBy']) => {
@@ -82,7 +99,7 @@ export function GalleryFilters({
           <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
           <Input
             placeholder='Search images...'
-            value={filters.search}
+            value={searchValue}
             onChange={e => handleSearchChange(e.target.value)}
             className='pl-9'
           />

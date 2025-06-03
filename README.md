@@ -95,7 +95,6 @@ APP_URL=https://nextjs-supabase-flame.vercel.app
 - [x] 验证所有功能并清理代码
 - [ ] 向用户报告并发送项目
 
-
 ### 图片上传页面
 
 - 选择图片文件（支持 JPG、PNG、GIF、WebP）

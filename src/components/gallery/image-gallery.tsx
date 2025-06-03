@@ -49,7 +49,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   // Extract all available tags from images (simplified for now since tags don't exist in the Image type)
   const availableTags = useMemo(() => {
     return [] // No tags in the current Image type
-  }, [images])
+  }, [])
 
   // Filter and sort images - now handled by the API, but keep for local filtering if needed
   const filteredImages = useMemo(() => {

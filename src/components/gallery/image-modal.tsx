@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import {
   X,
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { Image as ImageType } from '@/types/image'
 import { formatDistanceToNow } from 'date-fns'
+import { PaymentMethodSelector } from '@/components/payment/payment-method-selector'
 
 interface ImageModalProps {
   image: ImageType | null
@@ -36,6 +37,7 @@ export function ImageModal({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false)
 
   useEffect(() => {
     if (image && images.length > 0) {
@@ -43,6 +45,20 @@ export function ImageModal({
       setCurrentIndex(index >= 0 ? index : 0)
     }
   }, [image, images])
+
+  const currentImage = images[currentIndex] || image
+
+  const goToPrevious = useCallback(() => {
+    if (images.length <= 1) return
+    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1))
+    setImageError(false)
+  }, [images.length])
+
+  const goToNext = useCallback(() => {
+    if (images.length <= 1) return
+    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0))
+    setImageError(false)
+  }, [images.length])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -65,20 +81,22 @@ export function ImageModal({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, currentIndex, images.length])
+  }, [isOpen, goToPrevious, goToNext, onClose])
 
-  const currentImage = images[currentIndex] || image
-
-  const goToPrevious = () => {
-    if (images.length <= 1) return
-    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1))
-    setImageError(false)
+  const handlePurchaseClick = () => {
+    setShowPaymentSelector(true)
   }
 
-  const goToNext = () => {
-    if (images.length <= 1) return
-    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0))
-    setImageError(false)
+  const handlePaymentMethodSelected = (
+    method: 'stripe' | 'paypal' | 'crypto'
+  ) => {
+    console.log(
+      'Selected payment method:',
+      method,
+      'for image:',
+      currentImage.id
+    )
+    setShowPaymentSelector(false)
   }
 
   const handleDownload = async () => {
@@ -94,11 +112,9 @@ export function ImageModal({
   const handleDelete = () => {
     if (!currentImage) return
     onDelete(currentImage)
-    // If this was the last image, close the modal
     if (images.length <= 1) {
       onClose()
     } else {
-      // Move to next image or previous if at the end
       if (currentIndex >= images.length - 1) {
         setCurrentIndex(Math.max(0, currentIndex - 1))
       }
@@ -198,6 +214,17 @@ export function ImageModal({
                 <ChevronRight className='h-6 w-6' />
               </Button>
             </>
+          )}
+
+          {showPaymentSelector && currentImage && (
+            <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/70'>
+              <PaymentMethodSelector
+                onPaymentSelect={handlePaymentMethodSelected}
+                amount={1000}
+                licenseType='standard'
+                imageId={currentImage.id}
+              />
+            </div>
           )}
         </div>
 

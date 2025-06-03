@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { downloadImage } from '@/lib/supabase/storage'
 import { useAuth } from './use-auth'
 import { Image } from '@/types/image'
@@ -44,6 +44,10 @@ export const useGallery = () => {
     },
   })
 
+  // Use ref to prevent duplicate API calls
+  const fetchInProgressRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
   const fetchImages = useCallback(
     async (
       filters?: Partial<GalleryFilters>,
@@ -51,22 +55,44 @@ export const useGallery = () => {
     ) => {
       if (!user) return
 
-      setGalleryState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-        filters: { ...prev.filters, ...filters },
-      }))
+      // Prevent duplicate calls
+      if (fetchInProgressRef.current) {
+        return
+      }
+
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+
+      // Create new abort controller
+      abortControllerRef.current = new AbortController()
+      fetchInProgressRef.current = true
+
+      // Use functional state updates to get current filters
+      let finalFilters: GalleryFilters
+
+      setGalleryState(prev => {
+        finalFilters = { ...prev.filters, ...filters }
+
+        return {
+          ...prev,
+          loading: true,
+          error: null,
+          filters: finalFilters,
+        }
+      })
 
       try {
         const searchParams = new URLSearchParams()
 
         // Apply filters
-        const finalFilters = { ...galleryState.filters, ...filters }
-        if (finalFilters.search) searchParams.set('search', finalFilters.search)
-        if (finalFilters.sortBy) searchParams.set('sortBy', finalFilters.sortBy)
-        if (finalFilters.sortOrder)
-          searchParams.set('sortOrder', finalFilters.sortOrder)
+        if (finalFilters!.search)
+          searchParams.set('search', finalFilters!.search)
+        if (finalFilters!.sortBy)
+          searchParams.set('sortBy', finalFilters!.sortBy)
+        if (finalFilters!.sortOrder)
+          searchParams.set('sortOrder', finalFilters!.sortOrder)
 
         // Apply pagination
         if (pagination?.limit)
@@ -74,7 +100,12 @@ export const useGallery = () => {
         if (pagination?.offset)
           searchParams.set('offset', pagination.offset.toString())
 
-        const response = await fetch(`/api/gallery?${searchParams.toString()}`)
+        const response = await fetch(
+          `/api/gallery?${searchParams.toString()}`,
+          {
+            signal: abortControllerRef.current.signal,
+          }
+        )
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
@@ -88,9 +119,13 @@ export const useGallery = () => {
           loading: false,
           error: null,
           pagination: data.pagination,
-          filters: finalFilters,
         }))
       } catch (error) {
+        // Don't set error if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to fetch images'
         setGalleryState(prev => ({
@@ -98,9 +133,12 @@ export const useGallery = () => {
           loading: false,
           error: errorMessage,
         }))
+      } finally {
+        fetchInProgressRef.current = false
+        abortControllerRef.current = null
       }
     },
-    [user, galleryState.filters]
+    [user]
   )
 
   const deleteImage = async (image: Image) => {
@@ -158,51 +196,97 @@ export const useGallery = () => {
 
   const updateFilters = useCallback(
     (newFilters: Partial<GalleryFilters>) => {
+      // Use the latest fetchImages directly since it's stable due to useCallback with [user]
       fetchImages(newFilters, { offset: 0 })
     },
     [fetchImages]
   )
 
   const loadMore = useCallback(() => {
-    if (galleryState.pagination?.hasMore) {
-      const newOffset =
-        galleryState.pagination.offset + galleryState.pagination.limit
-      fetchImages({}, { offset: newOffset })
-    }
-  }, [fetchImages, galleryState.pagination])
+    setGalleryState(prev => {
+      if (prev.pagination?.hasMore) {
+        const newOffset = prev.pagination.offset + prev.pagination.limit
+        fetchImages({}, { offset: newOffset })
+      }
+      return prev
+    })
+  }, [fetchImages])
 
   const goToPage = useCallback(
     (page: number) => {
-      if (!galleryState.pagination) return
+      setGalleryState(prev => {
+        if (!prev.pagination) return prev
 
-      const newOffset = (page - 1) * galleryState.pagination.limit
-      fetchImages({}, { offset: newOffset })
+        const newOffset = (page - 1) * prev.pagination.limit
+        fetchImages({}, { offset: newOffset })
+        return prev
+      })
     },
-    [fetchImages, galleryState.pagination]
+    [fetchImages]
   )
 
   const goToNextPage = useCallback(() => {
-    if (!galleryState.pagination?.hasMore) return
+    setGalleryState(prev => {
+      if (!prev.pagination?.hasMore) return prev
 
-    const newOffset =
-      galleryState.pagination.offset + galleryState.pagination.limit
-    fetchImages({}, { offset: newOffset })
-  }, [fetchImages, galleryState.pagination])
+      const newOffset = prev.pagination.offset + prev.pagination.limit
+      fetchImages({}, { offset: newOffset })
+      return prev
+    })
+  }, [fetchImages])
 
   const goToPrevPage = useCallback(() => {
-    if (!galleryState.pagination || galleryState.pagination.offset === 0) return
+    setGalleryState(prev => {
+      if (!prev.pagination || prev.pagination.offset === 0) return prev
 
-    const newOffset = Math.max(
-      0,
-      galleryState.pagination.offset - galleryState.pagination.limit
-    )
-    fetchImages({}, { offset: newOffset })
-  }, [fetchImages, galleryState.pagination])
+      const newOffset = Math.max(
+        0,
+        prev.pagination.offset - prev.pagination.limit
+      )
+      fetchImages({}, { offset: newOffset })
+      return prev
+    })
+  }, [fetchImages])
 
-  // Fetch images when user changes
+  // Initial fetch when user changes
   useEffect(() => {
     if (user) {
-      fetchImages()
+      // Initial fetch with default filters
+      setGalleryState(prev => ({
+        ...prev,
+        loading: true,
+        error: null,
+      }))
+
+      const searchParams = new URLSearchParams()
+      searchParams.set('sortBy', 'created_at')
+      searchParams.set('sortOrder', 'desc')
+
+      fetch(`/api/gallery?${searchParams.toString()}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          return response.json()
+        })
+        .then(data => {
+          setGalleryState(prev => ({
+            ...prev,
+            images: data.images,
+            loading: false,
+            error: null,
+            pagination: data.pagination,
+          }))
+        })
+        .catch(error => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to fetch images'
+          setGalleryState(prev => ({
+            ...prev,
+            loading: false,
+            error: errorMessage,
+          }))
+        })
     } else {
       setGalleryState({
         images: [],
@@ -216,7 +300,7 @@ export const useGallery = () => {
         },
       })
     }
-  }, [user])
+  }, [user]) // Only depend on user
 
   return {
     ...galleryState,

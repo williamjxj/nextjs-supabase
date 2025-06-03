@@ -115,7 +115,7 @@ export default function Home() {
               </div>
               <CardTitle>Secure Storage</CardTitle>
               <CardDescription>
-                Your images are safely stored with Supabase's secure cloud
+                Your images are safely stored with Supabase&apos;s secure cloud
                 infrastructure.
               </CardDescription>
             </CardHeader>

@@ -13,12 +13,6 @@ export interface Image {
   updated_at: string
 }
 
-export interface ImageUploadData {
-  file: File
-  filename: string
-  storage_path: string
-}
-
 export interface ImageMetadata {
   filename: string
   original_name: string

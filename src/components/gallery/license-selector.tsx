@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { ShoppingCart, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
@@ -89,9 +90,11 @@ export function LicenseSelector({
         {/* Image Preview */}
         <div className='mb-8'>
           <div className='flex items-center gap-4'>
-            <img
+            <Image
               src={image.storage_url}
               alt={image.original_name}
+              width={80}
+              height={80}
               className='w-20 h-20 object-cover rounded-lg border'
             />
             <div>

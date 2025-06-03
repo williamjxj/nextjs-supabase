@@ -1,5 +1,4 @@
 import { supabase } from './client'
-import { ImageUploadData, ImageMetadata } from '@/types/image'
 
 const STORAGE_BUCKET = 'images'
 

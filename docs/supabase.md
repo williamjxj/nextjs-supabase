@@ -129,8 +129,8 @@ graph TB
 
 - **Dashboard**: https://supabase.com/dashboard/project/saamqzojqivrumnnnyrf/storage/buckets
 
-    ```bash
-    $ npm run supabase login
-    $ npm run supabase link --project-ref saamqzojqivrumnnnyrf
-    $ npm run db:push
-    ```
+  ```bash
+  $ npm run supabase login
+  $ npm run supabase link --project-ref saamqzojqivrumnnnyrf
+  $ npm run db:push
+  ```

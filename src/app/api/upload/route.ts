@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(storagePath)
 
     // Get image dimensions (basic implementation)
-    let width: number | null = null
-    let height: number | null = null
+    const width: number | null = null
+    const height: number | null = null
 
     // Create database record matching the schema
     const { data: imageData, error: dbError } = await supabase
