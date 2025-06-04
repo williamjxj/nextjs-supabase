@@ -6,16 +6,6 @@ export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient()
 
   try {
-    // Check if user is authenticated
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const formData = await request.formData()
     const file = formData.get('file')
 
@@ -66,7 +56,7 @@ export async function POST(request: NextRequest) {
             ? 'gif'
             : 'webp')
     const fileName = `${uuidv4()}.${fileExtension}`
-    const storagePath = `${user.id}/${fileName}`
+    const storagePath = `public/${fileName}` // Store in public folder instead of user-specific folder
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -97,7 +87,6 @@ export async function POST(request: NextRequest) {
     const { data: imageData, error: dbError } = await supabase
       .from('images')
       .insert({
-        user_id: user.id,
         filename: fileName,
         original_name: uploadFile.name,
         storage_path: storagePath,

@@ -80,12 +80,12 @@ const Modal = ({
 
   return createPortal(
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md'
       onClick={handleBackdropClick}
     >
       <div
         className={cn(
-          'relative w-full bg-background rounded-lg shadow-lg',
+          'relative w-full bg-background rounded-lg shadow-2xl border border-border/20',
           sizeClasses[size],
           className
         )}

@@ -142,4 +142,6 @@ graph TB
 ```bash
 $ npx supabase init
 $ npx supabase start
+$ supabase status
+$ supabase stop
 ```

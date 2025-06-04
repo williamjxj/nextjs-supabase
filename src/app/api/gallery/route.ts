@@ -9,21 +9,11 @@ export interface GalleryQueryParams {
   offset?: number
 }
 
-// GET /api/gallery - Get images for the authenticated user with filtering and pagination
+// GET /api/gallery - Get all images with filtering and pagination (no authentication required)
 export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient()
 
   try {
-    // Check if user is authenticated
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
@@ -59,10 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = supabase
-      .from('images')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id)
+    let query = supabase.from('images').select('*', { count: 'exact' })
 
     // Apply search filter
     if (search) {
@@ -122,16 +109,6 @@ export async function DELETE(request: NextRequest) {
   const supabase = await createServerSupabaseClient()
 
   try {
-    // Check if user is authenticated
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     // Get image ID from query parameters
     const { searchParams } = new URL(request.url)
     const imageId = searchParams.get('id')
@@ -148,14 +125,10 @@ export async function DELETE(request: NextRequest) {
       .from('images')
       .select('storage_path')
       .eq('id', imageId)
-      .eq('user_id', user.id)
       .single()
 
     if (fetchError || !image) {
-      return NextResponse.json(
-        { error: 'Image not found or access denied' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
     }
 
     // Delete from storage
@@ -173,7 +146,6 @@ export async function DELETE(request: NextRequest) {
       .from('images')
       .delete()
       .eq('id', imageId)
-      .eq('user_id', user.id)
 
     if (dbError) {
       console.error('Database deletion error:', dbError)
