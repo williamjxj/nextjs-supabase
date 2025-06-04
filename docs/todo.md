@@ -1,6 +1,6 @@
 ## 📋 Questions for Optimization Strategy
 
-### docs/\*.md Optimization
+### docs.md Optimization
 
 Can you please category, adjustment, optimize the docs/\*.md?
 

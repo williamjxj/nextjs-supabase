@@ -130,7 +130,16 @@ graph TB
 - **Dashboard**: https://supabase.com/dashboard/project/saamqzojqivrumnnnyrf/storage/buckets
 
   ```bash
-  $ npm run supabase login
+  $ npm run supabase login #William1!
   $ npm run supabase link --project-ref saamqzojqivrumnnnyrf
   $ npm run db:push
+  $ npx supabase db dump -f schema.sql
+  $ npx supabase db restore
   ```
+
+## Supabase Local
+
+```bash
+$ npx supabase init
+$ npx supabase start
+```
