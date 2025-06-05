@@ -14,6 +14,9 @@ export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    // TODO: Add RLS policies
+    // const userData = await supabase.auth.getUser()
+    // console.log('/gallery', userData)
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''

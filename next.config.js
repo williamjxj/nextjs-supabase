@@ -14,6 +14,12 @@ const nextConfig = {
         port: '54321',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
   },

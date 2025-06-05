@@ -48,10 +48,10 @@ run_query() {
 run_query "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';" "Available Tables"
 
 # Query images table
-run_query "SELECT id, filename, title, description, price, license_type, created_at FROM images ORDER BY created_at DESC LIMIT 10;" "Recent Images (Last 10)"
+run_query "SELECT id, filename, original_name, storage_path, created_at FROM images ORDER BY created_at DESC LIMIT 10;" "Recent Images (Last 10)"
 
 # Query purchases table
-run_query "SELECT id, user_id, image_id, amount, payment_method, status, created_at FROM purchases ORDER BY created_at DESC LIMIT 10;" "Recent Purchases (Last 10)"
+run_query "SELECT id, user_id, image_id, amount_paid, payment_method, payment_status, paypal_payment_id, stripe_session_id, created_at FROM purchases ORDER BY created_at DESC LIMIT 10;" "Recent Purchases (Last 10)"
 
 # Get table counts
 run_query "SELECT 'images' as table_name, COUNT(*) as count FROM images UNION ALL SELECT 'purchases' as table_name, COUNT(*) as count FROM purchases;" "Table Counts"

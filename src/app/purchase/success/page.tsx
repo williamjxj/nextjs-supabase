@@ -43,9 +43,17 @@ function PurchaseSuccessContent() {
     // Fetch real purchase details from the API
     const fetchPurchaseDetails = async () => {
       try {
-        const response = await fetch(
-          `/api/purchase/details?session_id=${sessionId}`
-        )
+        let response
+
+        // Call different API endpoints based on payment method
+        if (method === 'paypal') {
+          response = await fetch(`/api/paypal/details?payment_id=${sessionId}`)
+        } else {
+          // Default to Stripe
+          response = await fetch(
+            `/api/purchase/details?session_id=${sessionId}`
+          )
+        }
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -65,7 +73,7 @@ function PurchaseSuccessContent() {
     }
 
     fetchPurchaseDetails()
-  }, [sessionId])
+  }, [sessionId, method])
 
   if (loading) {
     return (

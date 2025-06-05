@@ -34,7 +34,7 @@ if ! command -v psql &> /dev/null; then
 fi
 
 # SQL query to insert the test record
-SQL_QUERY="INSERT INTO images (filename, original_name, storage_path, storage_url, file_size, mime_type) VALUES ('test-image-123', 'test-image-123', '/dev/null', 'http://localhost/dev/null', 0, 'image/jpeg');"
+SQL_QUERY="INSERT INTO images (filename, original_name, storage_path, storage_url, file_size, mime_type) VALUES ('test-image-123.jpg', 'test-image-123.jpg', '/dev/null', 'http://localhost/dev/null', 0, 'image/jpeg');"
 
 # Run the SQL query
 psql "$DB_URL" -c "$SQL_QUERY" || echo "❌ Failed to insert test record"

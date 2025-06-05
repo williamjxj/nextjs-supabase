@@ -17,7 +17,7 @@ export default function PaymentTestPage() {
   const router = useRouter()
   const [amount, setAmount] = useState('10.00')
   const [licenseType, setLicenseType] = useState('standard')
-  const [imageId, setImageId] = useState('test-image-123')
+  const [imageId, setImageId] = useState('test-image-123.jpg')
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [lastResult, setLastResult] = useState<{
     method: string
@@ -133,7 +133,7 @@ export default function PaymentTestPage() {
                   id='imageId'
                   value={imageId}
                   onChange={e => setImageId(e.target.value)}
-                  placeholder='test-image-123'
+                  placeholder='test-image-123.jpg'
                 />
               </div>
 

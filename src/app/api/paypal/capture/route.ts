@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
@@ -68,11 +69,61 @@ export async function POST(request: NextRequest) {
     }
 
     // On successful capture, responseData contains the transaction details.
-    // You should save relevant information (e.g., transaction ID, status, payer info) to your database.
-    // For example, if the payment is for an image license:
-    // const imageId = responseData.purchase_units[0]?.custom_id?.split('_')[1];
-    // const licenseType = responseData.purchase_units[0]?.custom_id?.split('_')[3];
-    // await recordPurchaseInDb(imageId, licenseType, responseData.id, 'paypal', responseData.payer.email_address);
+    // Save the purchase to the database
+    if (responseData.status === 'COMPLETED') {
+      try {
+        const purchaseUnit = responseData.purchase_units[0]
+        const capture = purchaseUnit.payments.captures[0]
+
+        // Extract imageId and licenseType from custom_id
+        const customId = capture.custom_id || ''
+        const parts = customId.split('_')
+        const imageId = parts[1]
+        const licenseType = parts[3]
+
+        if (imageId && licenseType) {
+          const supabase = await createServerSupabaseClient()
+
+          // First, lookup the actual image UUID using the filename
+          const { data: imageData, error: imageError } = await supabase
+            .from('images')
+            .select('id')
+            .eq('filename', imageId)
+            .single()
+
+          if (imageError || !imageData) {
+            console.error(
+              'Failed to find image with filename:',
+              imageId,
+              imageError
+            )
+            return NextResponse.json(responseData) // Still return success but log the error
+          }
+
+          const { error: insertError } = await supabase
+            .from('purchases')
+            .insert({
+              image_id: imageData.id,
+              license_type: licenseType,
+              amount_paid: Math.round(parseFloat(capture.amount.value) * 100), // Convert to cents
+              currency: capture.amount.currency_code.toLowerCase(),
+              payment_method: 'paypal',
+              payment_status: 'completed',
+              paypal_payment_id: capture.id, // Use capture ID as payment ID
+              paypal_order_id: responseData.id, // Store order ID separately
+              purchased_at: new Date().toISOString(),
+            })
+
+          if (insertError) {
+            console.error('Failed to save purchase to database:', insertError)
+          } else {
+            console.log('Purchase saved successfully for image:', imageId)
+          }
+        }
+      } catch (dbError) {
+        console.error('Error saving purchase to database:', dbError)
+      }
+    }
 
     return NextResponse.json(responseData)
   } catch (error: any) {
