@@ -21,7 +21,13 @@ interface PurchaseDetails {
 
 function PurchaseSuccessContent() {
   const searchParams = useSearchParams()
-  const sessionId = searchParams.get('session_id')
+  const paymentId = searchParams.get('paymentId') // Added for PayPal
+  const method = searchParams.get('method') // Added to check payment method
+  const sessionIdFromStripe = searchParams.get('session_id') // Existing for Stripe
+
+  // Determine the correct session ID based on the payment method
+  const sessionId = method === 'paypal' ? paymentId : sessionIdFromStripe
+
   const [purchaseDetails, setPurchaseDetails] =
     useState<PurchaseDetails | null>(null)
   const [loading, setLoading] = useState(true)

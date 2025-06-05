@@ -128,6 +128,11 @@ APP_URL=https://nextjs-supabase-flame.vercel.app
 
 ## 项目部署
 
-```bash
-$ lsof -i :3000
-```
+## Paypal
+
+### https://developer.paypal.com/
+
+### https://sandbox.paypal.com
+
+- sb-xe2gm43302125@personal.example.com / ed$@Vu1+
+- sb-myfyp43311448@business.example.com / &W$^6ILb
