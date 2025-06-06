@@ -84,8 +84,25 @@ export async function GET(request: NextRequest) {
     const totalImages = count || 0
     const hasMore = offset + limit < totalImages
 
+    // Check purchases to determine isPurchased status
+    const { data: purchases } = await supabase
+      .from('purchases')
+      .select('image_id')
+      .in(
+        'image_id',
+        images.map(image => image.id)
+      )
+
+    const purchasedImageIds =
+      purchases?.map(purchase => purchase.image_id) || []
+
+    const enrichedImages = images.map(image => ({
+      ...image,
+      isPurchased: purchasedImageIds.includes(image.id),
+    }))
+
     return NextResponse.json({
-      images: images || [],
+      images: enrichedImages || [],
       pagination: {
         total: totalImages,
         limit,

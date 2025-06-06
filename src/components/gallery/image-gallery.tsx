@@ -10,6 +10,7 @@ import { ImageCard } from './image-card'
 import { ImageModal } from './image-modal'
 import { DeleteConfirm } from './delete-confirm'
 import { LicenseSelector } from './license-selector'
+import { PaymentOptionsModal } from './payment-options-modal'
 import { GalleryFilters, GalleryFilters as FilterType } from './gallery-filters'
 import { Pagination } from './pagination'
 import { useGallery } from '@/hooks/use-gallery'
@@ -45,6 +46,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [checkoutImage, setCheckoutImage] = useState<ImageType | null>(null)
   const [isLicenseSelectorOpen, setIsLicenseSelectorOpen] = useState(false)
+  const [isPaymentOptionsOpen, setIsPaymentOptionsOpen] = useState(false)
 
   // Extract all available tags from images (simplified for now since tags don't exist in the Image type)
   const availableTags = useMemo(() => {
@@ -110,7 +112,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
   const handleCheckout = (image: ImageType) => {
     setCheckoutImage(image)
-    setIsLicenseSelectorOpen(true)
+    setIsPaymentOptionsOpen(true)
   }
 
   const handleLicenseCheckout = async (
@@ -143,6 +145,43 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     } catch (error) {
       console.error('Error initiating checkout:', error)
       showToast('Failed to start checkout process', 'error')
+    }
+  }
+
+  const handlePaymentMethodSelect = async (
+    method: 'stripe' | 'paypal' | 'cybercurrency'
+  ) => {
+    if (!checkoutImage) return
+
+    try {
+      if (method === 'stripe') {
+        const response = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageId: checkoutImage.id,
+            licenseType: checkoutImage.licenseType || 'standard',
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to create Stripe checkout session')
+        }
+
+        const { url } = await response.json()
+        if (url) {
+          window.location.href = url
+        } else {
+          throw new Error('No checkout URL received')
+        }
+      } else if (method === 'paypal') {
+        window.location.href = `/paypal/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || 'standard'}&amount=${checkoutImage.amount || 100}`
+      } else if (method === 'cybercurrency') {
+        window.location.href = `/crypto/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || 'standard'}`
+      }
+    } catch (error) {
+      console.error('Error initiating payment:', error)
+      showToast('Failed to start payment process', 'error')
     }
   }
 
@@ -262,6 +301,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
               onDelete={handleDeleteClick}
               onDownload={handleDownload}
               onCheckout={handleCheckout}
+              isPurchased={image.isPurchased}
             />
           ))}
         </div>
@@ -330,6 +370,16 @@ export function ImageGallery({ className }: ImageGalleryProps) {
             setCheckoutImage(null)
           }}
           onCheckout={handleLicenseCheckout}
+        />
+      )}
+
+      {/* Payment Options Modal */}
+      {checkoutImage && (
+        <PaymentOptionsModal
+          isOpen={isPaymentOptionsOpen}
+          onClose={() => setIsPaymentOptionsOpen(false)}
+          onSelectPaymentMethod={handlePaymentMethodSelect}
+          image={checkoutImage}
         />
       )}
     </div>

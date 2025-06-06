@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Download, Trash2, Eye, Calendar, ShoppingCart } from 'lucide-react'
+import { Download, Trash2, Eye, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Image as ImageType } from '@/types/image'
@@ -14,7 +14,8 @@ interface ImageCardProps {
   onView: (image: ImageType) => void
   onDelete: (image: ImageType) => void
   onDownload: (image: ImageType) => void
-  onCheckout?: (image: ImageType) => void
+  onCheckout: (image: ImageType) => void // Added for checkout functionality
+  isPurchased: boolean // Added to determine if the image is purchased
   className?: string
 }
 
@@ -24,6 +25,7 @@ export function ImageCard({
   onDelete,
   onDownload,
   onCheckout,
+  isPurchased,
   className,
 }: ImageCardProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -33,6 +35,15 @@ export function ImageCard({
     setIsLoading(true)
     try {
       await onDownload(image)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCheckout = async () => {
+    setIsLoading(true)
+    try {
+      await onCheckout(image)
     } finally {
       setIsLoading(false)
     }
@@ -82,16 +93,28 @@ export function ImageCard({
           >
             <Eye className='h-4 w-4' />
           </Button>
-          <Button
-            size='sm'
-            variant='secondary'
-            onClick={handleDownload}
-            disabled={isLoading}
-            className='h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm'
-            title='Download'
-          >
-            <Download className='h-4 w-4' />
-          </Button>
+          {isPurchased ? (
+            <Button
+              size='sm'
+              variant='secondary'
+              onClick={handleDownload}
+              disabled={isLoading}
+              className='h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm'
+              title='Download'
+            >
+              <Download className='h-4 w-4' />
+            </Button>
+          ) : (
+            <Button
+              size='sm'
+              variant='default'
+              onClick={handleCheckout}
+              className='h-8 w-8 p-0 bg-blue-500/90 backdrop-blur-sm hover:bg-blue-600 shadow-sm'
+              title='Checkout'
+            >
+              <span className='text-white'>Checkout</span>
+            </Button>
+          )}
           <Button
             size='sm'
             variant='destructive'
@@ -100,19 +123,6 @@ export function ImageCard({
             title='Delete'
           >
             <Trash2 className='h-4 w-4' />
-          </Button>
-        </div>
-
-        {/* Checkout Button - Bottom overlay */}
-        <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3'>
-          <Button
-            size='sm'
-            onClick={() => onCheckout?.(image)}
-            className='w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2'
-            title='Purchase this image'
-          >
-            <ShoppingCart className='h-4 w-4' />
-            Buy from $5.00
           </Button>
         </div>
       </div>

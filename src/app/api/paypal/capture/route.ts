@@ -84,19 +84,15 @@ export async function POST(request: NextRequest) {
         if (imageId && licenseType) {
           const supabase = await createServerSupabaseClient()
 
-          // First, lookup the actual image UUID using the filename
+          // First, lookup the actual image using the image ID
           const { data: imageData, error: imageError } = await supabase
             .from('images')
             .select('id')
-            .eq('filename', imageId)
+            .eq('id', imageId)
             .single()
 
           if (imageError || !imageData) {
-            console.error(
-              'Failed to find image with filename:',
-              imageId,
-              imageError
-            )
+            console.error('Failed to find image with id:', imageId, imageError)
             return NextResponse.json(responseData) // Still return success but log the error
           }
 

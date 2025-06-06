@@ -11,6 +11,9 @@ export interface Image {
   height?: number
   created_at: string
   updated_at: string
+  isPurchased: boolean // Indicates whether the image has been purchased
+  licenseType?: 'standard' | 'premium' | 'commercial' // Optional license type for the image
+  amount?: number // Optional amount property to support payment flows
 }
 
 export interface ImageMetadata {

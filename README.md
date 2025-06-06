@@ -53,7 +53,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ### 4. 运行开发服务器
 
 ```bash
+# If local Supabase:
+$ docker-compose up -d
+$ npx supabase start
 $ npm run dev
+$ open http://127.0.0.1:54323/
 ```
 
 应用将在 [http://localhost:3000](http://localhost:3000) 运行。
@@ -136,3 +140,10 @@ APP_URL=https://nextjs-supabase-flame.vercel.app
 
 - sb-xe2gm43302125@personal.example.com / ed$@Vu1+
 - sb-myfyp43311448@business.example.com / &W$^6ILb
+
+### http://127.0.0.1:54323/project/default/sql/1
+
+select * from auth.users;
+select * from images;
+select * from purchases;
+sleect * from storage.buckets;

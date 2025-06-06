@@ -38,6 +38,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
     }
 
+    // Validate imageId consistency
+    if (
+      !purchase.image_id ||
+      !purchase.images?.id ||
+      purchase.image_id !== purchase.images.id
+    ) {
+      console.error('Mismatched imageId in PayPal purchase:', {
+        imageIdFromPurchase: purchase.image_id,
+        imageIdFromImages: purchase.images?.id,
+      })
+      return NextResponse.json(
+        { error: 'Mismatched imageId in purchase details' },
+        { status: 500 }
+      )
+    }
+
     // Format response
     const response = {
       imageId: purchase.image_id,
