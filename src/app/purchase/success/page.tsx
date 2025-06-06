@@ -32,6 +32,8 @@ function PurchaseSuccessContent() {
     useState<PurchaseDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const [testingWebhook, setTestingWebhook] = useState(false)
 
   useEffect(() => {
     if (!sessionId) {
@@ -62,8 +64,39 @@ function PurchaseSuccessContent() {
 
         const data = await response.json()
         setPurchaseDetails(data)
+        setRetryCount(0) // Reset retry count on success
       } catch (err) {
         console.error('Error fetching purchase details:', err)
+
+        // For Stripe payments, if purchase details are not found and we haven't retried too many times,
+        // try to trigger the webhook test endpoint (development only)
+        if (
+          method !== 'paypal' &&
+          retryCount < 2 &&
+          err instanceof Error &&
+          err.message.includes('Purchase details not found')
+        ) {
+          console.log('Purchase not found, attempting webhook test...')
+          setRetryCount(prev => prev + 1)
+
+          // Try to trigger webhook test endpoint
+          try {
+            await fetch('/api/stripe/webhook-test', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId }),
+            })
+
+            // Wait a moment then retry fetching purchase details
+            setTimeout(() => {
+              fetchPurchaseDetails()
+            }, 1000)
+            return
+          } catch (webhookError) {
+            console.error('Webhook test failed:', webhookError)
+          }
+        }
+
         setError(
           err instanceof Error ? err.message : 'Failed to load purchase details'
         )
@@ -73,7 +106,7 @@ function PurchaseSuccessContent() {
     }
 
     fetchPurchaseDetails()
-  }, [sessionId, method])
+  }, [sessionId, method, retryCount])
 
   if (loading) {
     return (
@@ -87,6 +120,35 @@ function PurchaseSuccessContent() {
   }
 
   if (error || !purchaseDetails) {
+    const handleWebhookTest = async () => {
+      if (!sessionId || method === 'paypal') return
+
+      setTestingWebhook(true)
+      try {
+        const response = await fetch('/api/stripe/webhook-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        })
+
+        if (response.ok) {
+          // Retry fetching purchase details
+          setError(null)
+          setLoading(true)
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
+        } else {
+          const errorData = await response.json()
+          console.error('Webhook test failed:', errorData)
+        }
+      } catch (err) {
+        console.error('Webhook test error:', err)
+      } finally {
+        setTestingWebhook(false)
+      }
+    }
+
     return (
       <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
         <div className='bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center'>
@@ -111,13 +173,36 @@ function PurchaseSuccessContent() {
           <p className='text-gray-600 mb-6'>
             {error || 'Unable to retrieve purchase details'}
           </p>
-          <Link
-            href='/gallery'
-            className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-          >
-            <ArrowLeft className='w-4 h-4 mr-2' />
-            Back to Gallery
-          </Link>
+
+          <div className='space-y-3'>
+            {/* Show webhook test button for Stripe in development */}
+            {method !== 'paypal' &&
+              sessionId &&
+              process.env.NODE_ENV !== 'production' && (
+                <button
+                  onClick={handleWebhookTest}
+                  disabled={testingWebhook}
+                  className='w-full inline-flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50'
+                >
+                  {testingWebhook ? (
+                    <>
+                      <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+                      Testing Webhook...
+                    </>
+                  ) : (
+                    'Retry with Webhook Test (Dev)'
+                  )}
+                </button>
+              )}
+
+            <Link
+              href='/gallery'
+              className='w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+            >
+              <ArrowLeft className='w-4 h-4 mr-2' />
+              Back to Gallery
+            </Link>
+          </div>
         </div>
       </div>
     )

@@ -44,26 +44,62 @@ export async function GET(request: NextRequest) {
 
     if (purchaseError) {
       console.error('Purchase lookup error:', purchaseError)
-      // If not found in database, fall back to Stripe metadata
-      const imageId = session.metadata?.imageId
-      if (imageId) {
-        const { data: image, error: imageError } = await supabase
-          .from('images')
-          .select('*')
-          .eq('id', imageId)
-          .single()
+      // If not found in database but session is completed, create the purchase record
+      if (session.payment_status === 'paid') {
+        console.log(
+          'Session paid but no purchase record found. Creating fallback record for session:',
+          sessionId
+        )
+        const imageId = session.metadata?.imageId
+        if (imageId) {
+          const { data: image, error: imageError } = await supabase
+            .from('images')
+            .select('*')
+            .eq('id', imageId)
+            .single()
 
-        if (!imageError && image) {
-          return NextResponse.json({
-            imageId: image.id,
-            imageName: image.original_name,
-            imageUrl: image.storage_url,
-            licenseType: session.metadata?.licenseType || 'standard',
-            amount: (session.amount_total || 0) / 100, // Convert from cents
-            currency: session.currency || 'usd',
-            paymentStatus: session.payment_status,
-            sessionId: session.id,
-          })
+          if (!imageError && image) {
+            // Create the missing purchase record
+            const userId = session.metadata?.userId
+            const purchaseData = {
+              image_id: image.id,
+              user_id: userId && userId !== 'anonymous' ? userId : null,
+              license_type: session.metadata?.licenseType || 'standard',
+              amount_paid: session.amount_total || 0,
+              currency: session.currency || 'usd',
+              stripe_session_id: session.id,
+              payment_method: 'stripe',
+              payment_status: 'completed',
+              purchased_at: new Date().toISOString(),
+            }
+
+            const { error: insertError } = await supabase
+              .from('purchases')
+              .insert([purchaseData])
+
+            if (insertError) {
+              console.error('Failed to create purchase record:', insertError)
+            } else {
+              console.log(
+                'Created missing purchase record for session:',
+                session.id
+              )
+            }
+
+            return NextResponse.json({
+              imageId: image.id,
+              imageName: image.original_name,
+              imageUrl: image.storage_url,
+              licenseType: session.metadata?.licenseType || 'standard',
+              amount: (session.amount_total || 0) / 100, // Convert from cents
+              currency: session.currency || 'usd',
+              paymentStatus: session.payment_status,
+              sessionId: session.id,
+              purchasedAt: new Date().toISOString(),
+              fileSize: image.file_size,
+              mimeType: image.mime_type,
+            })
+          }
         }
       }
 

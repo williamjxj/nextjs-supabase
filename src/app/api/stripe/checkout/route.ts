@@ -34,7 +34,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 })
     }
 
-    const priceConfig = IMAGE_PRICE_CONFIG[licenseType as ImageLicenseType]
+    const priceConfig = IMAGE_PRICE_CONFIG[licenseType as ImageLicenseType] // Prepare image URL for Stripe - ensure it's publicly accessible
+    const imageUrl = image.storage_url
+
+    // For development, we might not have publicly accessible URLs
+    // In that case, we'll use a placeholder or skip the image
+    const isValidUrl = (url: string) => {
+      try {
+        const urlObj = new URL(url)
+        return urlObj.protocol === 'https:' || urlObj.protocol === 'http:'
+      } catch {
+        return false
+      }
+    }
+
+    // Check if URL is publicly accessible (not localhost)
+    const isPubliclyAccessible = (url: string) => {
+      return (
+        !url.includes('localhost') &&
+        !url.includes('127.0.0.1') &&
+        !url.includes('0.0.0.0')
+      )
+    }
+
+    // Only include image if it's a valid, publicly accessible URL
+    // For development, we'll skip images since Stripe can't access localhost
+    const productImages =
+      isValidUrl(imageUrl) && isPubliclyAccessible(imageUrl) ? [imageUrl] : []
+
+    console.log('Creating Stripe checkout session for image:', {
+      imageId: image.id,
+      imageName: image.original_name,
+      imageUrl: imageUrl,
+      isValidUrl: isValidUrl(imageUrl),
+      isPubliclyAccessible: isPubliclyAccessible(imageUrl),
+      productImagesCount: productImages.length,
+      licenseType,
+      amount: priceConfig.amount,
+    })
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -46,7 +83,7 @@ export async function POST(request: NextRequest) {
             product_data: {
               name: `${priceConfig.name} - ${image.original_name}`,
               description: priceConfig.description,
-              images: [image.storage_url],
+              images: productImages,
               metadata: {
                 imageId: image.id,
                 licenseType,
@@ -63,7 +100,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         imageId: image.id,
         licenseType,
-        userId: image.user_id || 'anonymous',
+        userId: image.user_id || null,
       },
     })
 
