@@ -34,11 +34,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 })
     }
 
-    const priceConfig = IMAGE_PRICE_CONFIG[licenseType as ImageLicenseType] // Prepare image URL for Stripe - ensure it's publicly accessible
+    const priceConfig = IMAGE_PRICE_CONFIG[licenseType as ImageLicenseType]
+
+    // Prepare image URL for Stripe - ensure it's publicly accessible
     const imageUrl = image.storage_url
 
-    // For development, we might not have publicly accessible URLs
-    // In that case, we'll use a placeholder or skip the image
+    // Check if URL is valid and publicly accessible
     const isValidUrl = (url: string) => {
       try {
         const urlObj = new URL(url)
@@ -58,20 +59,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Only include image if it's a valid, publicly accessible URL
-    // For development, we'll skip images since Stripe can't access localhost
     const productImages =
       isValidUrl(imageUrl) && isPubliclyAccessible(imageUrl) ? [imageUrl] : []
-
-    console.log('Creating Stripe checkout session for image:', {
-      imageId: image.id,
-      imageName: image.original_name,
-      imageUrl: imageUrl,
-      isValidUrl: isValidUrl(imageUrl),
-      isPubliclyAccessible: isPubliclyAccessible(imageUrl),
-      productImagesCount: productImages.length,
-      licenseType,
-      amount: priceConfig.amount,
-    })
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -106,7 +95,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
-    console.error('Stripe checkout error:', error)
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

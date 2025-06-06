@@ -3,12 +3,10 @@ import { stripe } from '@/lib/stripe'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
-  console.log('Stripe webhook received')
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
   if (!signature) {
-    console.error('Missing stripe signature')
     return NextResponse.json(
       { error: 'Missing stripe signature' },
       { status: 400 }
@@ -23,9 +21,7 @@ export async function POST(request: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
-    console.log('Webhook event constructed successfully:', event.type)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -33,7 +29,6 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
-        console.log('Processing completed checkout session:', session.id)
 
         // Record the purchase in the database
         const supabase = await createServerSupabaseClient()
@@ -51,21 +46,16 @@ export async function POST(request: NextRequest) {
           purchased_at: new Date().toISOString(),
         }
 
-        console.log('Inserting purchase data:', purchaseData)
-
         const { error: insertError } = await supabase
           .from('purchases')
           .insert([purchaseData])
 
         if (insertError) {
-          console.error('Failed to record purchase:', insertError)
           // Return error so Stripe retries the webhook
           return NextResponse.json(
             { error: 'Failed to record purchase' },
             { status: 500 }
           )
-        } else {
-          console.log('Purchase recorded successfully for session:', session.id)
         }
 
         break
@@ -73,19 +63,16 @@ export async function POST(request: NextRequest) {
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object
-        console.log('Payment failed:', paymentIntent.id)
-
-        // You could record failed payments here if needed
+        // Record failed payments if needed
         break
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+      // Handle other event types if needed
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook handler error:', error)
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

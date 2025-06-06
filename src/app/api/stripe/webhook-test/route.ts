@@ -26,8 +26,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Testing webhook for session:', sessionId)
-
     // Get the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId)
 
@@ -71,8 +69,6 @@ export async function POST(request: NextRequest) {
       purchased_at: new Date().toISOString(),
     }
 
-    console.log('Creating purchase record via webhook test:', purchaseData)
-
     const { data: purchase, error: insertError } = await supabase
       .from('purchases')
       .insert([purchaseData])
@@ -80,7 +76,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('Failed to create purchase record:', insertError)
       return NextResponse.json(
         { error: 'Failed to create purchase record', details: insertError },
         { status: 500 }
@@ -92,7 +87,6 @@ export async function POST(request: NextRequest) {
       purchase,
     })
   } catch (error) {
-    console.error('Webhook test error:', error)
     return NextResponse.json(
       { error: 'Failed to process webhook test' },
       { status: 500 }

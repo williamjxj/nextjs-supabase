@@ -66,8 +66,6 @@ function PurchaseSuccessContent() {
         setPurchaseDetails(data)
         setRetryCount(0) // Reset retry count on success
       } catch (err) {
-        console.error('Error fetching purchase details:', err)
-
         // For Stripe payments, if purchase details are not found and we haven't retried too many times,
         // try to trigger the webhook test endpoint (development only)
         if (
@@ -76,7 +74,6 @@ function PurchaseSuccessContent() {
           err instanceof Error &&
           err.message.includes('Purchase details not found')
         ) {
-          console.log('Purchase not found, attempting webhook test...')
           setRetryCount(prev => prev + 1)
 
           // Try to trigger webhook test endpoint
@@ -93,7 +90,7 @@ function PurchaseSuccessContent() {
             }, 1000)
             return
           } catch (webhookError) {
-            console.error('Webhook test failed:', webhookError)
+            // Webhook test failed, continue to show error
           }
         }
 
@@ -138,12 +135,27 @@ function PurchaseSuccessContent() {
           setTimeout(() => {
             window.location.reload()
           }, 1000)
-        } else {
-          const errorData = await response.json()
-          console.error('Webhook test failed:', errorData)
         }
       } catch (err) {
-        console.error('Webhook test error:', err)
+        // Try again just once more
+        try {
+          const response = await fetch('/api/stripe/webhook-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          })
+
+          if (response.ok) {
+            // Retry fetching purchase details
+            setError(null)
+            setLoading(true)
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
+          }
+        } catch {
+          // If both attempts fail, just silently fail
+        }
       } finally {
         setTestingWebhook(false)
       }

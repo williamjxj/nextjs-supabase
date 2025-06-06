@@ -43,13 +43,8 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (purchaseError) {
-      console.error('Purchase lookup error:', purchaseError)
       // If not found in database but session is completed, create the purchase record
       if (session.payment_status === 'paid') {
-        console.log(
-          'Session paid but no purchase record found. Creating fallback record for session:',
-          sessionId
-        )
         const imageId = session.metadata?.imageId
         if (imageId) {
           const { data: image, error: imageError } = await supabase
@@ -78,11 +73,9 @@ export async function GET(request: NextRequest) {
               .insert([purchaseData])
 
             if (insertError) {
-              console.error('Failed to create purchase record:', insertError)
-            } else {
-              console.log(
-                'Created missing purchase record for session:',
-                session.id
+              return NextResponse.json(
+                { error: 'Failed to create purchase record' },
+                { status: 500 }
               )
             }
 
@@ -124,7 +117,6 @@ export async function GET(request: NextRequest) {
       mimeType: purchase.images?.mime_type,
     })
   } catch (error) {
-    console.error('Error fetching purchase details:', error)
     return NextResponse.json(
       { error: 'Failed to fetch purchase details' },
       { status: 500 }
