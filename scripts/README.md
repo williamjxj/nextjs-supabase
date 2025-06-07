@@ -73,31 +73,6 @@ All scripts automatically load environment variables from `.env.local`:
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for API access
 - `SUPABASE_S3_STORAGE_URL` - S3 storage URL
 
-## Making Scripts Executable
-
-```bash
-chmod +x scripts/*.sh
-```
-
-## Usage Examples
-
-```bash
-# Make all scripts executable
-chmod +x scripts/*.sh
-
-# Query all tables
-./scripts/query-tables.sh
-
-# Check storage
-./scripts/get-storage.sh
-
-# Reset database (interactive)
-./scripts/reset-sync-tables.sh
-
-# Quick migration run
-./scripts/reset-sync-tables.sh --migrate
-```
-
 ## Safety Notes
 
 - The reset script includes confirmation prompts for destructive operations

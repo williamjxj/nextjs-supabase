@@ -22,5 +22,7 @@ A modern image gallery application built with Next.js, Supabase, and TypeScript.
 ## Development
 ```bash
 npm install
+npm supabase status|start
 npm run dev
+open http://127.0.0.1:54323
 ```

@@ -51,25 +51,6 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
-    label: 'Membership',
-    href: '/subscription',
-    requireAuth: true,
-    icon: (
-      <svg
-        width='20'
-        height='20'
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-      >
-        <path d='M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'></path>
-        <circle cx='8.5' cy='7' r='4'></circle>
-        <polyline points='17 11 19 13 23 9'></polyline>
-      </svg>
-    ),
-  },
-  {
     label: 'Upload',
     href: '/upload',
     requireAuth: true,
@@ -85,6 +66,25 @@ const navigationItems: NavigationItem[] = [
         <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
         <polyline points='7,10 12,15 17,10' />
         <line x1='12' y1='15' x2='12' y2='3' />
+      </svg>
+    ),
+  },
+  {
+    label: 'Membership',
+    href: '/membership',
+    requireAuth: true,
+    icon: (
+      <svg
+        width='20'
+        height='20'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='2'
+      >
+        <path d='M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'></path>
+        <circle cx='8.5' cy='7' r='4'></circle>
+        <polyline points='17 11 19 13 23 9'></polyline>
       </svg>
     ),
   },
