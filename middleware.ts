@@ -42,7 +42,7 @@ export async function middleware(req: NextRequest) {
 
   // Protected routes that require authentication
   const protectedRoutes = ['/gallery', '/upload']
-  const authRoutes = ['/auth/login', '/auth/signup']
+  const authRoutes = ['/login', '/signup']
 
   // Subscription-only routes
   const subscriptionRoutes = [
@@ -77,7 +77,7 @@ export async function middleware(req: NextRequest) {
 
   // If user is not authenticated and trying to access protected route
   if (isProtectedRoute && !session) {
-    return NextResponse.redirect(new URL('/auth/login', req.url))
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
   // If user is authenticated and trying to access auth routes

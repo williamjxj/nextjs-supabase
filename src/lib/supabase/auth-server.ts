@@ -10,6 +10,22 @@ const planHierarchy: Record<SubscriptionType, number> = {
   commercial: 3,
 }
 
+// Helper function to extract subscription plan type safely
+const extractPlanType = (subscription: any): SubscriptionType | null => {
+  try {
+    if (!subscription?.subscription_plans) return null
+    
+    if (Array.isArray(subscription.subscription_plans)) {
+      return subscription.subscription_plans[0]?.type as SubscriptionType
+    } else {
+      return (subscription.subscription_plans as any).type as SubscriptionType
+    }
+  } catch (error) {
+    console.error('Error accessing subscription plan type:', error)
+    return null
+  }
+}
+
 // Check if user has a subscription
 export const userHasSubscription = async (userId: string): Promise<boolean> => {
   if (!userId) return false
@@ -24,29 +40,11 @@ export const userHasSubscriptionType = async (
   if (!userId) return false
 
   const subscription = await getUserSubscription(userId)
-
   if (!subscription || subscription.status !== 'active') {
     return false
   }
 
-  // Access plan type safely, handling potential array or object structure
-  let userPlanType: SubscriptionType | null = null
-
-  try {
-    if (subscription.subscription_plans) {
-      if (Array.isArray(subscription.subscription_plans)) {
-        // Handle array case (shouldn't happen with current schema)
-        userPlanType = subscription.subscription_plans[0]?.type as SubscriptionType
-      } else {
-        // Handle object case (expected)
-        userPlanType = (subscription.subscription_plans as any).type as SubscriptionType
-      }
-    }
-  } catch (error) {
-    console.error('Error accessing subscription plan type:', error)
-    return false
-  }
-
+  const userPlanType = extractPlanType(subscription)
   if (!userPlanType || !(userPlanType in planHierarchy)) {
     return false
   }
@@ -79,22 +77,9 @@ export const getUserSubscriptionTier = async (
   if (!userId) return null
 
   const subscription = await getUserSubscription(userId)
-
   if (!subscription || subscription.status !== 'active') {
     return null
   }
 
-  try {
-    if (subscription.subscription_plans) {
-      if (Array.isArray(subscription.subscription_plans)) {
-        return subscription.subscription_plans[0]?.type as SubscriptionType
-      } else {
-        return (subscription.subscription_plans as any).type as SubscriptionType
-      }
-    }
-  } catch (error) {
-    console.error('Error accessing subscription plan type:', error)
-  }
-
-  return null
+  return extractPlanType(subscription)
 }

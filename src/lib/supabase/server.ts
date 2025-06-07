@@ -57,6 +57,24 @@ export function createClient() {
   )
 }
 
+// Service role client for admin operations (migrations, etc.)
+export const createServiceRoleClient = () => {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return []
+        },
+        setAll(cookiesToSet) {
+          // No cookies needed for service role
+        },
+      },
+    }
+  )
+}
+
 export const getServerSession = async () => {
   const supabase = await createServerSupabaseClient()
   const {

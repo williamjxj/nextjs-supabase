@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,8 +31,12 @@ export const LoginForm = ({
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signIn } = useAuth()
   const { addToast } = useToast()
+  
+  // Get redirect URL from search params or use default
+  const finalRedirectTo = searchParams.get('redirect') || redirectTo
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -57,7 +61,7 @@ export const LoginForm = ({
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push(redirectTo)
+        router.push(finalRedirectTo)
       }
     } catch (error) {
       addToast({

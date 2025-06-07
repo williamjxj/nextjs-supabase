@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
+import { useAuth } from '@/hooks/use-auth'
+import { useRouter } from 'next/navigation'
 
 const SUBSCRIPTION_OPTIONS = [
   {
@@ -58,12 +60,53 @@ export default function MembershipPage() {
     'standard' | 'premium' | 'commercial'
   >('standard')
   const { showToast } = useToast()
+  const { user, loading } = useAuth()
+  const router = useRouter()
 
   const handleSubscriptionCheckout = async (
     subscriptionType: 'standard' | 'premium' | 'commercial'
   ) => {
+    console.log('=== Client-side Debug ===')
+    console.log('Loading state:', loading)
+    console.log('User state:', !!user)
+    console.log('User ID:', user?.id)
+    console.log('User email:', user?.email)
+    
+    // Check if authentication is still loading
+    if (loading) {
+      showToast('Please wait while we check your login status', 'info')
+      return
+    }
+
+    // Check if user is authenticated before proceeding
+    if (!user) {
+      showToast('Please log in to subscribe to a plan', 'error')
+      // Redirect to login with return URL
+      router.push(`/login?redirect=${encodeURIComponent('/membership')}`)
+      return
+    }
+
     try {
       showToast('Processing subscription... (redirecting to checkout)', 'info')
+      
+      // Double-check authentication with Supabase client before making API call
+      const { supabase } = await import('@/lib/supabase/client')
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      console.log('Client-side session check:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        sessionError,
+        expiresAt: session?.expires_at
+      })
+      
+      if (!session || sessionError) {
+        console.error('No valid session found on client side:', sessionError)
+        showToast('Please log in again to subscribe', 'error')
+        router.push(`/login?redirect=${encodeURIComponent('/membership')}`)
+        return
+      }
+      
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,6 +118,14 @@ export default function MembershipPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // Handle specific authentication error (backup check)
+        if (response.status === 401 && errorData.requireLogin) {
+          showToast('Please log in to subscribe to a plan', 'error')
+          router.push(`/login?redirect=${encodeURIComponent('/membership')}`)
+          return
+        }
+        
         throw new Error(errorData.error || 'Failed to create checkout session')
       }
 
@@ -97,6 +148,9 @@ export default function MembershipPage() {
   }
 
   const handleCheckout = () => {
+    console.log('=== handleCheckout called ===')
+    console.log('User state:', { user: !!user, loading, userId: user?.id })
+    console.log('Selected subscription:', selectedSubscription)
     handleSubscriptionCheckout(selectedSubscription)
   }
 
@@ -169,26 +223,114 @@ export default function MembershipPage() {
 
       {/* Checkout Button */}
       <div className='text-center'>
-        <Button
-          onClick={handleCheckout}
-          className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg'
-        >
-          <ShoppingCart className='w-5 h-5 mr-2' />
-          Subscribe to{' '}
-          {
-            SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
-              ?.name
-          }{' '}
-          - $
-          {SUBSCRIPTION_OPTIONS.find(
-            o => o.type === selectedSubscription
-          )?.price.toFixed(2)}
-          /
-          {
-            SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
-              ?.period
-          }
-        </Button>
+        {/* Debug button - temporary */}
+        <div className='mb-4 space-x-2'>
+          <button
+            onClick={async () => {
+              console.log('=== DEBUG SESSION CHECK ===')
+              const { supabase } = await import('@/lib/supabase/client')
+              const { data: { session }, error } = await supabase.auth.getSession()
+              console.log('Client session:', {
+                hasSession: !!session,
+                hasUser: !!session?.user,
+                userId: session?.user?.id,
+                email: session?.user?.email,
+                expiresAt: session?.expires_at,
+                error
+              })
+              
+              // Also check server session
+              const debugResponse = await fetch('/api/debug/session')
+              const serverSession = await debugResponse.json()
+              console.log('Server session:', serverSession)
+            }}
+            className='bg-gray-500 text-white px-4 py-2 rounded mb-2'
+          >
+            Debug Session
+          </button>
+          
+          <button
+            onClick={async () => {
+              const { createTestUser, signInTestUser } = await import('@/lib/test-auth')
+              console.log('Creating test user...')
+              await createTestUser()
+              console.log('Signing in test user...')
+              const result = await signInTestUser()
+              if (result) {
+                console.log('Test user signed in successfully')
+                // Refresh page to update auth state
+                window.location.reload()
+              }
+            }}
+            className='bg-green-500 text-white px-4 py-2 rounded mb-2'
+          >
+            Create & Login Test User
+          </button>
+        </div>
+        {loading ? (
+          <Button disabled className='bg-gray-400 text-white px-8 py-3 text-lg'>
+            <ShoppingCart className='w-5 h-5 mr-2' />
+            Loading...
+          </Button>
+        ) : !user ? (
+          <Button
+            onClick={() => {
+              console.log('Login button clicked - redirecting to login')
+              router.push(`/login?redirect=${encodeURIComponent('/membership')}`)
+            }}
+            className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg'
+          >
+            <ShoppingCart className='w-5 h-5 mr-2' />
+            Login to Subscribe to{' '}
+            {
+              SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
+                ?.name
+            }{' '}
+            - $
+            {SUBSCRIPTION_OPTIONS.find(
+              o => o.type === selectedSubscription
+            )?.price.toFixed(2)}
+            /
+            {
+              SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
+                ?.period
+            }
+          </Button>
+        ) : (
+          <div>
+            {/* Debug info */}
+            <div className='mb-2 text-sm text-gray-600'>
+              Debug: loading={loading.toString()}, user={user ? 'present' : 'null'}, userId={user?.id || 'none'}
+            </div>
+            <Button
+              onClick={() => {
+                console.log('Subscribe button clicked - user authenticated:', {
+                  user: !!user,
+                  loading,
+                  userId: user?.id,
+                })
+                handleCheckout()
+              }}
+              className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg'
+            >
+            <ShoppingCart className='w-5 h-5 mr-2' />
+            Subscribe to{' '}
+            {
+              SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
+                ?.name
+            }{' '}
+            - $
+            {SUBSCRIPTION_OPTIONS.find(
+              o => o.type === selectedSubscription
+            )?.price.toFixed(2)}
+            /
+            {
+              SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
+                ?.period
+            }
+          </Button>
+          </div>
+        )}
       </div>
     </div>
   )

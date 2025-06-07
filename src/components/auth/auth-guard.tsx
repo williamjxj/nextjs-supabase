@@ -32,7 +32,7 @@ export const AuthGuard = ({
     if (!loading) {
       if (requireAuth && !user) {
         // User should be authenticated but isn't
-        router.push(redirectTo || '/auth/login')
+        router.push(redirectTo || '/login')
       } else if (!requireAuth && user) {
         // User shouldn't be authenticated but is (e.g., login page when already logged in)
         router.push(redirectTo || '/gallery')

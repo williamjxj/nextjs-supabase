@@ -28,7 +28,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
+      console.log('=== useAuth: Getting initial session ===')
       const session = await authService.getSession()
+      console.log('Initial session:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        email: session?.user?.email
+      })
       if (session?.user) {
         const initialUser = session.user as AuthUser
         setUser(initialUser)
@@ -44,6 +51,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('=== useAuth: Auth state change ===')
+      console.log('Event:', event)
+      console.log('Session:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userId: session?.user?.id
+      })
       if (session?.user) {
         const authUser = session.user as AuthUser
         setUser(authUser)

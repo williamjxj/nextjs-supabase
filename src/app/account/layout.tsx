@@ -57,7 +57,7 @@ export default function AccountLayout({
 
 			if (error || !data.user) {
 				// If not logged in, redirect to login
-				router.push('/auth/login')
+				router.push('/login')
 				return
 			}
 
@@ -85,7 +85,7 @@ export default function AccountLayout({
 
 	const handleLogout = async () => {
 		await supabase.auth.signOut()
-		router.push('/auth/login')
+		router.push('/login')
 	}
 
 	if (loading) {

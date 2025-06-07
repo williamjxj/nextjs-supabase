@@ -38,7 +38,7 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   // If user is not logged in, redirect to login
   if (!user) {
     if (redirectTo) {
-      router.push('/auth/login')
+      router.push('/login')
       return null
     }
 
@@ -52,7 +52,7 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
             Please log in to access this content.
           </p>
           <button
-            onClick={() => router.push('/auth/login')}
+            onClick={() => router.push('/login')}
             className='mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
           >
             Log In

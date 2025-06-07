@@ -64,6 +64,21 @@ Reset database and run migrations to sync with latest schema.
 - Status checking
 - New migration generation
 
+### 4. 🌱 `seed-plans.sh`
+
+Seed subscription plans in the database.
+
+```bash
+./scripts/seed-plans.sh
+```
+
+**Features:**
+
+- Seeds all subscription plans (standard, premium, commercial)
+- Verifies server is running before execution
+- Pretty-printed JSON response
+- Error handling and validation
+
 ## Environment Variables
 
 All scripts automatically load environment variables from `.env.local`:
