@@ -4,10 +4,11 @@ export const APP_DESCRIPTION =
 
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/auth/login',
-  SIGNUP: '/auth/signup',
+  LOGIN: '/login',
+  SIGNUP: '/signup',
   GALLERY: '/gallery',
   UPLOAD: '/upload',
+  MEMBERSHIP: '/membership',
 } as const
 
 export const API_ROUTES = {

@@ -51,7 +51,7 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
-    label: 'Subscription',
+    label: 'Membership',
     href: '/subscription',
     requireAuth: true,
     icon: (

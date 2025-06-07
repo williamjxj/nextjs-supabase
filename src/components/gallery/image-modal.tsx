@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { Image as ImageType } from '@/types/image'
 import { formatDistanceToNow } from 'date-fns'
-import { PaymentMethodSelector } from '@/components/payment/payment-method-selector'
+import { PaymentMethodSelector } from '@/components/membership/payment-method-selector'
 
 interface ImageModalProps {
   image: ImageType | null
