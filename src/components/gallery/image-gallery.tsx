@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { Upload, RefreshCw } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Upload, RefreshCw, Grid3X3, List, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
@@ -11,10 +11,13 @@ import { ImageModal } from './image-modal'
 import { DeleteConfirm } from './delete-confirm'
 import { LicenseSelector } from './license-selector'
 import { PaymentOptionsModal } from '../membership/payment-options-modal'
-import { GalleryFilters, GalleryFilters as FilterType } from './gallery-filters'
+import {
+  GalleryFilters,
+  type GalleryFilters as FilterType,
+} from './gallery-filters'
 import { Pagination } from './pagination'
 import { useGallery } from '@/hooks/use-gallery'
-import { Image as ImageType } from '@/types/image'
+import type { Image as ImageType } from '@/types/image'
 import { cn } from '@/lib/utils/cn'
 
 interface ImageGalleryProps {
@@ -47,8 +50,10 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const [checkoutImage, setCheckoutImage] = useState<ImageType | null>(null)
   const [isLicenseSelectorOpen, setIsLicenseSelectorOpen] = useState(false)
   const [isPaymentOptionsOpen, setIsPaymentOptionsOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showFilters, setShowFilters] = useState(false)
 
-  // Extract all available tags from images (simplified for now since tags don't exist in the Image type)
+  // Extract all available tags from images
   const availableTags = useMemo(() => {
     return [] // No tags in the current Image type
   }, [])
@@ -211,131 +216,208 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
   if (loading) {
     return (
-      <div className='flex items-center justify-center py-12'>
-        <LoadingSpinner size='lg' />
+      <div className='flex items-center justify-center py-20'>
+        <div className='text-center'>
+          <LoadingSpinner size='lg' />
+          <p className='mt-4 text-gray-600'>Loading your gallery...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className='text-center py-12'>
-        <p className='text-red-600 mb-4'>Failed to load gallery</p>
-        <Button onClick={handleRefresh} variant='outline'>
-          <RefreshCw className='h-4 w-4 mr-2' />
-          Try Again
-        </Button>
+      <div className='text-center py-20'>
+        <div className='krea-card max-w-md mx-auto p-8'>
+          <p className='text-red-600 mb-4'>Failed to load gallery</p>
+          <Button onClick={handleRefresh} className='krea-button-primary'>
+            <RefreshCw className='h-4 w-4 mr-2' />
+            Try Again
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Header */}
-      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>My Gallery</h1>
-          <p className='text-gray-600'>
-            {images.length} {images.length === 1 ? 'image' : 'images'}
-            {filteredImages.length !== images.length && (
-              <span> · {filteredImages.length} shown</span>
-            )}
-          </p>
-        </div>
-        <div className='flex gap-2'>
-          <Button onClick={handleRefresh} variant='outline' size='sm'>
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Refresh
-          </Button>
-          <Link href='/upload'>
-            <Button>
-              <Upload className='h-4 w-4 mr-2' />
-              Upload Images
+    <div className={cn('min-h-screen bg-gray-50', className)}>
+      <div className='container mx-auto px-6 py-8'>
+        {/* Header */}
+        <div className='flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8'>
+          <div>
+            <h1 className='text-3xl font-bold text-gray-900 mb-2'>
+              My Gallery
+            </h1>
+            <p className='text-gray-600'>
+              {images.length} {images.length === 1 ? 'image' : 'images'}
+              {filteredImages.length !== images.length && (
+                <span> · {filteredImages.length} shown</span>
+              )}
+            </p>
+          </div>
+
+          <div className='flex items-center gap-3'>
+            {/* View Mode Toggle */}
+            <div className='flex items-center bg-white rounded-full p-1 border border-gray-200'>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'p-2 rounded-full transition-all duration-200',
+                  viewMode === 'grid'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                )}
+              >
+                <Grid3X3 className='w-4 h-4' />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'p-2 rounded-full transition-all duration-200',
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                )}
+              >
+                <List className='w-4 h-4' />
+              </button>
+            </div>
+
+            {/* Filter Toggle */}
+            <Button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                'krea-button',
+                showFilters && 'bg-blue-50 border-blue-200 text-blue-700'
+              )}
+            >
+              <Filter className='h-4 w-4 mr-2' />
+              Filters
             </Button>
-          </Link>
+
+            <Button onClick={handleRefresh} className='krea-button'>
+              <RefreshCw className='h-4 w-4 mr-2' />
+              Refresh
+            </Button>
+
+            <Link href='/upload'>
+              <Button className='krea-button-primary'>
+                <Upload className='h-4 w-4 mr-2' />
+                Upload Images
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {/* Filters */}
+        {showFilters && (
+          <div className='krea-card p-6 mb-8'>
+            <GalleryFilters
+              filters={componentFilters}
+              availableTags={availableTags}
+              onFiltersChange={newFilters => {
+                updateFilters({
+                  search: newFilters.search,
+                  sortBy: newFilters.sortBy,
+                  sortOrder: newFilters.sortOrder,
+                  dateRange: newFilters.dateRange,
+                })
+              }}
+            />
+          </div>
+        )}
+
+        {/* Gallery Grid */}
+        {filteredImages.length === 0 ? (
+          <div className='text-center py-20'>
+            <div className='krea-card max-w-md mx-auto p-12'>
+              {images.length === 0 ? (
+                <>
+                  <div className='w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6'>
+                    <Upload className='w-8 h-8 text-gray-400' />
+                  </div>
+                  <h3 className='text-xl font-semibold text-gray-900 mb-2'>
+                    No images yet
+                  </h3>
+                  <p className='text-gray-600 mb-6'>
+                    Start building your gallery by uploading your first image
+                  </p>
+                  <Link href='/upload'>
+                    <Button className='krea-button-primary'>
+                      <Upload className='h-4 w-4 mr-2' />
+                      Upload Your First Image
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className='w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6'>
+                    <Search className='w-8 h-8 text-gray-400' />
+                  </div>
+                  <h3 className='text-xl font-semibold text-gray-900 mb-2'>
+                    No results found
+                  </h3>
+                  <p className='text-gray-600'>
+                    Try adjusting your filters or search terms
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'grid gap-6',
+              viewMode === 'grid'
+                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                : 'grid-cols-1'
+            )}
+          >
+            {filteredImages.map(image => (
+              <ImageCard
+                key={image.id}
+                image={image}
+                onView={handleViewImage}
+                onDelete={handleDeleteClick}
+                onDownload={handleDownload}
+                onCheckout={handleCheckout}
+                isPurchased={image.isPurchased}
+                viewMode={viewMode}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {pagination && totalPages > 1 && (
+          <div className='flex justify-center pt-12'>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={goToPage}
+              onPrevious={goToPrevPage}
+              onNext={goToNextPage}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious}
+            />
+          </div>
+        )}
+
+        {/* Gallery Statistics */}
+        {pagination && (
+          <div className='text-center text-sm text-gray-500 pt-8'>
+            Showing {filteredImages.length} of {pagination.total} images
+            {totalPages > 1 && (
+              <span>
+                {' '}
+                · Page {currentPage} of {totalPages}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Filters */}
-      <GalleryFilters
-        filters={componentFilters}
-        availableTags={availableTags}
-        onFiltersChange={newFilters => {
-          updateFilters({
-            search: newFilters.search,
-            sortBy: newFilters.sortBy,
-            sortOrder: newFilters.sortOrder,
-            dateRange: newFilters.dateRange,
-          })
-        }}
-      />
-
-      {/* Gallery Grid */}
-      {filteredImages.length === 0 ? (
-        <div className='text-center py-12'>
-          {images.length === 0 ? (
-            <>
-              <p className='text-gray-500 mb-4'>
-                No images in your gallery yet
-              </p>
-              <Link href='/upload'>
-                <Button>
-                  <Upload className='h-4 w-4 mr-2' />
-                  Upload Your First Image
-                </Button>
-              </Link>
-            </>
-          ) : (
-            <p className='text-gray-500'>
-              No images match your current filters
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'>
-          {filteredImages.map(image => (
-            <ImageCard
-              key={image.id}
-              image={image}
-              onView={handleViewImage}
-              onDelete={handleDeleteClick}
-              onDownload={handleDownload}
-              onCheckout={handleCheckout}
-              isPurchased={image.isPurchased}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination Controls */}
-      {pagination && totalPages > 1 && (
-        <div className='flex justify-center pt-6'>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-            onPrevious={goToPrevPage}
-            onNext={goToNextPage}
-            hasNext={hasNext}
-            hasPrevious={hasPrevious}
-          />
-        </div>
-      )}
-
-      {/* Gallery Statistics */}
-      {pagination && (
-        <div className='text-center text-sm text-gray-500 pt-4'>
-          Showing {filteredImages.length} of {pagination.total} images
-          {totalPages > 1 && (
-            <span>
-              {' '}
-              · Page {currentPage} of {totalPages}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Image Modal */}
+      {/* Modals */}
       <ImageModal
         image={selectedImage}
         images={filteredImages}
@@ -348,7 +430,6 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         onDownload={handleDownload}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirm
         image={deleteImage}
         isOpen={isDeleteConfirmOpen}
@@ -360,7 +441,6 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         isDeleting={isDeleting}
       />
 
-      {/* License Selector Modal */}
       {checkoutImage && (
         <LicenseSelector
           image={checkoutImage}
@@ -373,7 +453,6 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         />
       )}
 
-      {/* Payment Options Modal */}
       {checkoutImage && (
         <PaymentOptionsModal
           isOpen={isPaymentOptionsOpen}

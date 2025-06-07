@@ -1,12 +1,120 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, IMAGE_PRICE_CONFIG, ImageLicenseType } from '@/lib/stripe'
+import {
+  stripe,
+  IMAGE_PRICE_CONFIG,
+  ImageLicenseType,
+  SUBSCRIPTION_PRICE_CONFIG,
+  SubscriptionType,
+} from '@/lib/stripe'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getSubscriptionPlanByType } from '@/lib/supabase/subscriptions'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { imageId, licenseType = 'standard' } = body
+    const {
+      imageId,
+      licenseType = 'standard',
+      subscriptionType,
+      isSubscription = false,
+    } = body
 
+    // Get authenticated user
+    const supabase = await createServerSupabaseClient()
+    const {
+      data: { session: authSession },
+    } = await supabase.auth.getSession()
+    const userId = authSession?.user?.id
+
+    // If it's a subscription checkout
+    if (isSubscription) {
+      // Verify subscription type is valid
+      if (
+        !subscriptionType ||
+        !Object.keys(SUBSCRIPTION_PRICE_CONFIG).includes(subscriptionType)
+      ) {
+        return NextResponse.json(
+          { error: 'Invalid subscription type' },
+          { status: 400 }
+        )
+      }
+
+      // Get subscription plan details from the database
+      const subscriptionPlan = await getSubscriptionPlanByType(
+        subscriptionType as SubscriptionType
+      )
+
+      if (!subscriptionPlan) {
+        return NextResponse.json(
+          { error: 'Subscription plan not found' },
+          { status: 404 }
+        )
+      }
+
+      // If no user is logged in, redirect to login
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'Login required for subscriptions', requireLogin: true },
+          { status: 401 }
+        )
+      }
+
+      // Check if user already has a Stripe customer ID
+      const { data: customer, error: customerError } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('id', userId)
+        .single()
+
+      // Create or retrieve Stripe customer
+      let stripeCustomerId = customer?.stripe_customer_id
+
+      if (!stripeCustomerId) {
+        // Get user details for the customer
+        const { data: user } = await supabase.auth.getUser()
+
+        // Create a new customer in Stripe
+        const newCustomer = await stripe.customers.create({
+          email: user.user?.email,
+          metadata: {
+            userId: userId,
+          },
+        })
+
+        stripeCustomerId = newCustomer.id
+
+        // Save Stripe customer ID to user profile
+        await supabase.from('profiles').upsert({
+          id: userId,
+          stripe_customer_id: stripeCustomerId,
+          updated_at: new Date().toISOString(),
+        })
+      }
+
+      // Create the checkout session for subscription
+      const checkoutSession = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        customer: stripeCustomerId,
+        line_items: [
+          {
+            price: subscriptionPlan.stripe_price_id,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${process.env.APP_URL}/membership/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.APP_URL}/membership`,
+        metadata: {
+          userId,
+          subscriptionType,
+          isSubscription: 'true',
+        },
+      })
+
+      return NextResponse.json({ url: checkoutSession.url })
+    }
+
+    // For one-time image purchases
     if (!imageId) {
       return NextResponse.json(
         { error: 'Image ID is required' },
@@ -23,7 +131,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Get image details from database
-    const supabase = await createServerSupabaseClient()
     const { data: image, error: imageError } = await supabase
       .from('images')
       .select('*')
@@ -63,7 +170,7 @@ export async function POST(request: NextRequest) {
       isValidUrl(imageUrl) && isPubliclyAccessible(imageUrl) ? [imageUrl] : []
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -89,12 +196,14 @@ export async function POST(request: NextRequest) {
       metadata: {
         imageId: image.id,
         licenseType,
-        userId: image.user_id || null,
+        userId: userId || image.user_id || null,
+        isSubscription: 'false',
       },
     })
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: checkoutSession.url })
   } catch (error) {
+    console.error('Checkout error:', error)
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

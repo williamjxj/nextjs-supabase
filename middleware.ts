@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import {
+  userHasSubscription,
+  userHasSubscriptionType,
+} from '@/lib/supabase/auth-server'
+import { contentRequiresSubscriptionTier } from '@/lib/supabase/auth'
+import { SubscriptionType } from '@/lib/stripe'
 
 export async function middleware(req: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -38,11 +44,34 @@ export async function middleware(req: NextRequest) {
   const protectedRoutes = ['/gallery', '/upload']
   const authRoutes = ['/auth/login', '/auth/signup']
 
+  // Subscription-only routes
+  const subscriptionRoutes = [
+    '/membership/premium',
+    '/gallery/premium',
+    '/account/downloads',
+  ]
+
+  // Routes requiring specific subscription tiers
+  const premiumRoutes = ['/gallery/premium', '/gallery/commercial']
+  const commercialRoutes = ['/gallery/commercial']
+
   const isProtectedRoute = protectedRoutes.some(route =>
     req.nextUrl.pathname.startsWith(route)
   )
 
   const isAuthRoute = authRoutes.some(route =>
+    req.nextUrl.pathname.startsWith(route)
+  )
+
+  const isSubscriptionRoute = subscriptionRoutes.some(route =>
+    req.nextUrl.pathname.startsWith(route)
+  )
+
+  const isPremiumRoute = premiumRoutes.some(route =>
+    req.nextUrl.pathname.startsWith(route)
+  )
+
+  const isCommercialRoute = commercialRoutes.some(route =>
     req.nextUrl.pathname.startsWith(route)
   )
 
@@ -54,6 +83,38 @@ export async function middleware(req: NextRequest) {
   // If user is authenticated and trying to access auth routes
   if (isAuthRoute && session) {
     return NextResponse.redirect(new URL('/gallery', req.url))
+  }
+
+  // For routes requiring a subscription
+  if (isSubscriptionRoute && session) {
+    const hasSubscription = await userHasSubscription(session.user.id)
+
+    if (!hasSubscription) {
+      return NextResponse.redirect(new URL('/membership', req.url))
+    }
+  }
+
+  // For routes requiring premium subscription
+  if (isPremiumRoute && session) {
+    const hasPremium = await userHasSubscriptionType(session.user.id, 'premium')
+
+    if (!hasPremium) {
+      return NextResponse.redirect(new URL('/membership?tier=premium', req.url))
+    }
+  }
+
+  // For routes requiring commercial subscription
+  if (isCommercialRoute && session) {
+    const hasCommercial = await userHasSubscriptionType(
+      session.user.id,
+      'commercial'
+    )
+
+    if (!hasCommercial) {
+      return NextResponse.redirect(
+        new URL('/membership?tier=commercial', req.url)
+      )
+    }
   }
 
   return supabaseResponse

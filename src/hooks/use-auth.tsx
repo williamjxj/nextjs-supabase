@@ -5,6 +5,7 @@ import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { AuthState, AuthUser } from '@/types/auth'
 import * as authService from '@/lib/supabase/auth'
+import { SubscriptionType } from '@/lib/stripe'
 
 const AuthContext = createContext<AuthState | null>(null)
 
@@ -28,7 +29,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Get initial session
     const getInitialSession = async () => {
       const session = await authService.getSession()
-      setUser((session?.user as AuthUser) ?? null)
+      if (session?.user) {
+        const initialUser = session.user as AuthUser
+        setUser(initialUser)
+      } else {
+        setUser(null)
+      }
       setLoading(false)
     }
 
@@ -38,7 +44,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser((session?.user as AuthUser) ?? null)
+      if (session?.user) {
+        const authUser = session.user as AuthUser
+        setUser(authUser)
+      } else {
+        setUser(null)
+      }
       setLoading(false)
     })
 
@@ -72,12 +83,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
+  // Check if user has access to specific subscription tier
+  const hasSubscriptionAccess = (requiredTier?: SubscriptionType): boolean => {
+    if (!user || !user.hasActiveSubscription || !user.subscription) {
+      return false
+    }
+
+    if (!requiredTier) {
+      return true // If no specific tier is required, any active subscription is enough
+    }
+
+    // Get the user's plan type
+    const userPlanType = user.subscription.subscription_plans
+      ?.type as SubscriptionType
+
+    // Define tier hierarchy
+    const tierLevels: Record<SubscriptionType, number> = {
+      standard: 1,
+      premium: 2,
+      commercial: 3,
+    }
+
+    // Check if user's tier is equal or higher than the required tier
+    return userPlanType && tierLevels[userPlanType] >= tierLevels[requiredTier]
+  }
+
   const value: AuthState = {
     user,
     loading,
     signIn,
     signUp,
     signOut,
+    hasSubscriptionAccess, // Add the subscription check method to the context
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
