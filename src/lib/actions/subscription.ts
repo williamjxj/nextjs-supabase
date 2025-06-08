@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { stripe } from '@/lib/stripe/config';
+import { stripe } from '@/lib/stripe';
 import { createOrRetrieveCustomer } from '@/utils/supabase/admin_vercel';
 import { getURL } from '@/lib/utils/helpers';
 import { getRedirectToErrorPage, getRedirectToSuccessPage } from '@/lib/utils/helpers';

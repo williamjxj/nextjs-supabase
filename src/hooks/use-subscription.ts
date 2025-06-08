@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { useProducts } from '@/hooks/use-products'
 import type { Tables } from '@/types/types_db'
 
 // Vercel-compatible types following nextjs-subscription-payments
@@ -18,8 +19,10 @@ type Price = Tables<'prices'>
 export function useSubscription() {
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [products, setProducts] = useState<Product[]>([])
   const [error, setError] = useState<string | null>(null)
+  
+  // Use the centralized product fetching to prevent duplicate API calls
+  const { products } = useProducts()
 
   useEffect(() => {
     async function fetchUserSubscription() {
@@ -71,32 +74,6 @@ export function useSubscription() {
     }
 
     fetchUserSubscription()
-  }, [])
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        // Fetch active products with prices (Vercel pattern)
-        const { data, error } = await supabase
-          .from('products')
-          .select('*, prices(*)')
-          .eq('active', true)
-          .eq('prices.active', true)
-          .order('metadata->index')
-          .order('unit_amount', { referencedTable: 'prices' })
-
-        if (error) {
-          console.error('Error fetching products:', error)
-          return
-        }
-
-        setProducts(data || [])
-      } catch (err) {
-        console.error('Error fetching products:', err)
-      }
-    }
-
-    fetchProducts()
   }, [])
 
   const cancelSubscription = async () => {
@@ -158,6 +135,12 @@ export function useSubscription() {
     isCanceled ||
     (currentPeriodEnd && currentPeriodEnd < new Date())
 
+  const isGracePeriod = 
+    !!subscription && 
+    isPastDue && 
+    currentPeriodEnd && 
+    currentPeriodEnd > new Date()
+
   return {
     loading,
     subscription,
@@ -168,6 +151,7 @@ export function useSubscription() {
     isCanceled,
     isTrialing,
     isExpired,
+    isGracePeriod,
     currentPeriodEnd,
     cancelSubscription,
   }

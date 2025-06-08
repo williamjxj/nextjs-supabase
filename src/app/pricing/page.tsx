@@ -1,70 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { checkoutWithStripe } from "@/lib/actions/subscription"
-import supabase from "@/lib/supabase/client"
+import { useProducts } from "@/hooks/use-products"
 import { Check, Star, Zap, Crown } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import type { Tables } from "@/types/types_db"
 
-type Product = Tables<"products">
 type Price = Tables<"prices">
-
-interface ProductWithPrices extends Product {
-  prices: Price[]
-}
 
 export default function PricingPage() {
   const [priceIdLoading, setPriceIdLoading] = useState<string>()
-  const [products, setProducts] = useState<ProductWithPrices[]>([])
-  const [loading, setLoading] = useState(true)
+  const { products, loading, error } = useProducts()
   const router = useRouter()
-
-  // Load products and prices on component mount
-  useEffect(() => {
-    const loadProducts = async () => {
-      console.log("Starting to load products...")
-
-      try {
-        // First, try a simple products query
-        const { data: simpleProducts, error: simpleError } = await supabase
-          .from("products")
-          .select("*")
-          .eq("active", true)
-
-        console.log("Simple products query result:", simpleProducts, simpleError)
-
-        // Then try the complex query
-        const { data: products, error } = await supabase
-          .from("products")
-          .select("*, prices(*)")
-          .eq("active", true)
-          .eq("prices.active", true)
-          .order("metadata->index")
-          .order("unit_amount", { referencedTable: "prices" })
-
-        console.log("Complex products query result:", products, error)
-
-        if (error) {
-          console.error("Error loading products:", error)
-        } else {
-          console.log("Products loaded successfully:", products)
-          setProducts(products || [])
-        }
-      } catch (err) {
-        console.error("Exception during product loading:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadProducts()
-  }, [])
 
   const handleStripeCheckout = async (price: Price) => {
     setPriceIdLoading(price.id)
     try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -120,7 +78,6 @@ export default function PricingPage() {
 
           <div className="grid gap-8 lg:grid-cols-3">
             {products.map((product, index) => {
-              console.log("Rendering product:", product)
               const price = product.prices?.[0]
               if (!price) return null
 

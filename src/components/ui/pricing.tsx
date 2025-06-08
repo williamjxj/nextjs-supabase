@@ -3,17 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkoutWithStripe } from '@/lib/actions/subscription';
-import supabase from '@/lib/supabase/client';
+import { useProducts } from '@/hooks/use-products';
 import { Check, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { Tables } from '@/types/types_db';
 
-type Product = Tables<'products'>;
 type Price = Tables<'prices'>;
-
-interface ProductWithPrices extends Product {
-  prices: Price[];
-}
 
 interface PricingProps {
   className?: string;
@@ -27,36 +22,17 @@ export default function Pricing({
   variant = 'default'
 }: PricingProps) {
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
-  const [products, setProducts] = useState<ProductWithPrices[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, loading, error } = useProducts();
   const router = useRouter();
-  // Use the imported supabase client
-
-  // Load products and prices on component mount
-  useState(() => {
-    const loadProducts = async () => {
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('*, prices(*)')
-        .eq('active', true)
-        .eq('prices.active', true)
-        .order('metadata->index')
-        .order('unit_amount', { referencedTable: 'prices' });
-
-      if (error) {
-        console.error('Error loading products:', error);
-      } else {
-        setProducts(products || []);
-      }
-      setLoading(false);
-    };
-
-    loadProducts();
-  });
 
   const handleStripeCheckout = async (price: Price) => {
     setPriceIdLoading(price.id);
     try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/auth/signin');

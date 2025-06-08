@@ -13,6 +13,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
   },
+  // Reduce console noise in development
+  realtime: {
+    logger: undefined, // Disable realtime logging
+  },
 })
 
 export default supabase

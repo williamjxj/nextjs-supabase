@@ -1,4 +1,4 @@
-import { stripe } from '@/lib/stripe/config'
+import { stripe } from '@/lib/stripe'
 
 interface CreateProductParams {
   name: string

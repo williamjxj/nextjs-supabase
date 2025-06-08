@@ -72,7 +72,7 @@ export function useSubscriptionAccess(): SubscriptionAccessHook {
     hasAccess,
     currentTier,
     isGracePeriod: isTrialing, // Map trialing to grace period
-    isExpired,
+    isExpired: isExpired || false, // Convert null to false
     isActive,
   }
 }

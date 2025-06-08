@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe/config'
+import { stripe } from '@/lib/stripe'
 import {
   upsertProductRecord,
   upsertPriceRecord,
