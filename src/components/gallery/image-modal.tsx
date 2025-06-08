@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { Image as ImageType } from '@/types/image'
 import { formatDistanceToNow } from 'date-fns'
-import { PaymentMethodSelector } from '@/components/membership/payment-method-selector'
 
 interface ImageModalProps {
   image: ImageType | null
@@ -37,7 +36,6 @@ export function ImageModal({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [showPaymentSelector, setShowPaymentSelector] = useState(false)
 
   useEffect(() => {
     if (image && images.length > 0) {
@@ -82,22 +80,6 @@ export function ImageModal({
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, goToPrevious, goToNext, onClose])
-
-  const handlePurchaseClick = () => {
-    setShowPaymentSelector(true)
-  }
-
-  const handlePaymentMethodSelected = (
-    method: 'stripe' | 'paypal' | 'crypto'
-  ) => {
-    console.log(
-      'Selected payment method:',
-      method,
-      'for image:',
-      currentImage.id
-    )
-    setShowPaymentSelector(false)
-  }
 
   const handleDownload = async () => {
     if (!currentImage) return
@@ -214,17 +196,6 @@ export function ImageModal({
                 <ChevronRight className='h-6 w-6' />
               </Button>
             </>
-          )}
-
-          {showPaymentSelector && currentImage && (
-            <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/70'>
-              <PaymentMethodSelector
-                onPaymentSelect={handlePaymentMethodSelected}
-                amount={1000}
-                licenseType='standard'
-                imageId={currentImage.id}
-              />
-            </div>
           )}
         </div>
 
