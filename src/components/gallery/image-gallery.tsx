@@ -11,6 +11,7 @@ import { ImageModal } from "./image-modal"
 import { SimpleImageViewer } from "./simple-image-viewer"
 import { DeleteConfirm } from "./delete-confirm"
 import { LicenseSelector } from "./license-selector"
+import { PaymentOptionsModal } from "./payment-options-modal"
 import { useSubscriptionAccess } from "@/hooks/use-subscription-access"
 import { GalleryFilters, type GalleryFilters as FilterType } from "./gallery-filters"
 import { Pagination } from "./pagination"
@@ -456,6 +457,15 @@ export function ImageGallery({ className }: ImageGalleryProps) {
             setCheckoutImage(null)
           }}
           onCheckout={handleLicenseCheckout}
+        />
+      )}
+
+      {/* Payment Options Modal */}
+      {checkoutImage && (
+        <PaymentOptionsModal
+          isOpen={isPaymentOptionsOpen}
+          onClose={() => setIsPaymentOptionsOpen(false)}
+          onSelectPaymentMethod={handlePaymentMethodSelect}
         />
       )}
     </div>

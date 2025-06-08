@@ -75,9 +75,9 @@ function PayPalCheckoutPage() {
       })
       .then(details => {
         console.log('Payment captured:', details)
-        alert(
-          `Transaction completed by ${details.payer?.name?.given_name || 'customer'}!`
-        )
+        // alert(
+        //   `Transaction completed by ${details.payer?.name?.given_name || 'customer'}!`
+        // )
         // Redirect to a success page, e.g., /purchase/success
         // router.push('/purchase/success?paymentId=${details.id}&method=paypal');
         window.location.href = `/purchase/success?paymentId=${details.id}&method=paypal&imageId=${imageId}&licenseType=${licenseType}`
