@@ -115,7 +115,7 @@ export async function upsertSubscriptionPlan(planData: {
   currency?: string
   interval?: string
   stripe_price_id?: string
-  features?: any[]
+  features?: string[]
   is_active?: boolean
 }) {
   const supabase = await createServerSupabaseClient()

@@ -34,7 +34,7 @@ export const LoginForm = ({
   const searchParams = useSearchParams()
   const { signIn } = useAuth()
   const { addToast } = useToast()
-  
+
   // Get redirect URL from search params or use default
   const finalRedirectTo = searchParams.get('redirect') || redirectTo
 

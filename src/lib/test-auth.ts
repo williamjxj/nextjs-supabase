@@ -6,12 +6,12 @@ export async function createTestUser() {
       email: 'test@example.com',
       password: 'password123',
     })
-    
+
     if (error) {
       console.error('Error creating test user:', error.message)
       return null
     }
-    
+
     console.log('Test user created:', data)
     return data
   } catch (err) {
@@ -26,12 +26,12 @@ export async function signInTestUser() {
       email: 'test@example.com',
       password: 'password123',
     })
-    
+
     if (error) {
       console.error('Error signing in test user:', error.message)
       return null
     }
-    
+
     console.log('Test user signed in:', data)
     return data
   } catch (err) {

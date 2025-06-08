@@ -147,8 +147,8 @@ export default function SubscriptionsPage() {
               No Active Subscription
             </h2>
             <p className='text-gray-600 dark:text-gray-300 mb-6 text-center'>
-              You don&apos;t currently have an active subscription. Subscribe to get
-              full access to our gallery.
+              You don&apos;t currently have an active subscription. Subscribe to
+              get full access to our gallery.
             </p>
             <Button onClick={() => router.push('/membership')}>
               View Membership Options

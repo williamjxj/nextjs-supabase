@@ -39,7 +39,7 @@ function SuccessPageContent() {
         if (!subscriptionLoading && !subscription) {
           setError('Subscription not found')
         }
-        
+
         setLoading(false)
       } catch (err) {
         console.error('Error verifying subscription:', err)

@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     console.log('User ID:', userId)
     console.log('Is subscription:', isSubscription)
     console.log('Session expires at:', authSession?.expires_at)
-    
+
     // Debug cookies
     const cookieHeader = request.headers.get('cookie')
     console.log('Cookie header present:', !!cookieHeader)
