@@ -35,7 +35,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   children,
 }) => {
   const { user } = useAuth()
-  const { loading, subscription, isActive, isGracePeriod, isExpired } =
+  const { loading, subscription, isActive, isPastDue, isExpired } =
     useSubscription()
 
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null)
@@ -53,9 +53,23 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     }
   }, [subscription])
 
-  // Determine current subscription tier
-  const subscriptionTier =
-    (subscription?.subscription_plans?.type as SubscriptionType) || null
+  // Determine current subscription tier (Vercel schema)
+  const subscriptionTier = React.useMemo(() => {
+    if (!subscription?.prices?.products?.name) return null
+    
+    // Map product names to subscription types
+    const productNameMap: Record<string, SubscriptionType> = {
+      'Basic Plan': 'standard',
+      'Pro Plan': 'premium',
+      'Premium Plan': 'commercial'
+    }
+    
+    return productNameMap[subscription.prices.products.name] || null
+  }, [subscription])
+
+  // Grace period logic (past due but not expired)
+  const isGracePeriod = isPastDue && !(isExpired ?? true)
+  const expired = isExpired ?? true
 
   // Function to check access to a specific tier
   const hasAccess = (requiredTier?: SubscriptionType): boolean => {
@@ -81,7 +95,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     isSubscribed: isActive || isGracePeriod,
     subscriptionTier,
     isGracePeriod,
-    isExpired,
+    isExpired: expired,
     daysRemaining,
     hasAccess,
   }

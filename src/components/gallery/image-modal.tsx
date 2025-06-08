@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { Image as ImageType } from '@/types/image'
 import { formatDistanceToNow } from 'date-fns'
-import { PaymentMethodSelector } from '@/components/membership/payment-method-selector'
+import { useSubscriptionAccess } from '@/hooks/use-subscription-access'
+import Link from 'next/link'
 
 interface ImageModalProps {
   image: ImageType | null
@@ -39,7 +40,8 @@ export function ImageModal({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [showPaymentSelector, setShowPaymentSelector] = useState(false)
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+  const { hasAccess, currentTier, loading: accessLoading } = useSubscriptionAccess()
 
   useEffect(() => {
     if (image && images.length > 0) {
@@ -85,20 +87,19 @@ export function ImageModal({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, goToPrevious, goToNext, onClose])
 
-  const handlePurchaseClick = () => {
-    setShowPaymentSelector(true)
+  const handleDownloadClick = () => {
+    if (!currentImage) return
+    
+    // Check if user can download based on subscription
+    if (hasAccess()) {
+      onDownload(currentImage)
+    } else {
+      setShowUpgradePrompt(true)
+    }
   }
 
-  const handlePaymentMethodSelected = (
-    method: 'stripe' | 'paypal' | 'crypto'
-  ) => {
-    console.log(
-      'Selected payment method:',
-      method,
-      'for image:',
-      currentImage.id
-    )
-    setShowPaymentSelector(false)
+  const handleUpgradePromptClose = () => {
+    setShowUpgradePrompt(false)
   }
 
   const handleViewFullSize = () => {
@@ -115,11 +116,17 @@ export function ImageModal({
 
   const handleDownload = async () => {
     if (!currentImage) return
-    setIsLoading(true)
-    try {
-      await onDownload(currentImage)
-    } finally {
-      setIsLoading(false)
+    
+    // Check if user can download based on subscription
+    if (hasAccess()) {
+      setIsLoading(true)
+      try {
+        await onDownload(currentImage)
+      } finally {
+        setIsLoading(false)
+      }
+    } else {
+      setShowUpgradePrompt(true)
     }
   }
 
@@ -245,14 +252,24 @@ export function ImageModal({
             </>
           )}
 
-          {showPaymentSelector && currentImage && (
+          {showUpgradePrompt && currentImage && (
             <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/70'>
-              <PaymentMethodSelector
-                onPaymentSelect={handlePaymentMethodSelected}
-                amount={1000}
-                licenseType='standard'
-                imageId={currentImage.id}
-              />
+              <div className="bg-white p-6 rounded-lg max-w-md mx-4">
+                <h3 className="text-lg font-semibold mb-4">Upgrade Required</h3>
+                <p className="text-gray-600 mb-4">
+                  {!currentTier 
+                    ? 'You need an active subscription to download images.'
+                    : 'Your current plan has reached the download limit.'}
+                </p>
+                <div className="flex gap-3">
+                  <Link href="/pricing">
+                    <Button>View Plans</Button>
+                  </Link>
+                  <Button variant="outline" onClick={handleUpgradePromptClose}>
+                    Close
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>

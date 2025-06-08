@@ -1,5 +1,6 @@
 import { User } from '@supabase/supabase-js'
 import { SubscriptionType } from '@/lib/stripe'
+import type { Tables } from '@/types/types_db'
 
 export interface Subscription {
   id: string
@@ -9,15 +10,19 @@ export interface Subscription {
   cancel_at_period_end: boolean
   canceled_at?: string | null
   stripe_subscription_id?: string
-  subscription_plans: {
+  prices?: {
     id: string
-    name: string
-    type: SubscriptionType
-    description: string
-    price: number
+    unit_amount: number
     currency: string
     interval: string
-    features: string[]
+    interval_count: number
+    products?: {
+      id: string
+      name: string
+      description?: string
+      active: boolean
+      metadata?: Record<string, any>
+    }
   }
 }
 

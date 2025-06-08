@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe/config';
 import { createOrRetrieveCustomer } from '@/utils/supabase/admin_vercel';
 import { getURL } from '@/lib/utils/helpers';

@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { checkoutWithStripe, createStripePortal, getSubscription, getUserDetails } from '@/lib/actions/subscription';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import CustomerPortalForm from './CustomerPortalForm';
-import SubscriptionForm from './SubscriptionForm';
+import Pricing from '@/components/ui/pricing';
 
 export default async function Account() {
   const supabase = createClient();
@@ -35,7 +35,7 @@ export default async function Account() {
         <CustomerPortalForm subscription={subscription} />
         {!subscription && (
           <div className="mt-8">
-            <SubscriptionForm user={user} />
+            <Pricing variant="compact" />
           </div>
         )}
       </div>

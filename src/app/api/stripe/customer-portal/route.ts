@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { StripeAdmin } from '@/lib/stripe/admin'
-import { SupabaseAdmin } from '@/utils/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { stripe } from '@/lib/stripe/config'
+import { createOrRetrieveCustomer } from '@/utils/supabase/admin_vercel'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = createClient()
     
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -20,8 +20,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { returnUrl } = body
 
-    // Get customer from database
-    const customer = await SupabaseAdmin.getCustomer(user.id)
+    // Get or create customer in Stripe
+    const customer = await createOrRetrieveCustomer({
+      uuid: user.id,
+      email: user.email || ''
+    })
     
     if (!customer) {
       return NextResponse.json(
@@ -31,9 +34,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create customer portal session
-    const session = await StripeAdmin.createCustomerPortalSession({
-      customerId: customer.stripe_customer_id,
-      returnUrl: returnUrl || `${request.nextUrl.origin}/account/subscriptions`,
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customer,
+      return_url: returnUrl || `${request.nextUrl.origin}/account`,
     })
 
     return NextResponse.json({ url: session.url })

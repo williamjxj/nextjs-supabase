@@ -107,9 +107,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return true // If no specific tier is required, any active subscription is enough
     }
 
-    // Get the user's plan type
-    const userPlanType = user.subscription.subscription_plans
-      ?.type as SubscriptionType
+    // Get the user's plan type (Vercel schema)
+    const userPlanType = (() => {
+      if (!user.subscription?.prices?.products?.name) return null
+      
+      // Map product names to subscription types
+      const productNameMap: Record<string, SubscriptionType> = {
+        'Basic Plan': 'standard',
+        'Pro Plan': 'premium',
+        'Premium Plan': 'commercial'
+      }
+      
+      return productNameMap[user.subscription.prices.products.name] || null
+    })()
 
     // Define tier hierarchy
     const tierLevels: Record<SubscriptionType, number> = {
@@ -119,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     // Check if user's tier is equal or higher than the required tier
-    return userPlanType && tierLevels[userPlanType] >= tierLevels[requiredTier]
+    return Boolean(userPlanType && tierLevels[userPlanType] >= tierLevels[requiredTier])
   }
 
   const value: AuthState = {

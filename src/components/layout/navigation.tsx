@@ -70,8 +70,8 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
-    label: 'Membership',
-    href: '/membership',
+    label: 'Pricing',
+    href: '/pricing',
     requireAuth: true,
     icon: (
       <svg

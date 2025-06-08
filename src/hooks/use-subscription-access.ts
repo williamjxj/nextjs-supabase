@@ -23,18 +23,17 @@ export function useSubscriptionAccess(): SubscriptionAccessHook {
   const {
     loading: subscriptionLoading,
     isActive,
-    isGracePeriod,
+    isTrialing,
     isExpired,
     subscription,
   } = useSubscription()
 
   const loading = authLoading || subscriptionLoading
   const hasAnySubscription =
-    !!user?.hasActiveSubscription || isActive || isGracePeriod
+    !!user?.hasActiveSubscription || isActive || isTrialing
 
-  // Determine current subscription tier
-  const currentTier =
-    (subscription?.subscription_plans?.type as SubscriptionType) || null
+  // Determine current subscription tier from Vercel schema
+  const currentTier = subscription?.prices?.products?.name?.toLowerCase() as SubscriptionType || null
 
   // Function to check access to a specific tier
   const hasAccess = (requiredTier?: SubscriptionType): boolean => {
@@ -50,15 +49,21 @@ export function useSubscriptionAccess(): SubscriptionAccessHook {
 
     if (!currentTier) return false // No tier information available
 
-    // Define tier hierarchy
-    const tierLevels: Record<SubscriptionType, number> = {
-      standard: 1,
-      premium: 2,
-      commercial: 3,
+    // Define tier hierarchy based on product names
+    const tierLevels: Record<string, number> = {
+      'basic': 1,
+      'basic plan': 1,
+      'pro': 2,
+      'pro plan': 2,
+      'premium': 3,
+      'premium plan': 3,
     }
 
+    const currentLevel = tierLevels[currentTier.toLowerCase()] || 0
+    const requiredLevel = tierLevels[requiredTier.toLowerCase()] || 1
+
     // User's tier must be equal or higher than required tier
-    return tierLevels[currentTier] >= tierLevels[requiredTier]
+    return currentLevel >= requiredLevel
   }
 
   return {
@@ -66,7 +71,7 @@ export function useSubscriptionAccess(): SubscriptionAccessHook {
     hasAnySubscription,
     hasAccess,
     currentTier,
-    isGracePeriod,
+    isGracePeriod: isTrialing, // Map trialing to grace period
     isExpired,
     isActive,
   }

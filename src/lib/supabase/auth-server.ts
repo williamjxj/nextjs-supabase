@@ -10,16 +10,19 @@ const planHierarchy: Record<SubscriptionType, number> = {
   commercial: 3,
 }
 
-// Helper function to extract subscription plan type safely
+// Helper function to extract subscription plan type safely (Vercel schema)
 const extractPlanType = (subscription: any): SubscriptionType | null => {
   try {
-    if (!subscription?.subscription_plans) return null
+    if (!subscription?.prices?.products?.name) return null
     
-    if (Array.isArray(subscription.subscription_plans)) {
-      return subscription.subscription_plans[0]?.type as SubscriptionType
-    } else {
-      return (subscription.subscription_plans as any).type as SubscriptionType
+    // Map product names back to subscription types
+    const productNameMap: Record<string, SubscriptionType> = {
+      'Basic Plan': 'standard',
+      'Pro Plan': 'premium',
+      'Premium Plan': 'commercial'
     }
+    
+    return productNameMap[subscription.prices.products.name] || null
   } catch (error) {
     console.error('Error accessing subscription plan type:', error)
     return null

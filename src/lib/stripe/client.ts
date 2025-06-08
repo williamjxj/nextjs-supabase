@@ -14,22 +14,6 @@ export const getStripe = () => {
   return stripePromise;
 };
 
-// Client-side utility to redirect to Stripe Checkout
-export async function redirectToCheckout(sessionId: string): Promise<void> {
-  const stripe = await getStripe()
-  
-  if (!stripe) {
-    throw new Error('Stripe not initialized')
-  }
-  
-  const { error } = await stripe.redirectToCheckout({ sessionId })
-  
-  if (error) {
-    console.error('Error redirecting to checkout:', error)
-    throw error
-  }
-}
-
 // Client-side utility to handle subscription checkout
 export async function createSubscriptionCheckout(params: {
   priceId: string
@@ -45,7 +29,7 @@ export async function createSubscriptionCheckout(params: {
       body: JSON.stringify({
         priceId: params.priceId,
         successUrl: params.successUrl || `${window.location.origin}/account/subscriptions?success=true`,
-        cancelUrl: params.cancelUrl || `${window.location.origin}/membership`,
+        cancelUrl: params.cancelUrl || `${window.location.origin}/pricing`,
       }),
     })
 

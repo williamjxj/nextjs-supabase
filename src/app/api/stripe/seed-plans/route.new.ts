@@ -1,27 +1,16 @@
-import { createClient } from '@supabase/supabase-js'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { SUBSCRIPTION_PRICE_CONFIG } from '@/lib/stripe'
 import { NextResponse } from 'next/server'
-
-// Create admin client that bypasses RLS for seeding
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 // This API route will seed products and prices in the Vercel schema
 export async function GET() {
   try {
-    console.log('Seed API: Starting seeding process');
-    const supabase = supabaseAdmin // Use admin client that bypasses RLS
+    const supabase = await createServerSupabaseClient()
 
     // Create products and prices based on subscription config
     const results = []
-    const configEntries = Object.entries(SUBSCRIPTION_PRICE_CONFIG);
-    console.log('Seed API: Processing config entries:', configEntries.map(([k]) => k));
     
-    for (const [type, config] of configEntries) {
-      console.log(`Seed API: Processing ${type}:`, config);
-      
+    for (const [type, config] of Object.entries(SUBSCRIPTION_PRICE_CONFIG)) {
       // Create product
       const { data: product, error: productError } = await supabase
         .from('products')
@@ -39,19 +28,11 @@ export async function GET() {
           ignoreDuplicates: false,
         })
         .select()
+        .single()
 
       if (productError) {
-        console.error(`Seed API: Error creating product ${type}:`, productError)
+        console.error(`Error creating product ${type}:`, productError)
         continue
-      }
-
-      // Get the first product from the array (since upsert can return an array)
-      const productData = Array.isArray(product) ? product[0] : product;
-      console.log(`Seed API: Product result for ${type}:`, productData);
-      
-      if (!productData) {
-        console.error(`Seed API: No product data returned for ${type}`);
-        continue;
       }
 
       // Create price for the product
@@ -59,7 +40,7 @@ export async function GET() {
         .from('prices')
         .upsert([{
           id: `price_${type}_monthly`,
-          product_id: productData.id,
+          product_id: product.id,
           active: true,
           currency: config.currency,
           unit_amount: config.amount,
@@ -73,14 +54,12 @@ export async function GET() {
         .select()
 
       if (priceError) {
-        console.error(`Seed API: Error creating price for ${type}:`, priceError)
+        console.error(`Error creating price for ${type}:`, priceError)
       } else {
-        console.log(`Seed API: Successfully created/updated ${type}:`, { product: productData, price });
-        results.push({ product: productData, price })
+        results.push({ product, price })
       }
     }
 
-    console.log('Seed API: Final results count:', results.length);
     return NextResponse.json({
       success: true,
       message: 'Products and prices seeded successfully',
@@ -88,7 +67,7 @@ export async function GET() {
       results: results
     })
   } catch (error) {
-    console.error('Seed API: Error in seed-plans API:', error)
+    console.error('Error in seed-plans API:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

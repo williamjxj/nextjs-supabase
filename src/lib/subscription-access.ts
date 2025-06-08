@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { getSubscription } from '@/lib/actions/subscription';
 
 export interface SubscriptionAccess {
@@ -45,7 +45,7 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
   // Determine access level based on subscription
   const productName = subscription.prices?.products?.name?.toLowerCase() || '';
   let accessLevel: SubscriptionAccess['accessLevel'] = 'basic';
-  let imagesViewable = undefined; // Unlimited
+  const imagesViewable = undefined; // Unlimited
   let downloadsRemaining = undefined; // Unlimited
 
   if (productName.includes('basic')) {

@@ -46,10 +46,10 @@ export const Header = () => {
                 </button>
               </Link>
 
-              <Link href='/membership'>
+              <Link href='/pricing'>
                 <button className='flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
                   <Crown className='w-4 h-4' />
-                  <span className='text-sm font-medium'>Membership</span>
+                  <span className='text-sm font-medium'>Pricing</span>
                 </button>
               </Link>
             </>
@@ -136,10 +136,10 @@ export const Header = () => {
                   </button>
                 </Link>
 
-                <Link href='/membership'>
+                <Link href='/pricing'>
                   <button className='flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
                     <Crown className='w-5 h-5' />
-                    <span className='font-medium'>Membership</span>
+                    <span className='font-medium'>Pricing</span>
                   </button>
                 </Link>
               </>

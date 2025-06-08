@@ -43,7 +43,7 @@ export const AuthGuard = ({
           // User doesn't have required subscription
           router.push(
             subscriptionRedirectTo ||
-              `/membership${requiredTier ? `?tier=${requiredTier}` : ''}`
+              `/pricing${requiredTier ? `?tier=${requiredTier}` : ''}`
           )
         }
       }

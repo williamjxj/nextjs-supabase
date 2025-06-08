@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { StripeAdmin } from '@/lib/stripe/admin'
-import { getPrice } from '@/lib/stripe/server'
-import { SupabaseAdmin } from '@/utils/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { stripe } from '@/lib/stripe/config'
+import { createOrRetrieveCustomer } from '@/utils/supabase/admin_vercel'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = createClient()
     
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -28,47 +27,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get or create Stripe customer
-    let customer = await SupabaseAdmin.getCustomer(user.id)
-    
-    if (!customer) {
-      // Create Stripe customer
-      const stripeCustomer = await StripeAdmin.createCustomer({
-        email: user.email!,
-        userId: user.id,
-        metadata: {
-          userId: user.id,
-        },
-      })
-
-      // Save customer to database
-      customer = await SupabaseAdmin.upsertCustomer({
-        userId: user.id,
-        stripeCustomerId: stripeCustomer.id,
-        email: user.email!,
-      })
-    }
-
-    // Determine subscription tier from price ID
-    let subscriptionTier = 'starter'
-    if (priceId.includes('pro')) {
-      subscriptionTier = 'pro'
-    } else if (priceId.includes('enterprise')) {
-      subscriptionTier = 'enterprise'
-    }
+    // Get or create Stripe customer using Vercel pattern
+    const customer = await createOrRetrieveCustomer({
+      uuid: user.id,
+      email: user.email || ''
+    })
 
     // Create checkout session
-    const session = await StripeAdmin.createCheckoutSession({
-      customerId: customer.stripe_customer_id,
-      priceId,
-      successUrl: successUrl || `${request.nextUrl.origin}/account/subscriptions?success=true`,
-      cancelUrl: cancelUrl || `${request.nextUrl.origin}/membership`,
+    const session = await stripe.checkout.sessions.create({
+      customer: customer,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: successUrl || `${request.nextUrl.origin}/account?success=true`,
+      cancel_url: cancelUrl || `${request.nextUrl.origin}/pricing`,
       metadata: {
         userId: user.id,
-        subscriptionType: subscriptionTier,
-        isSubscription: 'true',
       },
-      trialPeriodDays,
+      ...(trialPeriodDays && {
+        subscription_data: {
+          trial_period_days: trialPeriodDays,
+        },
+      }),
     })
 
     return NextResponse.json({ sessionId: session.id })

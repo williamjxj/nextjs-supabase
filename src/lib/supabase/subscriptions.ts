@@ -1,6 +1,7 @@
 // Utility functions for subscription operations
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { SubscriptionType, SUBSCRIPTION_PRICE_CONFIG } from '@/lib/stripe'
+import type { Tables } from '@/types/types_db'
 
 export type SubscriptionStatus =
   | 'active'
@@ -8,6 +9,17 @@ export type SubscriptionStatus =
   | 'canceled'
   | 'incomplete'
   | 'trialing'
+
+// Vercel-compatible types
+type Subscription = Tables<'subscriptions'> & {
+  prices?: Tables<'prices'> & {
+    products?: Tables<'products'>
+  }
+}
+
+type Product = Tables<'products'> & {
+  prices?: Tables<'prices'>[]
+}
 
 // Check if a user has an active subscription
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
@@ -34,7 +46,7 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 }
 
 // Get user's current subscription details
-export async function getUserSubscription(userId: string) {
+export async function getUserSubscription(userId: string): Promise<Subscription | null> {
   if (!userId) return null
 
   const supabase = await createServerSupabaseClient()
@@ -42,104 +54,102 @@ export async function getUserSubscription(userId: string) {
     .from('subscriptions')
     .select(
       `
-      id, 
-      status, 
-      current_period_start, 
-      current_period_end, 
-      cancel_at_period_end,
-      stripe_subscription_id,
-      subscription_plans (
-        id,
-        name,
-        type,
-        description,
-        price,
-        currency,
-        interval,
-        features
+      *,
+      prices (
+        *,
+        products (*)
       )
     `
     )
     .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .in('status', ['active', 'trialing', 'past_due'])
+    .order('created', { ascending: false })
     .limit(1)
-    .single()
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return null
   }
 
-  return data
+  return data[0] as Subscription
 }
 
 // Get all available subscription plans
-export async function getSubscriptionPlans() {
+export async function getSubscriptionPlans(): Promise<Product[]> {
   const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
-    .from('subscription_plans')
-    .select('*')
-    .eq('is_active', true)
-    .order('price', { ascending: true })
+    .from('products')
+    .select('*, prices(*)')
+    .eq('active', true)
+    .eq('prices.active', true)
+    .order('metadata->index')
 
   if (error) {
-    console.error('Error fetching subscription plans:', error)
+    console.error('Error fetching products:', error)
     return []
   }
 
-  return data || []
+  return (data || []) as Product[]
 }
 
-// Get subscription plan by type
-export async function getSubscriptionPlanByType(type: SubscriptionType) {
+// Get subscription plan by type (map to product name)
+export async function getSubscriptionPlanByType(type: SubscriptionType): Promise<Product | null> {
   const supabase = await createServerSupabaseClient()
-  const { data, error } = await supabase
-    .from('subscription_plans')
-    .select('*')
-    .eq('type', type)
-    .single()
-
-  if (error) {
-    console.error(`Error fetching subscription plan for type ${type}:`, error)
+  
+  // Map subscription types to product names
+  const productNameMap: Record<SubscriptionType, string> = {
+    'standard': 'Basic Plan',
+    'premium': 'Pro Plan', 
+    'commercial': 'Premium Plan'
+  }
+  
+  const productName = productNameMap[type]
+  if (!productName) {
+    console.error(`Unknown subscription type: ${type}`)
     return null
   }
 
-  return data
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, prices(*)')
+    .eq('name', productName)
+    .eq('active', true)
+    .single()
+
+  if (error) {
+    console.error(`Error fetching product for type ${type}:`, error)
+    return null
+  }
+
+  return data as Product
 }
 
-// Create or update a subscription plan in the database
-export async function upsertSubscriptionPlan(planData: {
-  type: SubscriptionType
+// Create or update a product in the database (Vercel pattern)
+export async function upsertProduct(productData: {
+  id?: string
   name: string
-  description: string
-  price: number
-  currency?: string
-  interval?: string
-  stripe_price_id?: string
-  features?: string[]
-  is_active?: boolean
+  description?: string
+  active?: boolean
+  metadata?: Record<string, any>
 }) {
   const supabase = await createServerSupabaseClient()
 
-  // Default values
   const data = {
-    ...planData,
-    currency: planData.currency || 'usd',
-    interval: planData.interval || 'month',
-    is_active: planData.is_active !== undefined ? planData.is_active : true,
-    features: planData.features || [],
+    ...productData,
+    active: productData.active !== undefined ? productData.active : true,
+    metadata: productData.metadata || {},
   }
 
   const { data: result, error } = await supabase
-    .from('subscription_plans')
+    .from('products')
     .upsert([data], {
-      onConflict: 'type',
+      onConflict: 'name',
       ignoreDuplicates: false,
     })
     .select()
     .single()
 
   if (error) {
-    console.error('Error upserting subscription plan:', error)
+    console.error('Error upserting product:', error)
     return null
   }
 
@@ -165,23 +175,58 @@ export async function getUserSubscriptionInvoices(userId: string) {
   return data || []
 }
 
-// Initialize default subscription plans in the database
+// Initialize default products and prices in the database (Vercel pattern)
 export async function initializeSubscriptionPlans() {
-  const planPromises = Object.entries(SUBSCRIPTION_PRICE_CONFIG).map(
-    ([type, config]) => {
-      return upsertSubscriptionPlan({
-        type: type as SubscriptionType,
-        name: config.name,
-        description: config.description,
-        price: config.amount / 100, // Convert cents to dollars for storage
-        currency: config.currency,
-        interval: config.interval,
-        stripe_price_id: config.stripe_price_id || undefined,
-        is_active: true,
-      })
+  const supabase = await createServerSupabaseClient()
+  
+  // Create products first
+  const productPromises = Object.entries(SUBSCRIPTION_PRICE_CONFIG).map(
+    async ([type, config]) => {
+      const { data: product, error } = await supabase
+        .from('products')
+        .upsert([{
+          id: `prod_${type}`,
+          name: config.name,
+          description: config.description,
+          active: true,
+          metadata: { index: type === 'standard' ? 0 : type === 'premium' ? 1 : 2 }
+        }], {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error(`Error creating product ${type}:`, error)
+        return null
+      }
+
+      // Create price for the product
+      const { data: price, error: priceError } = await supabase
+        .from('prices')
+        .upsert([{
+          id: `price_${type}_monthly`,
+          product_id: product.id,
+          active: true,
+          currency: config.currency,
+          unit_amount: config.amount,
+          interval: config.interval,
+          interval_count: 1,
+          type: 'recurring'
+        }], {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        })
+
+      if (priceError) {
+        console.error(`Error creating price for ${type}:`, priceError)
+      }
+
+      return product
     }
   )
 
-  await Promise.all(planPromises)
-  console.log('Subscription plans initialized')
+  await Promise.all(productPromises)
+  console.log('Products and prices initialized')
 }

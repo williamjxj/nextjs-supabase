@@ -31,7 +31,11 @@ export default function SubscriptionsPage() {
     cancelSubscription,
   } = useSubscription()
 
+  const [changingPlan, setChangingPlan] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false)
+  const [selectedPlanType, setSelectedPlanType] =
+    useState<SubscriptionType | null>(null)
 
   // Derive grace period from the available data
   const isGracePeriod = isPastDue && !(isExpired ?? true)
@@ -49,7 +53,14 @@ export default function SubscriptionsPage() {
     return productNameMap[subscription.prices.products.name] || null
   })()
 
-  const handleCancelSubscription = async () => {
+  const handleChangePlan = async () => {
+    if (!selectedPlanType) return
+
+    setChangingPlan(true)
+    showToast('Plan change functionality coming soon!', 'info')
+    setChangingPlan(false)
+    setShowUpgradeOptions(false)
+  }
     if (
       !confirm(
         'Are you sure you want to cancel your subscription? You will still have access until the end of your billing period.'
@@ -68,7 +79,21 @@ export default function SubscriptionsPage() {
         'success'
       )
     } else {
-      showToast(error || 'Failed to cancel subscription', 'error')
+      showToast(`Failed to cancel subscription: ${error}`, 'error')
+    }
+  }
+
+  const handleChangePlan = async () => {
+    if (!selectedPlanType) return
+
+    setChangingPlan(true)
+    const { success, error, redirectUrl } = await changePlan(selectedPlanType)
+    setChangingPlan(false)
+
+    if (success && redirectUrl) {
+      window.location.href = redirectUrl
+    } else {
+      showToast(`Failed to update subscription: ${error}`, 'error')
     }
   }
 
@@ -83,12 +108,19 @@ export default function SubscriptionsPage() {
   }
 
   const formatCurrency = (amount: number, currency = 'usd') => {
-    // Convert from cents to dollars if amount is in cents
-    const displayAmount = amount > 100 ? amount / 100 : amount
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency.toUpperCase(),
-    }).format(displayAmount)
+      currency: currency,
+    }).format(amount)
+  }
+
+  const getCurrentPlanLabel = () => {
+    if (!subscription) return 'No active subscription'
+    if (isGracePeriod) return 'Cancelling soon'
+    if (isActive) return 'Active'
+    return (
+      subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)
+    )
   }
 
   if (loading) {
@@ -115,8 +147,8 @@ export default function SubscriptionsPage() {
           <p className='text-lg text-gray-600 dark:text-gray-300 mb-6'>
             {error}
           </p>
-          <Button onClick={() => router.push('/pricing')}>
-            View Pricing Plans
+          <Button onClick={() => router.push('/membership')}>
+            View Membership Options
           </Button>
         </div>
       </div>
@@ -140,8 +172,8 @@ export default function SubscriptionsPage() {
               You don&apos;t currently have an active subscription. Subscribe to
               get full access to our gallery.
             </p>
-            <Button onClick={() => router.push('/pricing')}>
-              View Pricing Plans
+            <Button onClick={() => router.push('/membership')}>
+              View Membership Options
             </Button>
           </div>
         </div>
@@ -209,10 +241,10 @@ export default function SubscriptionsPage() {
               </div>
 
               <div className='flex flex-col justify-end space-y-3'>
-                {isActive && (
+                {isActive && !showUpgradeOptions && (
                   <>
                     <Button
-                      onClick={() => router.push('/pricing')}
+                      onClick={() => setShowUpgradeOptions(true)}
                       variant='outline'
                       className='w-full'
                     >
@@ -238,7 +270,7 @@ export default function SubscriptionsPage() {
                       reactivate it before this date.
                     </p>
                     <Button
-                      onClick={() => router.push('/pricing')}
+                      onClick={() => router.push('/membership')}
                       variant='outline'
                       className='mt-3 w-full'
                     >
@@ -249,7 +281,7 @@ export default function SubscriptionsPage() {
 
                 {isExpired && (
                   <Button
-                    onClick={() => router.push('/pricing')}
+                    onClick={() => router.push('/membership')}
                     className='w-full'
                   >
                     Renew Subscription
@@ -257,56 +289,147 @@ export default function SubscriptionsPage() {
                 )}
               </div>
             </div>
-          </Card>
 
-          {/* Available Plans Section */}
-          {products.length > 0 && (
-            <Card className='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8'>
-              <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-6'>
-                Available Plans
-              </h2>
-              <div className='grid md:grid-cols-3 gap-4'>
-                {products.map(product => (
-                  <div
-                    key={product.id}
-                    className={`border rounded-lg p-4 ${
-                      subscription.prices?.products?.id === product.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700'
-                    }`}
-                  >
-                    <div className='flex justify-between items-start mb-2'>
-                      <h4 className='font-medium text-gray-800 dark:text-white'>
-                        {product.name}
-                      </h4>
-                      {subscription.prices?.products?.id === product.id && (
-                        <span className='text-xs bg-blue-100 dark:bg-blue-700 text-blue-600 dark:text-blue-300 px-2 py-1 rounded'>
-                          Current
+            {showUpgradeOptions && (
+              <div className='mt-8 border-t pt-6'>
+                <h3 className='text-lg font-medium text-gray-800 dark:text-white mb-4'>
+                  Change Subscription Plan
+                </h3>
+
+                <div className='grid md:grid-cols-3 gap-4 mb-6'>
+                  {plans.map(plan => (
+                    <div
+                      key={plan.id}
+                      className={`border rounded-lg p-4 cursor-pointer ${
+                        selectedPlanType === plan.type
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                      onClick={() =>
+                        setSelectedPlanType(plan.type as SubscriptionType)
+                      }
+                    >
+                      <div className='flex justify-between items-start mb-2'>
+                        <h4 className='font-medium text-gray-800 dark:text-white'>
+                          {plan.name}
+                        </h4>
+                        {selectedPlanType === plan.type && (
+                          <CheckCircle className='w-5 h-5 text-blue-500' />
+                        )}
+                      </div>
+                      <p className='text-gray-600 dark:text-gray-300 text-sm mb-2'>
+                        {formatCurrency(plan.price, plan.currency)} /{' '}
+                        {plan.interval}
+                      </p>
+                      {subscription.subscription_plans?.type === plan.type && (
+                        <span className='text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded'>
+                          Current Plan
                         </span>
                       )}
                     </div>
-                    <p className='text-gray-600 dark:text-gray-300 text-sm mb-2'>
-                      {product.description}
-                    </p>
-                    {product.prices && product.prices.length > 0 && (
-                      <p className='text-gray-600 dark:text-gray-300 text-sm'>
-                        {formatCurrency(
-                          product.prices[0].unit_amount || 0,
-                          product.prices[0].currency || 'usd'
-                        )}{' '}
-                        / {product.prices[0].interval || 'month'}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                <div className='flex space-x-3'>
+                  <Button
+                    onClick={handleChangePlan}
+                    disabled={
+                      changingPlan ||
+                      !selectedPlanType ||
+                      selectedPlanType === subscription.subscription_plans?.type
+                    }
+                  >
+                    {changingPlan ? 'Processing...' : 'Confirm Change'}
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => {
+                      setShowUpgradeOptions(false)
+                      setSelectedPlanType(null)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
-              <div className='mt-6'>
-                <Button
-                  onClick={() => router.push('/pricing')}
-                  className='w-full'
-                >
-                  View All Plans & Change Subscription
-                </Button>
+            )}
+          </Card>
+
+          {invoices.length > 0 && (
+            <Card className='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8'>
+              <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-6'>
+                Billing History
+              </h2>
+
+              <div className='overflow-x-auto'>
+                <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+                  <thead>
+                    <tr>
+                      <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                        Date
+                      </th>
+                      <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                        Amount
+                      </th>
+                      <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                        Status
+                      </th>
+                      <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                        Period
+                      </th>
+                      <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                        Receipt
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className='divide-y divide-gray-200 dark:divide-gray-700'>
+                    {invoices.map(invoice => (
+                      <tr key={invoice.id}>
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300'>
+                          {formatDate(invoice.created_at)}
+                        </td>
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300'>
+                          {formatCurrency(
+                            invoice.amount_paid,
+                            invoice.currency
+                          )}
+                        </td>
+                        <td className='px-4 py-4 whitespace-nowrap text-sm'>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              invoice.status === 'paid'
+                                ? 'bg-green-100 text-green-800'
+                                : invoice.status === 'open'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {invoice.status}
+                          </span>
+                        </td>
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300'>
+                          {invoice.invoice_period_start
+                            ? `${formatDate(invoice.invoice_period_start)} - ${formatDate(invoice.invoice_period_end || '')}`
+                            : 'N/A'}
+                        </td>
+                        <td className='px-4 py-4 whitespace-nowrap text-sm'>
+                          {invoice.receipt_url ? (
+                            <a
+                              href={invoice.receipt_url}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='text-blue-500 hover:text-blue-700'
+                            >
+                              View Receipt
+                            </a>
+                          ) : (
+                            <span className='text-gray-400'>N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </Card>
           )}

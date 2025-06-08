@@ -63,7 +63,7 @@ export default function CustomerPortalForm({ subscription }: Props) {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">
-              You don't have an active subscription.
+              You don&apos;t have an active subscription.
             </p>
             <p className="text-sm text-gray-400">
               Subscribe to access premium features and content.

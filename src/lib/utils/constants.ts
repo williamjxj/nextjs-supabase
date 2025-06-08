@@ -8,7 +8,7 @@ export const ROUTES = {
   SIGNUP: '/signup',
   GALLERY: '/gallery',
   UPLOAD: '/upload',
-  MEMBERSHIP: '/membership',
+  PRICING: '/pricing',
 } as const
 
 export const API_ROUTES = {

@@ -46,7 +46,7 @@ export async function middleware(req: NextRequest) {
 
   // Subscription-only routes
   const subscriptionRoutes = [
-    '/membership/premium',
+    '/pricing/premium',
     '/gallery/premium',
     '/account/downloads',
   ]
@@ -90,7 +90,7 @@ export async function middleware(req: NextRequest) {
     const hasSubscription = await userHasSubscription(session.user.id)
 
     if (!hasSubscription) {
-      return NextResponse.redirect(new URL('/membership', req.url))
+      return NextResponse.redirect(new URL('/pricing', req.url))
     }
   }
 
