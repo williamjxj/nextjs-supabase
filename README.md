@@ -30,3 +30,9 @@ npm supabase status|start
 npm run dev
 open http://127.0.0.1:54323
 ```
+
+## Krea.ai-Inspired Gallery UI
+
+- Modern Masonry Layout
+- Cleaner Image Card
+- Responsive Design Improvements

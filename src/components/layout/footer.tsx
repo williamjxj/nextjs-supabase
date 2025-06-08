@@ -67,7 +67,7 @@ export const Footer = () => {
               <li>
                 <Link
                   href='/privacy'
-                  className='text-muted-foreground hover:text-foreground transition-colors'
+                  className='text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors'
                 >
                   Privacy Policy
                 </Link>
@@ -75,7 +75,7 @@ export const Footer = () => {
               <li>
                 <Link
                   href='/terms'
-                  className='text-muted-foreground hover:text-foreground transition-colors'
+                  className='text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors'
                 >
                   Terms of Service
                 </Link>
@@ -126,13 +126,13 @@ export const Footer = () => {
           <div className='flex items-center space-x-4 mt-4 sm:mt-0'>
             <Link
               href='/privacy'
-              className='text-xs text-muted-foreground hover:text-foreground transition-colors'
+              className='text-xs text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors'
             >
               Privacy
             </Link>
             <Link
               href='/terms'
-              className='text-xs text-muted-foreground hover:text-foreground transition-colors'
+              className='text-xs text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors'
             >
               Terms
             </Link>

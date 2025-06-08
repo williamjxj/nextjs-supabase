@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Calendar,
   User,
+  Maximize2,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
@@ -99,6 +101,18 @@ export function ImageModal({
     setShowPaymentSelector(false)
   }
 
+  const handleViewFullSize = () => {
+    if (!currentImage) return
+    
+    // Construct the direct public URL to the full-size image
+    // This avoids hydration issues by not using the Supabase client during SSR
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
+    const fullSizeUrl = `${supabaseUrl}/storage/v1/object/public/images/${currentImage.storage_path}`
+    
+    // Open the direct URL in a new tab for full resolution viewing
+    window.open(fullSizeUrl, '_blank')
+  }
+
   const handleDownload = async () => {
     if (!currentImage) return
     setIsLoading(true)
@@ -150,9 +164,20 @@ export function ImageModal({
             <Button
               variant='ghost'
               size='sm'
+              onClick={handleViewFullSize}
+              className='text-white hover:bg-white/20 cursor-pointer'
+              title="Open full size in new tab"
+            >
+              <ExternalLink className='h-4 w-4' />
+              View Large
+            </Button>
+            <Button
+              variant='ghost'
+              size='sm'
               onClick={handleDownload}
               disabled={isLoading}
-              className='text-white hover:bg-white/20'
+              className='text-white hover:bg-white/20 cursor-pointer'
+              title="Download image"
             >
               <Download className='h-4 w-4' />
               Download
@@ -161,7 +186,8 @@ export function ImageModal({
               variant='ghost'
               size='sm'
               onClick={handleDelete}
-              className='text-red-400 hover:bg-red-500/20'
+              className='text-red-400 hover:bg-red-500/20 cursor-pointer'
+              title="Delete image"
             >
               <Trash2 className='h-4 w-4' />
               Delete
@@ -170,7 +196,8 @@ export function ImageModal({
               variant='ghost'
               size='sm'
               onClick={onClose}
-              className='text-white hover:bg-white/20'
+              className='text-white hover:bg-white/20 cursor-pointer'
+              title="Close modal"
             >
               <X className='h-4 w-4' />
             </Button>
@@ -178,7 +205,7 @@ export function ImageModal({
         </div>
 
         {/* Image Container */}
-        <div className='relative flex-1 flex items-center justify-center'>
+        <div className='relative flex-1 flex items-center justify-center cursor-pointer' onClick={handleViewFullSize} title="Click to view large">
           {!imageError ? (
             <Image
               src={currentImage.storage_url}
@@ -201,7 +228,8 @@ export function ImageModal({
                 variant='ghost'
                 size='sm'
                 onClick={goToPrevious}
-                className='absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20'
+                className='absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 cursor-pointer'
+                title="Previous image"
               >
                 <ChevronLeft className='h-6 w-6' />
               </Button>
@@ -209,7 +237,8 @@ export function ImageModal({
                 variant='ghost'
                 size='sm'
                 onClick={goToNext}
-                className='absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20'
+                className='absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 cursor-pointer'
+                title="Next image"
               >
                 <ChevronRight className='h-6 w-6' />
               </Button>

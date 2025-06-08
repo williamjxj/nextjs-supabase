@@ -125,7 +125,7 @@ export const Navigation = ({
             href={item.href}
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              'hover:bg-accent hover:text-accent-foreground',
+              'hover:bg-accent hover:text-accent-foreground hover:cursor-pointer',
               isActive
                 ? 'bg-accent text-accent-foreground'
                 : 'text-muted-foreground',
@@ -156,7 +156,7 @@ export const MobileNavigation = () => {
     <div className='md:hidden relative'>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='p-2 rounded-md hover:bg-accent'
+        className='p-2 rounded-md hover:bg-accent hover:cursor-pointer'
         aria-label='Toggle navigation menu'
       >
         <svg

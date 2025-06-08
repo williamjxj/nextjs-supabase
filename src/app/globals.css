@@ -1,63 +1,62 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @layer base {
   :root {
-    --background: 248 250 252;
-    --foreground: 15 23 42;
-    --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --popover: 255 255 255;
-    --popover-foreground: 15 23 42;
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 51 65 85;
-    --muted: 248 250 252;
-    --muted-foreground: 100 116 139;
-    --accent: 241 245 249;
-    --accent-foreground: 51 65 85;
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 59 130 246;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 53%;
     --radius: 12px;
   }
 
   .dark {
-    --background: 2 6 23;
-    --foreground: 248 250 252;
-    --card: 15 23 42;
-    --card-foreground: 248 250 252;
-    --popover: 15 23 42;
-    --popover-foreground: 248 250 252;
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 30 41 59;
-    --secondary-foreground: 226 232 240;
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
-    --accent: 30 41 59;
-    --accent-foreground: 226 232 240;
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
-    --border: 51 65 85;
-    --input: 51 65 85;
-    --ring: 59 130 246;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
   }
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+    sans-serif;
 }
 
 /* Krea.ai inspired styles */
 .krea-card {
-  @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200;
+  @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200;
 }
 
 .krea-button {
@@ -73,19 +72,174 @@ body {
 }
 
 .krea-gradient-blue {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
 }
 
 .krea-hero-card {
-  @apply rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300;
+  @apply rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300;
 }
 
 .krea-tool-card {
-  @apply bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200;
+  @apply bg-white rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200;
 }
 
 .krea-gallery-item {
-  @apply rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 relative;
+  @apply rounded-xl overflow-hidden relative;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.krea-gallery-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.krea-gallery-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.krea-gallery-item:hover::after {
+  opacity: 1;
+}
+
+.krea-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.krea-gallery-grid .krea-gallery-item {
+  width: 100%;
+}
+
+/* Grid mode: square thumbnails for uniform appearance */
+.krea-gallery-grid .krea-gallery-item > div:first-child {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Alternative grid mode with original aspect ratios */
+.krea-gallery-grid-original {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: start; /* Allow items to have different heights */
+}
+
+.krea-gallery-grid-original .krea-gallery-item {
+  width: 100%;
+}
+
+.krea-gallery-grid-original .krea-gallery-item > div:first-child {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Use original aspect ratios - no fixed height constraints */
+}
+
+.krea-gallery-masonry {
+  column-count: 1;
+  column-gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .krea-gallery-masonry {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 768px) {
+  .krea-gallery-masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .krea-gallery-masonry {
+    column-count: 4;
+  }
+}
+
+@media (min-width: 1280px) {
+  .krea-gallery-masonry {
+    column-count: 5;
+  }
+}
+
+.krea-gallery-masonry .krea-gallery-item {
+  break-inside: avoid;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* Improved badge styles for better distinction */
+.krea-badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.krea-badge-primary {
+  @apply bg-blue-50 text-blue-700;
+}
+
+.krea-badge-success {
+  @apply bg-green-50 text-green-700;
+}
+
+.krea-badge-warning {
+  @apply bg-amber-50 text-amber-700;
+}
+
+.krea-badge-info {
+  @apply bg-indigo-50 text-indigo-700;
+}
+
+.krea-time-badge {
+  @apply absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm;
+}
+
+.krea-action-button {
+  @apply rounded-full p-2 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-all duration-200 cursor-pointer;
+}
+
+.krea-action-button-primary {
+  @apply rounded-full p-2 bg-blue-600/90 text-white backdrop-blur-sm shadow-sm hover:bg-blue-700 transition-all duration-200 cursor-pointer;
+}
+
+.krea-action-button-danger {
+  @apply rounded-full p-2 bg-red-500/90 text-white backdrop-blur-sm shadow-sm hover:bg-red-600 transition-all duration-200 cursor-pointer;
+}
+
+.krea-image-overlay {
+  @apply absolute inset-0 bg-black/0 transition-all duration-300;
+}
+
+.krea-gallery-item:hover .krea-image-overlay {
+  @apply bg-black/10;
+}
+
+.krea-action-buttons {
+  @apply absolute top-3 right-3 flex flex-col gap-2 opacity-0 transition-opacity duration-300;
+}
+
+.krea-gallery-item:hover .krea-action-buttons {
+  @apply opacity-100;
+}
+
+.krea-image-info {
+  @apply absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 transition-opacity duration-300 z-10;
+}
+
+.krea-gallery-item:hover .krea-image-info {
+  @apply opacity-100;
 }
 
 /* Custom animations */
@@ -110,17 +264,66 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Custom Tooltip Styles */
+[title] {
+  position: relative;
+}
+
+[title]:hover:after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+[title]:hover:before {
+  content: '';
+  position: absolute;
+  bottom: 92%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* Grid patterns */
 .grid-pattern {
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+  background-image: linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 1rem;

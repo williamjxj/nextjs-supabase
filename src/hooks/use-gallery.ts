@@ -53,8 +53,6 @@ export const useGallery = () => {
       filters?: Partial<GalleryFilters>,
       pagination?: { limit?: number; offset?: number }
     ) => {
-      if (!user) return
-
       // Prevent duplicate calls
       if (fetchInProgressRef.current) {
         return
@@ -138,7 +136,7 @@ export const useGallery = () => {
         abortControllerRef.current = null
       }
     },
-    [user]
+    [] // fetchImages doesn't depend on user since API is public
   )
 
   const deleteImage = async (image: Image) => {
@@ -248,59 +246,12 @@ export const useGallery = () => {
     })
   }, [fetchImages])
 
-  // Initial fetch when user changes
+  // Initial fetch on component mount (gallery is public, no user required)
   useEffect(() => {
-    if (user) {
-      // Initial fetch with default filters
-      setGalleryState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }))
-
-      const searchParams = new URLSearchParams()
-      searchParams.set('sortBy', 'created_at')
-      searchParams.set('sortOrder', 'desc')
-
-      fetch(`/api/gallery?${searchParams.toString()}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
-          }
-          return response.json()
-        })
-        .then(data => {
-          setGalleryState(prev => ({
-            ...prev,
-            images: data.images,
-            loading: false,
-            error: null,
-            pagination: data.pagination,
-          }))
-        })
-        .catch(error => {
-          const errorMessage =
-            error instanceof Error ? error.message : 'Failed to fetch images'
-          setGalleryState(prev => ({
-            ...prev,
-            loading: false,
-            error: errorMessage,
-          }))
-        })
-    } else {
-      setGalleryState({
-        images: [],
-        loading: false,
-        error: null,
-        pagination: null,
-        filters: {
-          search: '',
-          sortBy: 'created_at',
-          sortOrder: 'desc',
-        },
-      })
-    }
-  }, [user]) // Only depend on user
+    // Use the fetchImages function for consistency
+    fetchImages({}, { offset: 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once when component mounts, not dependent on fetchImages to avoid infinite loop
 
   return {
     ...galleryState,

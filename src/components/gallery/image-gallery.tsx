@@ -1,24 +1,22 @@
-'use client'
+"use client"
 
-import { useState, useMemo } from 'react'
-import { Upload, RefreshCw, Grid3X3, List, Search, Filter } from 'lucide-react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { useToast } from '@/components/ui/toast'
-import { ImageCard } from './image-card'
-import { ImageModal } from './image-modal'
-import { DeleteConfirm } from './delete-confirm'
-import { LicenseSelector } from './license-selector'
-import { PaymentOptionsModal } from '../membership/payment-options-modal'
-import {
-  GalleryFilters,
-  type GalleryFilters as FilterType,
-} from './gallery-filters'
-import { Pagination } from './pagination'
-import { useGallery } from '@/hooks/use-gallery'
-import type { Image as ImageType } from '@/types/image'
-import { cn } from '@/lib/utils/cn'
+import { useState, useMemo } from "react"
+import { Upload, RefreshCw, Grid3X3, List, Search, Filter, LayoutGrid } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { useToast } from "@/components/ui/toast"
+import { ImageCard } from "./image-card"
+import { ImageModal } from "./image-modal"
+import { SimpleImageViewer } from "./simple-image-viewer"
+import { DeleteConfirm } from "./delete-confirm"
+import { LicenseSelector } from "./license-selector"
+import { PaymentOptionsModal } from "../membership/payment-options-modal"
+import { GalleryFilters, type GalleryFilters as FilterType } from "./gallery-filters"
+import { Pagination } from "./pagination"
+import { useGallery } from "@/hooks/use-gallery"
+import type { Image as ImageType } from "@/types/image"
+import { cn } from "@/lib/utils/cn"
 
 interface ImageGalleryProps {
   className?: string
@@ -44,14 +42,17 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   // Modal states
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [simpleViewerImage, setSimpleViewerImage] = useState<ImageType | null>(null)
+  const [isSimpleViewerOpen, setIsSimpleViewerOpen] = useState(false)
   const [deleteImage, setDeleteImage] = useState<ImageType | null>(null)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [checkoutImage, setCheckoutImage] = useState<ImageType | null>(null)
   const [isLicenseSelectorOpen, setIsLicenseSelectorOpen] = useState(false)
   const [isPaymentOptionsOpen, setIsPaymentOptionsOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "masonry">("masonry")
   const [showFilters, setShowFilters] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Extract all available tags from images
   const availableTags = useMemo(() => {
@@ -64,14 +65,10 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
     // Date range filter (client-side for now)
     if (filters.dateRange?.start || filters.dateRange?.end) {
-      filtered = filtered.filter(image => {
+      filtered = filtered.filter((image) => {
         const imageDate = new Date(image.created_at)
-        const start = filters.dateRange?.start
-          ? new Date(filters.dateRange.start)
-          : null
-        const end = filters.dateRange?.end
-          ? new Date(filters.dateRange.end)
-          : null
+        const start = filters.dateRange?.start ? new Date(filters.dateRange.start) : null
+        const end = filters.dateRange?.end ? new Date(filters.dateRange.end) : null
 
         if (start && imageDate < start) return false
         if (end && imageDate > end) return false
@@ -87,6 +84,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     setIsModalOpen(true)
   }
 
+  const handleViewFullSize = (image: ImageType) => {
+    setSimpleViewerImage(image)
+    setIsSimpleViewerOpen(true)
+  }
+
   const handleDeleteClick = (image: ImageType) => {
     setDeleteImage(image)
     setIsDeleteConfirmOpen(true)
@@ -96,10 +98,10 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     setIsDeleting(true)
     try {
       await deleteImageFromHook(image)
-      showToast('Image deleted successfully', 'success')
+      showToast("Image deleted successfully", "success")
     } catch (error) {
-      console.error('Error deleting image:', error)
-      showToast('Failed to delete image', 'error')
+      console.error("Error deleting image:", error)
+      showToast("Failed to delete image", "error")
     } finally {
       setIsDeleting(false)
     }
@@ -108,10 +110,10 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const handleDownload = async (image: ImageType) => {
     try {
       await downloadImageFile(image)
-      showToast('Image downloaded successfully', 'success')
+      showToast("Image downloaded successfully", "success")
     } catch (error) {
-      console.error('Error downloading image:', error)
-      showToast('Failed to download image', 'error')
+      console.error("Error downloading image:", error)
+      showToast("Failed to download image", "error")
     }
   }
 
@@ -120,16 +122,13 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     setIsPaymentOptionsOpen(true)
   }
 
-  const handleLicenseCheckout = async (
-    image: ImageType,
-    licenseType: 'standard' | 'premium' | 'commercial'
-  ) => {
+  const handleLicenseCheckout = async (image: ImageType, licenseType: "standard" | "premium" | "commercial") => {
     try {
-      showToast('Redirecting to checkout...', 'info')
+      showToast("Redirecting to checkout...", "info")
 
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageId: image.id,
           licenseType,
@@ -137,7 +136,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session')
+        throw new Error("Failed to create checkout session")
       }
 
       const { url } = await response.json()
@@ -145,81 +144,84 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       if (url) {
         window.location.href = url
       } else {
-        throw new Error('No checkout URL received')
+        throw new Error("No checkout URL received")
       }
     } catch (error) {
-      console.error('Error initiating checkout:', error)
-      showToast('Failed to start checkout process', 'error')
+      console.error("Error initiating checkout:", error)
+      showToast("Failed to start checkout process", "error")
     }
   }
 
-  const handlePaymentMethodSelect = async (
-    method: 'stripe' | 'paypal' | 'cybercurrency'
-  ) => {
+  const handlePaymentMethodSelect = async (method: "stripe" | "paypal" | "cybercurrency") => {
     if (!checkoutImage) return
 
     try {
-      if (method === 'stripe') {
-        const response = await fetch('/api/stripe/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+      if (method === "stripe") {
+        const response = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             imageId: checkoutImage.id,
-            licenseType: checkoutImage.licenseType || 'standard',
+            licenseType: checkoutImage.licenseType || "standard",
           }),
         })
 
         if (!response.ok) {
-          throw new Error('Failed to create Stripe checkout session')
+          throw new Error("Failed to create Stripe checkout session")
         }
 
         const { url } = await response.json()
         if (url) {
           window.location.href = url
         } else {
-          throw new Error('No checkout URL received')
+          throw new Error("No checkout URL received")
         }
-      } else if (method === 'paypal') {
-        window.location.href = `/paypal/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || 'standard'}&amount=${checkoutImage.amount || 100}`
-      } else if (method === 'cybercurrency') {
-        window.location.href = `/crypto/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || 'standard'}`
+      } else if (method === "paypal") {
+        window.location.href = `/paypal/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || "standard"}&amount=${checkoutImage.amount || 100}`
+      } else if (method === "cybercurrency") {
+        window.location.href = `/crypto/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || "standard"}`
       }
     } catch (error) {
-      console.error('Error initiating payment:', error)
-      showToast('Failed to start payment process', 'error')
+      console.error("Error initiating payment:", error)
+      showToast("Failed to start payment process", "error")
     }
   }
 
-  const handleRefresh = () => {
-    refetch()
-    showToast('Gallery refreshed', 'success')
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true)
+      showToast("Refreshing gallery...", "info")
+      await refetch()
+      showToast("Gallery refreshed", "success")
+    } catch (error) {
+      console.error("Error refreshing gallery:", error)
+      showToast("Failed to refresh gallery", "error")
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   // Calculate pagination info
-  const currentPage = pagination
-    ? Math.floor(pagination.offset / pagination.limit) + 1
-    : 1
-  const totalPages = pagination
-    ? Math.ceil(pagination.total / pagination.limit)
-    : 1
+  const currentPage = pagination ? Math.floor(pagination.offset / pagination.limit) + 1 : 1
+  const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 1
   const hasPrevious = pagination ? pagination.offset > 0 : false
   const hasNext = pagination?.hasMore || false
 
   // Convert hook filters to component filters format
   const componentFilters: FilterType = {
-    search: filters.search || '',
-    sortBy: filters.sortBy || 'created_at',
-    sortOrder: filters.sortOrder || 'desc',
+    search: filters.search || "",
+    sortBy: filters.sortBy || "created_at",
+    sortOrder: filters.sortOrder || "desc",
     tags: [], // No tags in current implementation
     dateRange: filters.dateRange,
   }
 
   if (loading) {
     return (
-      <div className='flex items-center justify-center py-20'>
-        <div className='text-center'>
-          <LoadingSpinner size='lg' />
-          <p className='mt-4 text-gray-600'>Loading your gallery...</p>
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Loading your gallery...</p>
         </div>
       </div>
     )
@@ -227,11 +229,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
   if (error) {
     return (
-      <div className='text-center py-20'>
-        <div className='krea-card max-w-md mx-auto p-8'>
-          <p className='text-red-600 mb-4'>Failed to load gallery</p>
-          <Button onClick={handleRefresh} className='krea-button-primary'>
-            <RefreshCw className='h-4 w-4 mr-2' />
+      <div className="text-center py-20">
+        <div className="krea-card max-w-md mx-auto p-8">
+          <p className="text-red-600 mb-4">Failed to load gallery</p>
+          <Button onClick={handleRefresh} className="krea-button-primary">
+            <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
           </Button>
         </div>
@@ -240,69 +242,70 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   }
 
   return (
-    <div className={cn('min-h-screen bg-gray-50', className)}>
-      <div className='container mx-auto px-6 py-8'>
-        {/* Header */}
-        <div className='flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8'>
+    <div className={cn("min-h-screen bg-gray-50", className)}>
+      <div className="container mx-auto px-6 py-8">
+        {/* Header - Krea.ai style */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
           <div>
-            <h1 className='text-3xl font-bold text-gray-900 mb-2'>
-              My Gallery
-            </h1>
-            <p className='text-gray-600'>
-              {images.length} {images.length === 1 ? 'image' : 'images'}
-              {filteredImages.length !== images.length && (
-                <span> · {filteredImages.length} shown</span>
-              )}
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Gallery</h1>
+            <p className="text-gray-600">
+              {images.length} {images.length === 1 ? "image" : "images"}
+              {filteredImages.length !== images.length && <span> · {filteredImages.length} shown</span>}
             </p>
           </div>
 
-          <div className='flex items-center gap-3'>
-            {/* View Mode Toggle */}
-            <div className='flex items-center bg-white rounded-full p-1 border border-gray-200'>
+          <div className="flex items-center gap-3">
+            {/* View Mode Toggle - Krea.ai style */}
+            <div className="flex items-center bg-white rounded-full p-1 border border-gray-200 shadow-sm">
               <button
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode("grid")}
                 className={cn(
-                  'p-2 rounded-full transition-all duration-200',
-                  viewMode === 'grid'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  "p-2 rounded-full transition-all duration-200",
+                  viewMode === "grid" ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:text-gray-900",
                 )}
+                title="Grid view"
               >
-                <Grid3X3 className='w-4 h-4' />
+                <Grid3X3 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode("masonry")}
                 className={cn(
-                  'p-2 rounded-full transition-all duration-200',
-                  viewMode === 'list'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  "p-2 rounded-full transition-all duration-200",
+                  viewMode === "masonry" ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:text-gray-900",
                 )}
+                title="Masonry view"
               >
-                <List className='w-4 h-4' />
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "p-2 rounded-full transition-all duration-200",
+                  viewMode === "list" ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:text-gray-900",
+                )}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
               </button>
             </div>
 
             {/* Filter Toggle */}
             <Button
               onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                'krea-button',
-                showFilters && 'bg-blue-50 border-blue-200 text-blue-700'
-              )}
+              className={cn("krea-button", showFilters && "bg-blue-50 border-blue-200 text-blue-700")}
             >
-              <Filter className='h-4 w-4 mr-2' />
+              <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
 
-            <Button onClick={handleRefresh} className='krea-button'>
-              <RefreshCw className='h-4 w-4 mr-2' />
-              Refresh
+            <Button onClick={handleRefresh} className="krea-button" disabled={isRefreshing}>
+              <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
             </Button>
 
-            <Link href='/upload'>
-              <Button className='krea-button-primary'>
-                <Upload className='h-4 w-4 mr-2' />
+            <Link href="/upload">
+              <Button className="krea-button-primary">
+                <Upload className="h-4 w-4 mr-2" />
                 Upload Images
               </Button>
             </Link>
@@ -311,11 +314,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
         {/* Filters */}
         {showFilters && (
-          <div className='krea-card p-6 mb-8'>
+          <div className="krea-card p-6 mb-8">
             <GalleryFilters
               filters={componentFilters}
               availableTags={availableTags}
-              onFiltersChange={newFilters => {
+              onFiltersChange={(newFilters) => {
                 updateFilters({
                   search: newFilters.search,
                   sortBy: newFilters.sortBy,
@@ -327,39 +330,31 @@ export function ImageGallery({ className }: ImageGalleryProps) {
           </div>
         )}
 
-        {/* Gallery Grid */}
+        {/* Gallery Grid - Krea.ai style */}
         {filteredImages.length === 0 ? (
-          <div className='text-center py-20'>
-            <div className='krea-card max-w-md mx-auto p-12'>
+          <div className="text-center py-20">
+            <div className="krea-card max-w-md mx-auto p-12">
               {images.length === 0 ? (
                 <>
-                  <div className='w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6'>
-                    <Upload className='w-8 h-8 text-gray-400' />
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Upload className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className='text-xl font-semibold text-gray-900 mb-2'>
-                    No images yet
-                  </h3>
-                  <p className='text-gray-600 mb-6'>
-                    Start building your gallery by uploading your first image
-                  </p>
-                  <Link href='/upload'>
-                    <Button className='krea-button-primary'>
-                      <Upload className='h-4 w-4 mr-2' />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No images yet</h3>
+                  <p className="text-gray-600 mb-6">Start building your gallery by uploading your first image</p>
+                  <Link href="/upload">
+                    <Button className="krea-button-primary">
+                      <Upload className="h-4 w-4 mr-2" />
                       Upload Your First Image
                     </Button>
                   </Link>
                 </>
               ) : (
                 <>
-                  <div className='w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6'>
-                    <Search className='w-8 h-8 text-gray-400' />
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className='text-xl font-semibold text-gray-900 mb-2'>
-                    No results found
-                  </h3>
-                  <p className='text-gray-600'>
-                    Try adjusting your filters or search terms
-                  </p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
+                  <p className="text-gray-600">Try adjusting your filters or search terms</p>
                 </>
               )}
             </div>
@@ -367,17 +362,19 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         ) : (
           <div
             className={cn(
-              'grid gap-6',
-              viewMode === 'grid'
-                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-                : 'grid-cols-1'
+              viewMode === "masonry"
+                ? "krea-gallery-masonry"
+                : viewMode === "grid"
+                  ? "krea-gallery-grid-original"
+                  : "grid grid-cols-1 gap-4",
             )}
           >
-            {filteredImages.map(image => (
+            {filteredImages.map((image) => (
               <ImageCard
                 key={image.id}
                 image={image}
                 onView={handleViewImage}
+                onViewFullSize={handleViewFullSize}
                 onDelete={handleDeleteClick}
                 onDownload={handleDownload}
                 onCheckout={handleCheckout}
@@ -390,7 +387,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
         {/* Pagination Controls */}
         {pagination && totalPages > 1 && (
-          <div className='flex justify-center pt-12'>
+          <div className="flex justify-center pt-12">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -405,11 +402,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
         {/* Gallery Statistics */}
         {pagination && (
-          <div className='text-center text-sm text-gray-500 pt-8'>
+          <div className="text-center text-sm text-gray-500 pt-8">
             Showing {filteredImages.length} of {pagination.total} images
             {totalPages > 1 && (
               <span>
-                {' '}
+                {" "}
                 · Page {currentPage} of {totalPages}
               </span>
             )}
@@ -428,6 +425,15 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         }}
         onDelete={handleDeleteClick}
         onDownload={handleDownload}
+      />
+
+      <SimpleImageViewer
+        image={simpleViewerImage}
+        isOpen={isSimpleViewerOpen}
+        onClose={() => {
+          setIsSimpleViewerOpen(false)
+          setSimpleViewerImage(null)
+        }}
       />
 
       <DeleteConfirm
