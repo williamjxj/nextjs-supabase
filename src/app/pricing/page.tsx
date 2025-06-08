@@ -1,244 +1,295 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { checkoutWithStripe } from '@/lib/actions/subscription';
-import supabase from '@/lib/supabase/client';
-import { Check } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
-import type { Tables } from '@/types/types_db';
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { checkoutWithStripe } from "@/lib/actions/subscription"
+import supabase from "@/lib/supabase/client"
+import { Check, Star, Zap, Crown } from "lucide-react"
+import { cn } from "@/lib/utils/cn"
+import type { Tables } from "@/types/types_db"
 
-type Product = Tables<'products'>;
-type Price = Tables<'prices'>;
+type Product = Tables<"products">
+type Price = Tables<"prices">
 
 interface ProductWithPrices extends Product {
-  prices: Price[];
+  prices: Price[]
 }
 
 export default function PricingPage() {
-  const [priceIdLoading, setPriceIdLoading] = useState<string>();
-  const [products, setProducts] = useState<ProductWithPrices[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [priceIdLoading, setPriceIdLoading] = useState<string>()
+  const [products, setProducts] = useState<ProductWithPrices[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   // Load products and prices on component mount
   useEffect(() => {
     const loadProducts = async () => {
-      console.log('Starting to load products...');
-      
+      console.log("Starting to load products...")
+
       try {
         // First, try a simple products query
         const { data: simpleProducts, error: simpleError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('active', true);
+          .from("products")
+          .select("*")
+          .eq("active", true)
 
-        console.log('Simple products query result:', simpleProducts, simpleError);
+        console.log("Simple products query result:", simpleProducts, simpleError)
 
         // Then try the complex query
         const { data: products, error } = await supabase
-          .from('products')
-          .select('*, prices(*)')
-          .eq('active', true)
-          .eq('prices.active', true)
-          .order('metadata->index')
-          .order('unit_amount', { referencedTable: 'prices' });
+          .from("products")
+          .select("*, prices(*)")
+          .eq("active", true)
+          .eq("prices.active", true)
+          .order("metadata->index")
+          .order("unit_amount", { referencedTable: "prices" })
 
-        console.log('Complex products query result:', products, error);
+        console.log("Complex products query result:", products, error)
 
         if (error) {
-          console.error('Error loading products:', error);
+          console.error("Error loading products:", error)
         } else {
-          console.log('Products loaded successfully:', products);
-          setProducts(products || []);
+          console.log("Products loaded successfully:", products)
+          setProducts(products || [])
         }
       } catch (err) {
-        console.error('Exception during product loading:', err);
+        console.error("Exception during product loading:", err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    loadProducts();
-  }, []);
+    loadProducts()
+  }, [])
 
   const handleStripeCheckout = async (price: Price) => {
-    setPriceIdLoading(price.id);
+    setPriceIdLoading(price.id)
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
-        router.push('/auth/signin');
-        return;
+        router.push("/auth/signin")
+        return
       }
-      await checkoutWithStripe({ price });
+      await checkoutWithStripe({ price })
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error("Error creating checkout session:", error)
     } finally {
-      setPriceIdLoading(undefined);
+      setPriceIdLoading(undefined)
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-          <p className="mt-2 text-white">Loading pricing plans...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading pricing plans...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-24">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-base font-semibold leading-7 text-pink-400">
-            Pricing
-          </h1>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Choose the perfect plan for&nbsp;you
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-6 py-16">
+        {/* Header Section - Krea.ai style */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <Star className="w-4 h-4" />
+            Pricing Plans
+          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">Choose the perfect plan for you</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Get unlimited access to our premium gallery with subscription plans designed to fit your needs. Start with a
+            7-day free trial on any plan.
           </p>
         </div>
-        
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-300">
-          Get unlimited access to our premium gallery with subscription plans designed to fit your needs.
-        </p>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3 lg:gap-6">
+        {/* Pricing Cards */}
+        <div className="max-w-6xl mx-auto">
           {products.length === 0 && !loading && (
-            <div className="col-span-3 text-center text-gray-300">
-              <p>No pricing plans available at the moment.</p>
+            <div className="text-center py-16">
+              <div className="krea-card max-w-md mx-auto p-8">
+                <p className="text-gray-600 text-lg">No pricing plans available at the moment.</p>
+                <p className="text-gray-500 text-sm mt-2">Please check back later or contact support.</p>
+              </div>
             </div>
           )}
-          {products.map((product) => {
-            console.log('Rendering product:', product);
-            const price = product.prices?.[0];
-            if (!price) return null;
 
-            const priceString = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: price.currency!,
-              minimumFractionDigits: 0
-            }).format((price?.unit_amount || 0) / 100);
+          <div className="grid gap-8 lg:grid-cols-3">
+            {products.map((product, index) => {
+              console.log("Rendering product:", product)
+              const price = product.prices?.[0]
+              if (!price) return null
 
-            return (
-              <div
-                key={product.id}
-                className={cn(
-                  'relative rounded-2xl border border-gray-700 bg-gray-800 p-8 shadow-lg',
-                  product.name === 'Pro' && 'border-pink-500'
-                )}
-              >
-                {product.name === 'Pro' && (
-                  <div className="absolute -top-5 left-0 right-0 mx-auto w-32 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-2 text-center text-sm font-medium text-white">
-                    Most Popular
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-white">
-                    {product.name}
-                  </h3>
-                </div>
-                
-                {product.description && (
-                  <p className="mt-4 text-sm text-gray-300">
-                    {product.description}
-                  </p>
-                )}
-                
-                <p className="mt-6 flex items-baseline gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-white">
-                    {priceString}
-                  </span>
-                  {price.interval && (
-                    <span className="text-sm font-semibold leading-6 text-gray-300">
-                      /{price.interval}
-                    </span>
-                  )}
-                </p>
+              const priceString = new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: price.currency!,
+                minimumFractionDigits: 0,
+              }).format((price?.unit_amount || 0) / 100)
 
-                <ul className="mt-8 space-y-3 text-sm text-gray-300">
-                  {getFeatures(product.name || '').map((feature) => (
-                    <li key={feature} className="flex gap-x-3">
-                      <Check className="h-6 w-5 flex-none text-pink-400" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+              const isPopular = product.name === "Premium Plan" || index === 1
+              const isPremium = product.name === "Commercial Plan" || index === 2
 
-                <button
-                  onClick={() => handleStripeCheckout(price)}
-                  disabled={!!priceIdLoading}
+              return (
+                <div
+                  key={product.id}
                   className={cn(
-                    'mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2',
-                    product.name === 'Premium Plan'
-                      ? 'bg-pink-500 text-white shadow-sm hover:bg-pink-400 focus-visible:outline-pink-500'
-                      : 'bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white',
-                    priceIdLoading === price.id && 'opacity-50 cursor-not-allowed'
+                    "krea-card relative p-8 transition-all duration-300 hover:shadow-xl",
+                    isPopular && "ring-2 ring-blue-500 shadow-lg scale-105",
+                    isPremium && "krea-gradient-purple text-white",
                   )}
                 >
-                  {priceIdLoading === price.id ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
+                  {/* Popular Badge */}
+                  {isPopular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+                        <Crown className="w-4 h-4" />
+                        Most Popular
+                      </div>
                     </div>
-                  ) : (
-                    'Get started'
                   )}
-                </button>
-              </div>
-            );
-          })}
+
+                  {/* Premium Badge */}
+                  {isPremium && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+                        <Zap className="w-4 h-4" />
+                        Enterprise
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-center mb-8">
+                    <h3 className={cn("text-2xl font-bold mb-3", isPremium ? "text-white" : "text-gray-900")}>
+                      {product.name}
+                    </h3>
+
+                    {product.description && (
+                      <p className={cn("text-base mb-6", isPremium ? "text-purple-100" : "text-gray-600")}>
+                        {product.description}
+                      </p>
+                    )}
+
+                    <div className="mb-6">
+                      <span className={cn("text-5xl font-bold", isPremium ? "text-white" : "text-gray-900")}>
+                        {priceString}
+                      </span>
+                      {price.interval && (
+                        <span
+                          className={cn("text-lg font-medium ml-1", isPremium ? "text-purple-200" : "text-gray-500")}
+                        >
+                          /{price.interval}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Features List */}
+                  <ul className="space-y-4 mb-8">
+                    {getFeatures(product.name || "").map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <div className={cn("rounded-full p-1 mt-0.5", isPremium ? "bg-white/20" : "bg-green-100")}>
+                          <Check className={cn("w-4 h-4", isPremium ? "text-white" : "text-green-600")} />
+                        </div>
+                        <span className={cn("text-base", isPremium ? "text-purple-100" : "text-gray-700")}>
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA Button */}
+                  <button
+                    onClick={() => handleStripeCheckout(price)}
+                    disabled={!!priceIdLoading}
+                    className={cn(
+                      "w-full py-4 px-6 rounded-xl font-semibold text-base transition-all duration-200 shadow-sm hover:shadow-md",
+                      isPremium
+                        ? "bg-white text-purple-700 hover:bg-gray-50"
+                        : isPopular
+                          ? "krea-button-primary"
+                          : "krea-button hover:bg-gray-100",
+                      priceIdLoading === price.id && "opacity-50 cursor-not-allowed",
+                    )}
+                  >
+                    {priceIdLoading === price.id ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-3"></div>
+                        Processing...
+                      </div>
+                    ) : (
+                      "Start Free Trial"
+                    )}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="mt-16 text-center">
-          <p className="text-sm text-gray-400">
-            All plans include 7-day free trial. Cancel anytime.
-          </p>
+        {/* Bottom Section */}
+        <div className="text-center mt-16">
+          <div className="krea-card max-w-2xl mx-auto p-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">All plans include</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+              <div className="flex items-center justify-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                7-day free trial
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                Cancel anytime
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                24/7 support
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function getFeatures(productName?: string): string[] {
   switch (productName?.toLowerCase()) {
-    case 'standard plan':
+    case "standard plan":
       return [
-        '100 image uploads per month',
-        '1GB storage',
-        'Standard support',
-        'Basic editing tools',
-        'Personal use license'
-      ];
-    case 'premium plan':
+        "100 image uploads per month",
+        "1GB storage space",
+        "Standard support",
+        "Basic editing tools",
+        "Personal use license",
+        "Mobile app access",
+      ]
+    case "premium plan":
       return [
-        '1,000 image uploads per month',
-        '10GB storage',
-        'Priority support',
-        'Advanced editing tools',
-        'Commercial use license',
-        'Bulk operations',
-        'Analytics dashboard'
-      ];
-    case 'commercial plan':
+        "1,000 image uploads per month",
+        "10GB storage space",
+        "Priority support",
+        "Advanced editing tools",
+        "Commercial use license",
+        "Bulk operations",
+        "Analytics dashboard",
+        "API access",
+      ]
+    case "commercial plan":
       return [
-        'Unlimited image uploads',
-        '100GB storage',
-        '24/7 priority support',
-        'All editing features',
-        'Full commercial license',
-        'API access',
-        'Custom integrations',
-        'Advanced analytics'
-      ];
+        "Unlimited image uploads",
+        "100GB storage space",
+        "24/7 priority support",
+        "All editing features",
+        "Full commercial license",
+        "Advanced API access",
+        "Custom integrations",
+        "Dedicated account manager",
+        "White-label options",
+      ]
     default:
-      return [
-        'Basic features included',
-        'Standard support',
-        'Personal use license'
-      ];
+      return ["Basic features included", "Standard support", "Personal use license", "Mobile app access"]
   }
 }
