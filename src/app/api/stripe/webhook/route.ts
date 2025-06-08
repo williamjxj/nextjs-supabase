@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { stripe } from '@/lib/stripe/config'
+import {
+  upsertProductRecord,
+  upsertPriceRecord,
+  deleteProductRecord,
+  deletePriceRecord,
+  manageSubscriptionStatusChange
+} from '@/utils/supabase/admin_vercel'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -37,270 +43,64 @@ export async function POST(request: NextRequest) {
 
         if (isSubscription) {
           // This is a subscription checkout
-          const subscriptionId = session.subscription as string
-          const userId = session.metadata?.userId
-          const subscriptionType = session.metadata?.subscriptionType
-
-          if (!subscriptionId || !userId) {
-            console.error(
-              'Missing subscription ID or user ID in session metadata'
-            )
-            return NextResponse.json(
-              { error: 'Invalid subscription data' },
-              { status: 400 }
-            )
-          }
-
-          // Get subscription details from Stripe
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-          
-          // Cast to any to access properties that might not be in the type definition
-          const sub = subscription as any
-
-          // Get subscription plan from database
-          const { data: plan, error: planError } = await supabase
-            .from('subscription_plans')
-            .select('id')
-            .eq('type', subscriptionType)
-            .single()
-
-          if (planError || !plan) {
-            console.error('Subscription plan not found:', planError)
-            return NextResponse.json(
-              { error: 'Subscription plan not found' },
-              { status: 404 }
-            )
-          }
-
-          // Record the subscription in the database
-          const subscriptionData = {
-            user_id: userId,
-            plan_id: plan.id,
-            stripe_subscription_id: sub.id,
-            stripe_customer_id: sub.customer as string,
-            status: sub.status,
-            current_period_start: new Date(
-              sub.current_period_start * 1000
-            ).toISOString(),
-            current_period_end: new Date(
-              sub.current_period_end * 1000
-            ).toISOString(),
-            cancel_at_period_end: sub.cancel_at_period_end,
-          }
-
-          const { error: insertError } = await supabase
-            .from('subscriptions')
-            .upsert([subscriptionData], {
-              onConflict: 'stripe_subscription_id',
-              ignoreDuplicates: false,
-            })
-
-          if (insertError) {
-            console.error('Failed to record subscription:', insertError)
-            return NextResponse.json(
-              { error: 'Failed to record subscription' },
-              { status: 500 }
-            )
-          }
+          await handleSubscriptionCheckoutCompleted(session)
         } else {
           // This is a one-time purchase
-          const purchaseData = {
-            image_id: session.metadata?.imageId,
-            user_id: session.metadata?.userId,
-            license_type: session.metadata?.licenseType,
-            amount_paid: session.amount_total,
-            currency: session.currency,
-            stripe_session_id: session.id,
-            payment_method: 'stripe',
-            payment_status: 'completed',
-            purchased_at: new Date().toISOString(),
-          }
-
-          const { error: insertError } = await supabase
-            .from('purchases')
-            .insert([purchaseData])
-
-          if (insertError) {
-            console.error('Failed to record purchase:', insertError)
-            return NextResponse.json(
-              { error: 'Failed to record purchase' },
-              { status: 500 }
-            )
-          }
+          await handlePurchaseCheckoutCompleted(session, supabase)
         }
+        break
+      }
+
+      // Handle customer created
+      case 'customer.created': {
+        const customer = event.data.object as Stripe.Customer
+        await handleCustomerCreated(customer)
+        break
+      }
+
+      // Handle customer updated
+      case 'customer.updated': {
+        const customer = event.data.object as Stripe.Customer
+        await handleCustomerUpdated(customer)
         break
       }
 
       // Handle invoice payment succeeded (for subscription renewals)
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice
-
-        // Only process subscription invoices
-        if ((invoice as any).subscription) {
-          const subscriptionId = (invoice as any).subscription as string
-
-          // Get subscription from database
-          const { data: subscription, error: subError } = await supabase
-            .from('subscriptions')
-            .select('id, user_id')
-            .eq('stripe_subscription_id', subscriptionId)
-            .single()
-
-          if (subError || !subscription) {
-            console.error('Subscription not found for invoice:', subError)
-            return NextResponse.json(
-              { error: 'Subscription not found' },
-              { status: 404 }
-            )
-          }
-
-          // Record the invoice
-          const invoiceData = {
-            subscription_id: subscription.id,
-            user_id: subscription.user_id,
-            stripe_invoice_id: invoice.id,
-            stripe_payment_intent_id: (invoice as any).payment_intent as string,
-            amount_paid: invoice.amount_paid / 100, // Convert from cents
-            currency: invoice.currency,
-            invoice_period_start: invoice.lines.data[0]?.period?.start
-              ? new Date(
-                  invoice.lines.data[0].period.start * 1000
-                ).toISOString()
-              : null,
-            invoice_period_end: invoice.lines.data[0]?.period?.end
-              ? new Date(invoice.lines.data[0].period.end * 1000).toISOString()
-              : null,
-            status: invoice.status,
-            payment_method: 'stripe',
-            receipt_url: invoice.hosted_invoice_url,
-          }
-
-          await supabase.from('subscription_invoices').upsert([invoiceData], {
-            onConflict: 'stripe_invoice_id',
-            ignoreDuplicates: false,
-          })
-
-          // Update subscription current_period_end
-          if (invoice.lines.data[0]?.period?.end) {
-            await supabase
-              .from('subscriptions')
-              .update({
-                current_period_end: new Date(
-                  invoice.lines.data[0].period.end * 1000
-                ).toISOString(),
-                status: 'active', // Ensure status is active after successful payment
-              })
-              .eq('id', subscription.id)
-          }
-        }
+        await handleInvoicePaymentSucceeded(invoice)
         break
       }
 
       // Handle subscription updated
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-
-        // Update subscription in database
-        const { error: updateError } = await supabase
-          .from('subscriptions')
-          .update({
-            status: subscription.status,
-            current_period_start: new Date(
-              (subscription as any).current_period_start * 1000
-            ).toISOString(),
-            current_period_end: new Date(
-              (subscription as any).current_period_end * 1000
-            ).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-            canceled_at: subscription.canceled_at
-              ? new Date(subscription.canceled_at * 1000).toISOString()
-              : null,
-          })
-          .eq('stripe_subscription_id', subscription.id)
-
-        if (updateError) {
-          console.error('Failed to update subscription:', updateError)
-          return NextResponse.json(
-            { error: 'Failed to update subscription' },
-            { status: 500 }
-          )
-        }
+        await handleSubscriptionUpdated(subscription)
         break
       }
 
       // Handle subscription deleted/canceled
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
-
-        // Update subscription in database
-        const { error: updateError } = await supabase
-          .from('subscriptions')
-          .update({
-            status: 'canceled',
-            canceled_at: new Date().toISOString(),
-          })
-          .eq('stripe_subscription_id', subscription.id)
-
-        if (updateError) {
-          console.error('Failed to cancel subscription:', updateError)
-          return NextResponse.json(
-            { error: 'Failed to cancel subscription' },
-            { status: 500 }
-          )
-        }
+        await handleSubscriptionDeleted(subscription)
         break
       }
 
       // Handle payment failures
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
-
-        if ((invoice as any).subscription) {
-          // Update subscription status to past_due
-          await supabase
-            .from('subscriptions')
-            .update({ status: 'past_due' })
-            .eq('stripe_subscription_id', (invoice as any).subscription)
-
-          // Record the failed invoice
-          const { data: subscription } = await supabase
-            .from('subscriptions')
-            .select('id, user_id')
-            .eq('stripe_subscription_id', (invoice as any).subscription)
-            .single()
-
-          if (subscription) {
-            await supabase.from('subscription_invoices').upsert(
-              [
-                {
-                  subscription_id: subscription.id,
-                  user_id: subscription.user_id,
-                  stripe_invoice_id: invoice.id,
-                  stripe_payment_intent_id: (invoice as any).payment_intent as string,
-                  amount_paid: 0,
-                  currency: invoice.currency,
-                  status: 'failed',
-                  payment_method: 'stripe',
-                },
-              ],
-              {
-                onConflict: 'stripe_invoice_id',
-                ignoreDuplicates: false,
-              }
-            )
-          }
-        }
+        await handleInvoicePaymentFailed(invoice)
         break
       }
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
-        // Record failed payments if needed
+        await handlePaymentIntentFailed(paymentIntent)
         break
       }
 
       default:
-      // Handle other event types if needed
+        console.log(`Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
@@ -310,5 +110,198 @@ export async function POST(request: NextRequest) {
       { error: 'Webhook handler failed' },
       { status: 500 }
     )
+  }
+}
+
+// Handler functions for different webhook events
+async function handleSubscriptionCheckoutCompleted(
+  session: Stripe.Checkout.Session
+) {
+  const subscriptionId = session.subscription as string
+  const userId = session.metadata?.userId
+  const subscriptionType = session.metadata?.subscriptionType
+
+  if (!subscriptionId || !userId || !subscriptionType) {
+    throw new Error('Missing required metadata in session')
+  }
+
+  // Get subscription details from Stripe
+  const subscription = await StripeAdmin.getSubscription(subscriptionId)
+  if (!subscription) {
+    throw new Error(`Subscription not found: ${subscriptionId}`)
+  }
+  
+  // Create or update customer record
+  if (session.customer) {
+    const customer = await stripe.customers.retrieve(session.customer as string) as Stripe.Customer
+    await SupabaseAdmin.upsertCustomer({
+      userId: userId,
+      stripeCustomerId: customer.id,
+      email: customer.email || '',
+    })
+  }
+
+  // Create subscription record
+  await SupabaseAdmin.upsertSubscription({
+    userId: userId,
+    stripeSubscription: subscription,
+    planType: subscriptionType,
+  })
+}
+
+async function handleCustomerCreated(
+  customer: Stripe.Customer
+) {
+  // Customer will be linked to user when they create a subscription
+  // For now, just log the event
+  console.log(`Customer created: ${customer.id}`)
+}
+
+async function handleCustomerUpdated(
+  customer: Stripe.Customer
+) {
+  // For now, we don't have an updateCustomerByStripeId method
+  // This could be implemented later if needed
+  console.log(`Customer updated: ${customer.id}`)
+}
+
+async function handleInvoicePaymentSucceeded(
+  invoice: Stripe.Invoice
+) {
+  // Only process subscription invoices
+  const subscriptionId = (invoice as any).subscription as string
+  if (!subscriptionId) return
+
+  // Get subscription from database to get user info
+  const { data: subscription, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('id, user_id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .single()
+
+  if (error || !subscription) {
+    throw new Error(`Subscription not found for invoice: ${invoice.id}`)
+  }
+
+  // Record the invoice using the recordInvoice method
+  await SupabaseAdmin.recordInvoice({
+    stripeInvoice: invoice,
+    userId: subscription.user_id,
+    subscriptionId: subscription.id,
+  })
+
+  // Update subscription period and status if needed
+  if (invoice.lines.data[0]?.period?.end) {
+    const { error: updateError } = await supabaseAdmin
+      .from('subscriptions')
+      .update({
+        current_period_end: new Date(invoice.lines.data[0].period.end * 1000).toISOString(),
+        status: 'active',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', subscription.id)
+
+    if (updateError) {
+      console.error('Failed to update subscription period:', updateError)
+    }
+  }
+}
+
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription
+) {
+  // Update subscription in database using upsertSubscription
+  // We need to get the current subscription to know the user and plan type
+  const { data: currentSub, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('user_id, subscription_plans(type)')
+    .eq('stripe_subscription_id', subscription.id)
+    .single()
+
+  if (error || !currentSub) {
+    console.error('Subscription not found for update:', subscription.id)
+    return
+  }
+
+  // Use upsertSubscription to update
+  await SupabaseAdmin.upsertSubscription({
+    userId: currentSub.user_id,
+    stripeSubscription: subscription,
+    planType: (currentSub as any).subscription_plans.type,
+  })
+}
+
+async function handleSubscriptionDeleted(
+  subscription: Stripe.Subscription
+) {
+  // Update subscription status to canceled
+  await SupabaseAdmin.updateSubscriptionStatus({
+    stripeSubscriptionId: subscription.id,
+    status: 'canceled',
+    canceledAt: new Date().toISOString(),
+  })
+}
+
+async function handleInvoicePaymentFailed(
+  invoice: Stripe.Invoice
+) {
+  const subscriptionId = (invoice as any).subscription as string
+  if (!subscriptionId) return
+
+  // Update subscription status to past_due
+  await SupabaseAdmin.updateSubscriptionStatus({
+    stripeSubscriptionId: subscriptionId,
+    status: 'past_due',
+  })
+
+  // Get subscription to record failed invoice
+  const { data: subscription, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('id, user_id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .single()
+
+  if (subscription) {
+    // Record failed invoice
+    await SupabaseAdmin.recordInvoice({
+      stripeInvoice: invoice,
+      userId: subscription.user_id,
+      subscriptionId: subscription.id,
+    })
+  }
+}
+
+async function handlePaymentIntentFailed(
+  paymentIntent: Stripe.PaymentIntent
+) {
+  // Log failed payment intent for debugging
+  console.error(`Payment intent failed: ${paymentIntent.id}`, {
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    last_payment_error: paymentIntent.last_payment_error,
+  })
+}
+
+async function handlePurchaseCheckoutCompleted(
+  session: Stripe.Checkout.Session,
+  supabase: any
+) {
+  // Handle legacy one-time purchase logic
+  const purchaseData = {
+    image_id: session.metadata?.imageId,
+    user_id: session.metadata?.userId,
+    license_type: session.metadata?.licenseType,
+    amount: (session.amount_total || 0) / 100, // Convert from cents
+    currency: session.currency || 'usd',
+    stripe_session_id: session.id,
+    status: 'completed',
+  }
+
+  const { error: insertError } = await supabase
+    .from('purchases')
+    .insert([purchaseData])
+
+  if (insertError) {
+    throw new Error(`Failed to record purchase: ${insertError.message}`)
   }
 }

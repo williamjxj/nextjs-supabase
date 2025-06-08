@@ -20,8 +20,23 @@ export default function Home() {
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto'>
             {/* Left Hero Card - Upload Feature */}
             <div className='krea-hero-card relative group'>
-              <div className='aspect-[4/3] bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 p-8 flex flex-col justify-end text-white'>
-                <div className='absolute inset-0 bg-black/20'></div>
+              <div className='aspect-[4/3] bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 p-8 flex flex-col justify-end text-white relative overflow-hidden'>
+                {/* Video Background */}
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className='absolute inset-0 w-full h-full object-cover z-0'
+                  style={{ filter: 'brightness(0.7)' }}
+                >
+                  <source src='/hailuo-1.mp4' type='video/mp4' />
+                  {/* Fallback gradient will show if video fails to load */}
+                </video>
+                
+                {/* Overlay for better text readability */}
+                <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-5'></div>
+                
                 <div className='relative z-10'>
                   <div className='inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium mb-4'>
                     <Sparkles className='w-3 h-3' />
@@ -43,8 +58,23 @@ export default function Home() {
 
             {/* Right Hero Card - Gallery Feature */}
             <div className='krea-hero-card relative group'>
-              <div className='aspect-[4/3] krea-gradient-purple p-8 flex flex-col justify-end text-white'>
-                <div className='absolute inset-0 bg-black/10'></div>
+              <div className='aspect-[4/3] krea-gradient-purple p-8 flex flex-col justify-end text-white relative overflow-hidden'>
+                {/* Video Background */}
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className='absolute inset-0 w-full h-full object-cover z-0'
+                  style={{ filter: 'brightness(0.7)' }}
+                >
+                  <source src='/jimeng-1.mp4' type='video/mp4' />
+                  {/* Fallback gradient will show if video fails to load */}
+                </video>
+                
+                {/* Overlay for better text readability */}
+                <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-5'></div>
+                
                 <div className='relative z-10'>
                   <div className='inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium mb-4'>
                     <Zap className='w-3 h-3' />
