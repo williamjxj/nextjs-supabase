@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className='text-2xl font-semibold mb-4'>1. Introduction</h2>
             <p className='text-gray-700 leading-relaxed'>
-              Welcome to Gallery ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our image gallery service.
+              Welcome to Gallery (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our image gallery service.
             </p>
           </section>
 
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className='text-2xl font-semibold mb-4'>9. Children's Privacy</h2>
+            <h2 className='text-2xl font-semibold mb-4'>9. Children&apos;s Privacy</h2>
             <p className='text-gray-700 leading-relaxed'>
               Our service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe we have collected information from a child under 13, please contact us immediately.
             </p>

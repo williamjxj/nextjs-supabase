@@ -19,7 +19,7 @@ export default function TermsPage() {
           <section>
             <h2 className='text-2xl font-semibold mb-4'>1. Acceptance of Terms</h2>
             <p className='text-gray-700 leading-relaxed'>
-              By accessing or using Gallery ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.
+              By accessing or using Gallery (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you disagree with any part of these terms, you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.
             </p>
           </section>
 
@@ -61,7 +61,7 @@ export default function TermsPage() {
             
             <h3 className='text-xl font-medium mb-3'>4.1 Your Content</h3>
             <p className='text-gray-700 leading-relaxed mb-4'>
-              You retain ownership of any intellectual property rights in content you upload to the Service ("Your Content"). By uploading Your Content, you grant us a worldwide, non-exclusive license to use, store, and display Your Content solely for the purpose of providing the Service.
+              You retain ownership of any intellectual property rights in content you upload to the Service (&ldquo;Your Content&rdquo;). By uploading Your Content, you grant us a worldwide, non-exclusive license to use, store, and display Your Content solely for the purpose of providing the Service.
             </p>
 
             <h3 className='text-xl font-medium mb-3'>4.2 Content Restrictions</h3>
@@ -142,7 +142,7 @@ export default function TermsPage() {
             <h2 className='text-2xl font-semibold mb-4'>10. Disclaimers</h2>
             <div className='bg-yellow-50 border border-yellow-200 p-4 rounded-lg'>
               <p className='text-gray-700 leading-relaxed'>
-                <strong>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND.</strong> We disclaim all warranties, express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+                <strong>THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND.</strong> We disclaim all warranties, express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
               </p>
             </div>
           </section>
