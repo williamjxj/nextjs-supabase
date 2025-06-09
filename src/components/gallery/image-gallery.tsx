@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast"
 import { ImageCard } from "./image-card"
 import { ImageModal } from "./image-modal"
 import { SimpleImageViewer } from "./simple-image-viewer"
+import { EnhancedImageViewer } from "./enhanced-image-viewer"
 import { DeleteConfirm } from "./delete-confirm"
 import { LicenseSelector } from "./license-selector"
 import { PaymentOptionsModal } from "./payment-options-modal"
@@ -45,6 +46,8 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [simpleViewerImage, setSimpleViewerImage] = useState<ImageType | null>(null)
   const [isSimpleViewerOpen, setIsSimpleViewerOpen] = useState(false)
+  const [enhancedViewerIndex, setEnhancedViewerIndex] = useState(0)
+  const [isEnhancedViewerOpen, setIsEnhancedViewerOpen] = useState(false)
   const [deleteImage, setDeleteImage] = useState<ImageType | null>(null)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -86,8 +89,9 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   }
 
   const handleViewFullSize = (image: ImageType) => {
-    setSimpleViewerImage(image)
-    setIsSimpleViewerOpen(true)
+    const imageIndex = filteredImages.findIndex(img => img.id === image.id)
+    setEnhancedViewerIndex(imageIndex >= 0 ? imageIndex : 0)
+    setIsEnhancedViewerOpen(true)
   }
 
   const handleDeleteClick = (image: ImageType) => {
@@ -436,6 +440,15 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         onClose={() => {
           setIsSimpleViewerOpen(false)
           setSimpleViewerImage(null)
+        }}
+      />
+
+      <EnhancedImageViewer
+        images={filteredImages}
+        currentIndex={enhancedViewerIndex}
+        isOpen={isEnhancedViewerOpen}
+        onClose={() => {
+          setIsEnhancedViewerOpen(false)
         }}
       />
 
