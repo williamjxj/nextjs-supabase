@@ -9,6 +9,8 @@ and apply them to this app's current codes?
 3. Create Helper Utilities
 4. Create Server Actions for Stripe Operations
 
-## MAU
+## MAU, PII
 
 - Monthly Active Users
+- Personally Identifiable Information (PII),
+- supabase.auth.getUser()

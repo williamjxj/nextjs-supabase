@@ -67,11 +67,21 @@ export const useGallery = () => {
       abortControllerRef.current = new AbortController()
       fetchInProgressRef.current = true
 
-      // Use functional state updates to get current filters
-      let finalFilters: GalleryFilters
-
+      // Get current state synchronously to avoid race conditions
+      let finalFilters: GalleryFilters = {
+        search: '',
+        sortBy: 'created_at', 
+        sortOrder: 'desc',
+      }
+      
       setGalleryState(prev => {
-        finalFilters = { ...prev.filters, ...filters }
+        finalFilters = {
+          search: '',
+          sortBy: 'created_at',
+          sortOrder: 'desc',
+          ...prev.filters,
+          ...filters,
+        }
 
         return {
           ...prev,
@@ -84,13 +94,16 @@ export const useGallery = () => {
       try {
         const searchParams = new URLSearchParams()
 
-        // Apply filters
-        if (finalFilters!.search)
-          searchParams.set('search', finalFilters!.search)
-        if (finalFilters!.sortBy)
-          searchParams.set('sortBy', finalFilters!.sortBy)
-        if (finalFilters!.sortOrder)
-          searchParams.set('sortOrder', finalFilters!.sortOrder)
+        // Apply filters with safe access
+        if (finalFilters.search) {
+          searchParams.set('search', finalFilters.search)
+        }
+        if (finalFilters.sortBy) {
+          searchParams.set('sortBy', finalFilters.sortBy)
+        }
+        if (finalFilters.sortOrder) {
+          searchParams.set('sortOrder', finalFilters.sortOrder)
+        }
 
         // Apply pagination
         if (pagination?.limit)
@@ -102,18 +115,23 @@ export const useGallery = () => {
           `/api/gallery?${searchParams.toString()}`,
           {
             signal: abortControllerRef.current.signal,
+            headers: {
+              'Content-Type': 'application/json',
+            },
           }
         )
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          const errorText = await response.text()
+          console.error('API error response:', errorText)
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
         }
 
         const data = await response.json()
 
         setGalleryState(prev => ({
           ...prev,
-          images: data.images,
+          images: data.images || [],
           loading: false,
           error: null,
           pagination: data.pagination,
@@ -124,6 +142,7 @@ export const useGallery = () => {
           return
         }
 
+        console.error('Error fetching images:', error)
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to fetch images'
         setGalleryState(prev => ({

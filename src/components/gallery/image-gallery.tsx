@@ -196,7 +196,8 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       showToast("Gallery refreshed", "success")
     } catch (error) {
       console.error("Error refreshing gallery:", error)
-      showToast("Failed to refresh gallery", "error")
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh gallery'
+      showToast(`Failed to refresh gallery: ${errorMessage}`, "error")
     } finally {
       setIsRefreshing(false)
     }
@@ -233,9 +234,10 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       <div className="text-center py-20">
         <div className="krea-card max-w-md mx-auto p-8">
           <p className="text-red-600 mb-4">Failed to load gallery</p>
-          <Button onClick={handleRefresh} className="krea-button-primary">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
+          <p className="text-sm text-gray-600 mb-4">{error}</p>
+          <Button onClick={handleRefresh} className="krea-button-primary" disabled={isRefreshing}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+            {isRefreshing ? "Refreshing..." : "Try Again"}
           </Button>
         </div>
       </div>

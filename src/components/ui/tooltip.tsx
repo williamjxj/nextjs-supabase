@@ -122,8 +122,19 @@ export const Tooltip = ({
 
   const toggleTooltip = useCallback(() => {
     if (disabled) return
-    setIsVisible(!isVisible)
-  }, [disabled, isVisible])
+    if (!isVisible) {
+      setIsVisible(true)
+      // Auto-persist if tooltip has close button
+      if (showCloseButton) {
+        setIsPersistent(true)
+      }
+    } else {
+      // Only allow hiding via close button when persistent
+      if (!isPersistent) {
+        setIsVisible(false)
+      }
+    }
+  }, [disabled, isVisible, showCloseButton, isPersistent])
 
   useEffect(() => {
     if (isVisible) {
@@ -148,7 +159,8 @@ export const Tooltip = ({
       if (trigger === 'click' && isVisible && 
           tooltipRef.current && !tooltipRef.current.contains(event.target as Node) &&
           triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
-        if (!isPersistent) {
+        // Don't hide if tooltip is persistent (has close button)
+        if (!isPersistent && !showCloseButton) {
           hideTooltip()
         }
       }
@@ -163,7 +175,7 @@ export const Tooltip = ({
       window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isVisible, calculatePosition, trigger, isPersistent, hideTooltip])
+  }, [isVisible, calculatePosition, trigger, isPersistent, hideTooltip, showCloseButton])
 
   useEffect(() => {
     return () => {
@@ -216,7 +228,6 @@ export const Tooltip = ({
         isVisible 
           ? 'opacity-100 scale-100 translate-y-0' 
           : 'opacity-0 scale-95 translate-y-1 pointer-events-none',
-        (isPersistent || showCloseButton) && 'max-h-96 overflow-y-auto',
         contentClassName
       )}
       style={{
@@ -245,7 +256,10 @@ export const Tooltip = ({
       )}
       
       {/* Content with padding for close button when needed */}
-      <div className={cn((showCloseButton || isPersistent) && 'pr-6')}>
+      <div className={cn(
+        (showCloseButton || isPersistent) && 'pr-6',
+        (showCloseButton || isPersistent) && 'max-h-80 overflow-y-auto'
+      )}>
         {content}
       </div>
       

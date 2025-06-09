@@ -206,11 +206,11 @@ export const UserInfoTooltip = ({
     <Tooltip 
       content={tooltipContent}
       placement={placement}
-      trigger="hover"
+      trigger="click"
       className={className}
       contentClassName="max-w-md"
       showCloseButton={true}
-      persistOnHover={true}
+      persistOnHover={false}
     >
       {children}
     </Tooltip>

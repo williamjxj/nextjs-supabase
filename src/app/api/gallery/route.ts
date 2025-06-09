@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
   try {
     // TODO: Add RLS policies
     // const userData = await supabase.auth.getUser()
-    // console.log('/gallery', userData)
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
@@ -101,7 +100,7 @@ export async function GET(request: NextRequest) {
       isPurchased: purchasedImageIds.includes(image.id),
     }))
 
-    return NextResponse.json({
+    const response = {
       images: enrichedImages || [],
       pagination: {
         total: totalImages,
@@ -114,9 +113,11 @@ export async function GET(request: NextRequest) {
         sortBy,
         sortOrder,
       },
-    })
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('Unexpected error in gallery API:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
