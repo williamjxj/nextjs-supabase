@@ -90,9 +90,9 @@ export const UserInfoTooltip = ({
   }
 
   const tooltipContent = (
-    <div className="max-w-sm p-3 space-y-3">
-      <div className="text-center border-b border-gray-200/60 dark:border-gray-600/60 pb-3">
-        <h3 className="font-medium text-base text-gray-800 dark:text-gray-100">
+    <div className="max-w-sm p-4 space-y-4">
+      <div className="text-center border-b border-gray-300/30 dark:border-gray-500/30 pb-3">
+        <h3 className="font-semibold text-base text-white dark:text-gray-50">
           Account Information
         </h3>
       </div>
@@ -100,45 +100,45 @@ export const UserInfoTooltip = ({
       <div className="space-y-3 text-sm">
         {/* Basic User Info */}
         <div>
-          <span className="font-medium text-gray-600 dark:text-gray-300">User ID:</span>
-          <div className="font-mono text-xs text-gray-500 dark:text-gray-400 break-all mt-1">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">User ID:</span>
+          <div className="font-mono text-xs text-gray-200 dark:text-gray-300 break-all mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg">
             {userInfo.user.id}
           </div>
         </div>
 
         <div>
-          <span className="font-medium text-gray-600 dark:text-gray-300">Email:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Email:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {userInfo.user.email || 'N/A'}
           </div>
         </div>
 
         <div>
-          <span className="font-medium text-gray-600 dark:text-gray-300">Created:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Created:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {formatDate(userInfo.user.created_at)}
           </div>
         </div>
 
         <div>
-          <span className="font-medium text-gray-600 dark:text-gray-300">Last Sign In:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Last Sign In:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {formatDate(userInfo.user.last_sign_in_at)}
           </div>
         </div>
 
         {/* Session Info */}
-        <div className="border-t border-gray-200/60 dark:border-gray-600/60 pt-3">
-          <span className="font-medium text-gray-600 dark:text-gray-300">Session Expires:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+        <div className="border-t border-gray-300/30 dark:border-gray-500/30 pt-3">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Session Expires:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {userInfo.sessionExpiry}
           </div>
         </div>
 
         {/* Subscription Info */}
         <div>
-          <span className="font-medium text-gray-600 dark:text-gray-300">Subscription:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Subscription:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {userInfo.subscriptionInfo}
           </div>
         </div>
@@ -146,8 +146,8 @@ export const UserInfoTooltip = ({
         {/* JWT Claims */}
         {userInfo.jwtClaims && (
           <div>
-            <span className="font-medium text-gray-600 dark:text-gray-300">JWT Role:</span>
-            <div className="text-gray-500 dark:text-gray-400 mt-1">
+            <span className="font-semibold text-gray-100 dark:text-gray-200">JWT Role:</span>
+            <div className="text-gray-200 dark:text-gray-300 mt-1">
               {userInfo.jwtClaims.role || 'authenticated'}
             </div>
           </div>
@@ -156,8 +156,8 @@ export const UserInfoTooltip = ({
         {/* App Metadata */}
         {userInfo.user.app_metadata && Object.keys(userInfo.user.app_metadata).length > 0 && (
           <div>
-            <span className="font-medium text-gray-600 dark:text-gray-300">App Metadata:</span>
-            <div className="text-gray-500 dark:text-gray-400 font-mono text-xs mt-1 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+            <span className="font-semibold text-gray-100 dark:text-gray-200">App Metadata:</span>
+            <div className="text-gray-200 dark:text-gray-300 font-mono text-xs mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg">
               {JSON.stringify(userInfo.user.app_metadata, null, 2)}
             </div>
           </div>
@@ -166,25 +166,25 @@ export const UserInfoTooltip = ({
         {/* User Metadata */}
         {userInfo.user.user_metadata && Object.keys(userInfo.user.user_metadata).length > 0 && (
           <div>
-            <span className="font-medium text-gray-600 dark:text-gray-300">User Metadata:</span>
-            <div className="text-gray-500 dark:text-gray-400 font-mono text-xs mt-1 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+            <span className="font-semibold text-gray-100 dark:text-gray-200">User Metadata:</span>
+            <div className="text-gray-200 dark:text-gray-300 font-mono text-xs mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg">
               {JSON.stringify(userInfo.user.user_metadata, null, 2)}
             </div>
           </div>
         )}
 
         {/* Cookie Info */}
-        <div className="border-t border-gray-200/60 dark:border-gray-600/60 pt-3">
-          <span className="font-medium text-gray-600 dark:text-gray-300">Browser Cookies:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+        <div className="border-t border-gray-300/30 dark:border-gray-500/30 pt-3">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Browser Cookies:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {userInfo.cookieInfo}
           </div>
         </div>
 
         {/* Email Verification Status */}
         <div>
-          <span className="font-medium text-gray-600 dark:text-gray-300">Email Verified:</span>
-          <div className="text-gray-500 dark:text-gray-400 mt-1">
+          <span className="font-semibold text-gray-100 dark:text-gray-200">Email Verified:</span>
+          <div className="text-gray-200 dark:text-gray-300 mt-1">
             {userInfo.user.email_confirmed_at ? '✓ Verified' : '✗ Unverified'}
           </div>
         </div>
@@ -192,8 +192,8 @@ export const UserInfoTooltip = ({
         {/* Phone Verification Status */}
         {userInfo.user.phone && (
           <div>
-            <span className="font-medium text-gray-600 dark:text-gray-300">Phone:</span>
-            <div className="text-gray-500 dark:text-gray-400 mt-1">
+            <span className="font-semibold text-gray-100 dark:text-gray-200">Phone:</span>
+            <div className="text-gray-200 dark:text-gray-300 mt-1">
               {userInfo.user.phone} {userInfo.user.phone_confirmed_at ? '(✓)' : '(✗)'}
             </div>
           </div>
@@ -209,6 +209,8 @@ export const UserInfoTooltip = ({
       trigger="hover"
       className={className}
       contentClassName="max-w-md"
+      showCloseButton={true}
+      persistOnHover={true}
     >
       {children}
     </Tooltip>

@@ -14,6 +14,8 @@ interface TooltipProps {
   delay?: number
   offset?: number
   disabled?: boolean
+  showCloseButton?: boolean
+  persistOnHover?: boolean
 }
 
 export const Tooltip = ({
@@ -26,8 +28,11 @@ export const Tooltip = ({
   delay = 200,
   offset = 8,
   disabled = false,
+  showCloseButton = false,
+  persistOnHover = false,
 }: TooltipProps) => {
   const [isVisible, setIsVisible] = useState(false)
+  const [isPersistent, setIsPersistent] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const [mounted, setMounted] = useState(false)
   const triggerRef = useRef<HTMLElement>(null)
@@ -80,7 +85,7 @@ export const Tooltip = ({
     setPosition({ top, left })
   }, [placement, offset])
 
-  const showTooltip = () => {
+  const showTooltip = useCallback(() => {
     if (disabled) return
     
     if (timeoutRef.current) {
@@ -90,19 +95,35 @@ export const Tooltip = ({
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true)
     }, delay)
-  }
+  }, [disabled, delay])
 
-  const hideTooltip = () => {
+  const hideTooltip = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    if (!isPersistent) {
+      setIsVisible(false)
+    }
+  }, [isPersistent])
+
+  const forceHideTooltip = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
     setIsVisible(false)
-  }
+    setIsPersistent(false)
+  }, [])
 
-  const toggleTooltip = () => {
+  const handleTooltipClick = useCallback(() => {
+    if (showCloseButton || persistOnHover) {
+      setIsPersistent(true)
+    }
+  }, [showCloseButton, persistOnHover])
+
+  const toggleTooltip = useCallback(() => {
     if (disabled) return
     setIsVisible(!isVisible)
-  }
+  }, [disabled, isVisible])
 
   useEffect(() => {
     if (isVisible) {
@@ -127,7 +148,9 @@ export const Tooltip = ({
       if (trigger === 'click' && isVisible && 
           tooltipRef.current && !tooltipRef.current.contains(event.target as Node) &&
           triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
-        hideTooltip()
+        if (!isPersistent) {
+          hideTooltip()
+        }
       }
     }
 
@@ -140,7 +163,7 @@ export const Tooltip = ({
       window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isVisible, calculatePosition, trigger])
+  }, [isVisible, calculatePosition, trigger, isPersistent, hideTooltip])
 
   useEffect(() => {
     return () => {
@@ -184,29 +207,54 @@ export const Tooltip = ({
     <div
       ref={tooltipRef}
       className={cn(
-        'fixed z-[55] px-4 py-3 text-sm font-normal rounded-2xl shadow-xl backdrop-blur-xl',
-        'bg-white/98 text-gray-700 border border-gray-200/60',
-        'dark:bg-gray-800/98 dark:text-gray-200 dark:border-gray-700/60',
-        'pointer-events-none select-none max-w-xs',
+        'fixed z-[55] px-4 py-3 text-sm font-medium rounded-2xl shadow-2xl backdrop-blur-xl',
+        'bg-slate-900/95 text-white border border-slate-700/50',
+        'dark:bg-slate-800/95 dark:text-gray-50 dark:border-slate-600/50',
+        'select-none max-w-xs',
+        isPersistent || showCloseButton ? 'pointer-events-auto' : 'pointer-events-none',
         'transition-all duration-300 ease-out',
         isVisible 
           ? 'opacity-100 scale-100 translate-y-0' 
           : 'opacity-0 scale-95 translate-y-1 pointer-events-none',
+        (isPersistent || showCloseButton) && 'max-h-96 overflow-y-auto',
         contentClassName
       )}
       style={{
         top: position.top,
         left: position.left,
       }}
+      onClick={handleTooltipClick}
+      onMouseEnter={() => {
+        if (persistOnHover && trigger === 'hover') {
+          setIsPersistent(true)
+        }
+      }}
     >
-      {content}
+      {/* Close button */}
+      {(showCloseButton || isPersistent) && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            forceHideTooltip()
+          }}
+          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-700/70 hover:bg-slate-600/80 dark:bg-slate-600/70 dark:hover:bg-slate-500/80 flex items-center justify-center text-xs text-gray-300 hover:text-white transition-colors duration-200"
+          aria-label="Close tooltip"
+        >
+          ×
+        </button>
+      )}
+      
+      {/* Content with padding for close button when needed */}
+      <div className={cn((showCloseButton || isPersistent) && 'pr-6')}>
+        {content}
+      </div>
       
       {/* Arrow */}
       <div
         className={cn(
           'absolute w-2 h-2 rotate-45',
-          'bg-white/98 border-gray-200/60',
-          'dark:bg-gray-800/98 dark:border-gray-700/60',
+          'bg-slate-900/95 border-slate-700/50',
+          'dark:bg-slate-800/95 dark:border-slate-600/50',
           placement === 'top' && 'bottom-[-4px] left-1/2 transform -translate-x-1/2 border-r border-b',
           placement === 'bottom' && 'top-[-4px] left-1/2 transform -translate-x-1/2 border-l border-t',
           placement === 'left' && 'right-[-4px] top-1/2 transform -translate-y-1/2 border-t border-r',

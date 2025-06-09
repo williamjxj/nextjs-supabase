@@ -8,3 +8,7 @@ and apply them to this app's current codes?
 2. Create Stripe Admin Utilities (Based on Vercel Template)
 3. Create Helper Utilities
 4. Create Server Actions for Stripe Operations
+
+## MAU
+
+- Monthly Active Users
