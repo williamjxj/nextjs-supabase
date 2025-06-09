@@ -69,10 +69,13 @@ export const Tooltip = ({
         break
     }
 
-    // Keep tooltip within viewport
-    const padding = 10
-    left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding))
-    top = Math.max(padding, Math.min(top, window.innerHeight + scrollY - tooltipRect.height - padding))
+    // Keep tooltip within viewport with better boundaries
+    const padding = 16
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    
+    left = Math.max(padding, Math.min(left, viewportWidth - tooltipRect.width - padding))
+    top = Math.max(padding, Math.min(top, viewportHeight + scrollY - tooltipRect.height - padding))
 
     setPosition({ top, left })
   }, [placement, offset])
@@ -120,14 +123,24 @@ export const Tooltip = ({
       }
     }
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (trigger === 'click' && isVisible && 
+          tooltipRef.current && !tooltipRef.current.contains(event.target as Node) &&
+          triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
+        hideTooltip()
+      }
+    }
+
     window.addEventListener('resize', handleResize)
     window.addEventListener('scroll', handleScroll)
+    document.addEventListener('mousedown', handleClickOutside)
 
     return () => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isVisible, calculatePosition])
+  }, [isVisible, calculatePosition, trigger])
 
   useEffect(() => {
     return () => {
@@ -143,8 +156,18 @@ export const Tooltip = ({
     ref: triggerRef,
     className: cn(children.props.className as string, className),
     ...(trigger === 'hover' && {
-      onMouseEnter: showTooltip,
-      onMouseLeave: hideTooltip,
+      onMouseEnter: (e: React.MouseEvent) => {
+        showTooltip()
+        if (children.props.onMouseEnter) {
+          children.props.onMouseEnter(e)
+        }
+      },
+      onMouseLeave: (e: React.MouseEvent) => {
+        hideTooltip()
+        if (children.props.onMouseLeave) {
+          children.props.onMouseLeave(e)
+        }
+      },
     }),
     ...(trigger === 'click' && {
       onClick: (e: React.MouseEvent) => {
@@ -157,14 +180,18 @@ export const Tooltip = ({
     }),
   })
 
-  const tooltipContent = mounted && isVisible && (
+  const tooltipContent = mounted && (
     <div
       ref={tooltipRef}
       className={cn(
-        'fixed z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-lg',
-        'pointer-events-none select-none',
-        'opacity-0 animate-in fade-in-0 zoom-in-95 duration-150',
-        isVisible && 'opacity-100',
+        'fixed z-[55] px-4 py-3 text-sm font-normal rounded-2xl shadow-xl backdrop-blur-xl',
+        'bg-white/98 text-gray-700 border border-gray-200/60',
+        'dark:bg-gray-800/98 dark:text-gray-200 dark:border-gray-700/60',
+        'pointer-events-none select-none max-w-xs',
+        'transition-all duration-300 ease-out',
+        isVisible 
+          ? 'opacity-100 scale-100 translate-y-0' 
+          : 'opacity-0 scale-95 translate-y-1 pointer-events-none',
         contentClassName
       )}
       style={{
@@ -177,11 +204,13 @@ export const Tooltip = ({
       {/* Arrow */}
       <div
         className={cn(
-          'absolute w-2 h-2 bg-gray-900 rotate-45',
-          placement === 'top' && 'bottom-[-4px] left-1/2 transform -translate-x-1/2',
-          placement === 'bottom' && 'top-[-4px] left-1/2 transform -translate-x-1/2',
-          placement === 'left' && 'right-[-4px] top-1/2 transform -translate-y-1/2',
-          placement === 'right' && 'left-[-4px] top-1/2 transform -translate-y-1/2'
+          'absolute w-2 h-2 rotate-45',
+          'bg-white/98 border-gray-200/60',
+          'dark:bg-gray-800/98 dark:border-gray-700/60',
+          placement === 'top' && 'bottom-[-4px] left-1/2 transform -translate-x-1/2 border-r border-b',
+          placement === 'bottom' && 'top-[-4px] left-1/2 transform -translate-x-1/2 border-l border-t',
+          placement === 'left' && 'right-[-4px] top-1/2 transform -translate-y-1/2 border-t border-r',
+          placement === 'right' && 'left-[-4px] top-1/2 transform -translate-y-1/2 border-b border-l'
         )}
       />
     </div>
@@ -190,7 +219,7 @@ export const Tooltip = ({
   return (
     <>
       {triggerElement}
-      {mounted && tooltipContent && createPortal(tooltipContent, document.body)}
+      {mounted && isVisible && createPortal(tooltipContent, document.body)}
     </>
   )
 }

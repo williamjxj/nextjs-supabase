@@ -323,11 +323,96 @@ body {
   }
 }
 
-/* Grid patterns */
-.grid-pattern {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
+/* Krea.ai inspired notification styles */
+.krea-notification-enter {
+  animation: krea-slide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.krea-notification-exit {
+  animation: krea-slide-out 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes krea-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes krea-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}
+
+.krea-tooltip {
+  @apply backdrop-blur-xl bg-white/98 text-gray-700 rounded-2xl px-4 py-3 text-sm font-normal shadow-xl border border-gray-200/60;
+}
+
+.krea-tooltip-light {
+  @apply backdrop-blur-xl bg-white/98 text-gray-700 rounded-2xl px-4 py-3 text-sm font-normal shadow-xl border border-gray-200/60;
+}
+
+.krea-notification-success {
+  @apply backdrop-blur-lg bg-emerald-50/90 border-emerald-200/50 text-emerald-900;
+}
+
+.krea-notification-error {
+  @apply backdrop-blur-lg bg-red-50/90 border-red-200/50 text-red-900;
+}
+
+.krea-notification-warning {
+  @apply backdrop-blur-lg bg-amber-50/90 border-amber-200/50 text-amber-900;
+}
+
+.krea-notification-info {
+  @apply backdrop-blur-lg bg-blue-50/90 border-blue-200/50 text-blue-900;
+}
+
+/* Dark mode variants */
+.dark .krea-notification-success {
+  @apply bg-emerald-950/90 border-emerald-800/50 text-emerald-100;
+}
+
+.dark .krea-notification-error {
+  @apply bg-red-950/90 border-red-800/50 text-red-100;
+}
+
+.dark .krea-notification-warning {
+  @apply bg-amber-950/90 border-amber-800/50 text-amber-100;
+}
+
+.dark .krea-notification-info {
+  @apply bg-blue-950/90 border-blue-800/50 text-blue-100;
+}
+
+/* Enhanced focus states for accessibility */
+.krea-button:focus-visible,
+.krea-button-primary:focus-visible {
+  @apply outline-none ring-2 ring-offset-2 ring-blue-500 ring-offset-white;
+}
+
+.dark .krea-button:focus-visible,
+.dark .krea-button-primary:focus-visible {
+  @apply ring-offset-gray-900;
+}
+
+/* Smooth hover transitions */
+.krea-interactive {
+  @apply transition-all duration-200 ease-out;
+}
+
+.krea-interactive:hover {
+  @apply transform -translate-y-0.5 shadow-lg;
 }
 
 .container {

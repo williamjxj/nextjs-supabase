@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/auth/logout-button'
+import { UserInfoTooltip } from '@/components/ui/user-info-tooltip'
 import { Home, Upload, ImageIcon, User, Crown, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
@@ -62,14 +63,16 @@ export const Header = () => {
             <div className='w-8 h-8 rounded-full bg-gray-200 animate-pulse' />
           ) : user ? (
             <div className='flex items-center space-x-3'>
-              <div className='hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-full'>
-                <div className='w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
-                  <User className='w-3 h-3 text-white' />
+              <UserInfoTooltip placement="bottom">
+                <div className='hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-full cursor-help'>
+                  <div className='w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
+                    <User className='w-3 h-3 text-white' />
+                  </div>
+                  <span className='text-sm text-gray-700 font-medium'>
+                    {user.email?.split('@')[0]}
+                  </span>
                 </div>
-                <span className='text-sm text-gray-700 font-medium'>
-                  {user.email?.split('@')[0]}
-                </span>
-              </div>
+              </UserInfoTooltip>
               <LogoutButton
                 variant='ghost'
                 size='sm'
