@@ -7,8 +7,8 @@ export interface Image {
   storage_url: string
   file_size: number
   mime_type: string
-  width?: number
-  height?: number
+  width: number // Required field
+  height: number // Required field
   created_at: string
   updated_at: string
   isPurchased: boolean // Indicates whether the image has been purchased
@@ -21,6 +21,6 @@ export interface ImageMetadata {
   original_name: string
   file_size: number
   mime_type: string
-  width?: number
-  height?: number
+  width: number // Required field
+  height: number // Required field
 }

@@ -87,11 +87,9 @@ export function ImageCard({
             <h3 className="font-medium text-gray-900 truncate mb-1">{image.original_name}</h3>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>{formatFileSize(image.file_size)}</span>
-              {image.width && image.height && (
-                <span>
-                  {image.width} × {image.height}
-                </span>
-              )}
+              <span>
+                {image.width} × {image.height}
+              </span>
               <span>
                 {formatDistanceToNow(new Date(image.created_at), {
                   addSuffix: true,
@@ -269,11 +267,9 @@ export function ImageCard({
             <h3 className="font-medium truncate text-sm">{image.original_name}</h3>
             <div className="flex items-center justify-between text-xs mt-1 text-gray-200">
               <span>{formatFileSize(image.file_size)}</span>
-              {image.width && image.height && (
-                <span>
-                  {image.width}×{image.height}
-                </span>
-              )}
+              <span>
+                {image.width}×{image.height}
+              </span>
             </div>
           </div>
         </div>

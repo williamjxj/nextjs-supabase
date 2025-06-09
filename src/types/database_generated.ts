@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       customers: {
@@ -61,43 +86,43 @@ export type Database = {
           created_at: string | null
           file_size: number
           filename: string
-          height: number | null
+          height: number
           id: string
           mime_type: string
           original_name: string
           storage_path: string
           storage_url: string
           updated_at: string | null
-          user_id: string | null
-          width: number | null
+          user_id: string
+          width: number
         }
         Insert: {
           created_at?: string | null
           file_size: number
           filename: string
-          height?: number | null
+          height: number
           id?: string
           mime_type: string
           original_name: string
           storage_path: string
           storage_url: string
           updated_at?: string | null
-          user_id?: string | null
-          width?: number | null
+          user_id: string
+          width: number
         }
         Update: {
           created_at?: string | null
           file_size?: number
           filename?: string
-          height?: number | null
+          height?: number
           id?: string
           mime_type?: string
           original_name?: string
           storage_path?: string
           storage_url?: string
           updated_at?: string | null
-          user_id?: string | null
-          width?: number | null
+          user_id?: string
+          width?: number
         }
         Relationships: []
       }
@@ -455,6 +480,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       pricing_plan_interval: ["day", "week", "month", "year"],

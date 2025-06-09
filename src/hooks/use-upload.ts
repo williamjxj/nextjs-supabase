@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useAuth } from './use-auth'
+import { getImageDimensions } from '@/lib/utils/file-validation'
 
 interface UploadProgress {
   fileName: string
@@ -50,9 +51,27 @@ export const useUpload = () => {
         throw new Error('File size too large. Maximum 10MB allowed.')
       }
 
+      // Extract image dimensions on client side
+      let dimensions: { width: number; height: number } | null = null
+      try {
+        dimensions = await getImageDimensions(file)
+      } catch (error) {
+        console.warn('Failed to extract dimensions on client side:', error)
+        // Continue without dimensions - server will handle it
+      }
+
       // Create FormData
       const formData = new FormData()
       formData.append('file', file)
+      
+      // Add user.id as fallback for server-side auth
+      formData.append('user_id', user.id)
+      
+      // Add dimensions if available
+      if (dimensions) {
+        formData.append('width', dimensions.width.toString())
+        formData.append('height', dimensions.height.toString())
+      }
 
       // Upload via API
       const response = await fetch('/api/upload', {

@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         customer: stripeCustomerId,
         line_items: [
           {
-            price: subscriptionPlan.stripe_price_id,
+            price: subscriptionPlan.prices?.[0]?.id || '',
             quantity: 1,
           },
         ],
