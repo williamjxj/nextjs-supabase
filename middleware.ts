@@ -5,8 +5,6 @@ import {
   userHasSubscription,
   userHasSubscriptionType,
 } from '@/lib/supabase/auth-server'
-import { contentRequiresSubscriptionTier } from '@/lib/supabase/auth'
-import { SubscriptionType } from '@/lib/stripe'
 
 export async function middleware(req: NextRequest) {
   let supabaseResponse = NextResponse.next({
