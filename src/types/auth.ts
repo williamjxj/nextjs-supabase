@@ -41,6 +41,7 @@ export interface AuthState {
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   hasSubscriptionAccess: (requiredTier?: SubscriptionType) => boolean
+  refreshAuthState: () => Promise<void>
 }
 
 export interface LoginFormData {

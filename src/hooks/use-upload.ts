@@ -60,9 +60,6 @@ export const useUpload = () => {
         body: formData,
       })
 
-      console.log('Upload response status:', response.status)
-      console.log('Upload response ok:', response.ok)
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Upload failed')

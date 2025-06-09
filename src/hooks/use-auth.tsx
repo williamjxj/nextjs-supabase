@@ -25,20 +25,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Helper function to enrich user with subscription data
+  const enrichUserWithSubscription = async (baseUser: User): Promise<AuthUser> => {
+    try {
+      // Fetch user subscription
+      const { data: userSubscriptions, error } = await supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          prices (
+            *,
+            products (*)
+          )
+        `)
+        .eq('user_id', baseUser.id)
+        .in('status', ['active', 'trialing', 'past_due'])
+        .order('created', { ascending: false })
+        .limit(1)
+
+      const subscription = userSubscriptions?.[0] || null
+      const hasActiveSubscription = subscription?.status === 'active'
+
+      const enrichedUser = {
+        ...baseUser,
+        subscription,
+        hasActiveSubscription,
+      } as AuthUser
+
+      return enrichedUser
+    } catch (error) {
+      console.error('Error enriching user with subscription:', error)
+      return {
+        ...baseUser,
+        subscription: null,
+        hasActiveSubscription: false,
+      } as AuthUser
+    }
+  }
+
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      console.log('=== useAuth: Getting initial session ===')
       const session = await authService.getSession()
-      console.log('Initial session:', {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        userId: session?.user?.id,
-        email: session?.user?.email
-      })
       if (session?.user) {
-        const initialUser = session.user as AuthUser
-        setUser(initialUser)
+        const enrichedUser = await enrichUserWithSubscription(session.user)
+        setUser(enrichedUser)
       } else {
         setUser(null)
       }
@@ -51,19 +82,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('=== useAuth: Auth state change ===')
-      console.log('Event:', event)
-      console.log('Session:', {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        userId: session?.user?.id
-      })
-      if (session?.user) {
-        const authUser = session.user as AuthUser
-        setUser(authUser)
-      } else {
+      try {
+        if (session?.user) {
+          const enrichedUser = await enrichUserWithSubscription(session.user)
+          setUser(enrichedUser)
+        } else {
+          setUser(null)
+        }
+      } catch (error) {
+        console.error('Error in auth state change handler:', error)
+        // Set user to null on error to maintain consistent state
         setUser(null)
       }
+      
       setLoading(false)
     })
 
@@ -73,7 +104,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     setLoading(true)
     try {
-      await authService.signIn(email, password)
+      // First, ensure we have a clean state by clearing any stale cookies
+      await supabase.auth.signOut()
+      
+      // Wait briefly for cleanup
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const result = await authService.signIn(email, password)
+      
+      // Ensure the session is properly synchronized
+      if (result.user) {
+        const enrichedUser = await enrichUserWithSubscription(result.user)
+        setUser(enrichedUser)
+      }
+      
+      // Also do a delayed refresh to ensure consistency
+      setTimeout(async () => {
+        await refreshAuthState()
+      }, 500)
+      
+    } catch (error) {
+      console.error('signIn error:', error)
+      throw error
     } finally {
       setLoading(false)
     }
@@ -92,6 +144,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true)
     try {
       await authService.signOut()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Function to manually refresh auth state
+  const refreshAuthState = async () => {
+    setLoading(true)
+    try {
+      // First try to get the session
+      const session = await authService.getSession()
+      
+      // Check if session is expired
+      if (session?.expires_at) {
+        const expiresAt = new Date(session.expires_at * 1000)
+        const now = new Date()
+        if (expiresAt <= now) {
+          await supabase.auth.signOut()
+          setUser(null)
+          return
+        }
+      }
+      
+      if (session?.user) {
+        const enrichedUser = await enrichUserWithSubscription(session.user)
+        setUser(enrichedUser)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('Manual refresh error:', error)
+      // On error, clear the state to ensure consistency
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -138,7 +223,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
-    hasSubscriptionAccess, // Add the subscription check method to the context
+    hasSubscriptionAccess,
+    refreshAuthState, // Auth state refresh function
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -26,19 +26,6 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getSession()
     const userId = authSession?.user?.id
 
-    // Debug logging
-    console.log('=== Stripe Checkout API Debug ===')
-    console.log('Has session:', !!authSession)
-    console.log('Has user:', !!authSession?.user)
-    console.log('User ID:', userId)
-    console.log('Is subscription:', isSubscription)
-    console.log('Session expires at:', authSession?.expires_at)
-
-    // Debug cookies
-    const cookieHeader = request.headers.get('cookie')
-    console.log('Cookie header present:', !!cookieHeader)
-    console.log('Cookie header length:', cookieHeader?.length || 0)
-
     // If it's a subscription checkout
     if (isSubscription) {
       // Verify subscription type is valid
