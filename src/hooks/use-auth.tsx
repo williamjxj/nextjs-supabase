@@ -23,7 +23,13 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Start with false to show login buttons immediately
+  const [mounted, setMounted] = useState(false)
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Helper function to enrich user with subscription data
   const enrichUserWithSubscription = async (baseUser: User): Promise<AuthUser> => {
@@ -64,24 +70,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session only after component is mounted
     const getInitialSession = async () => {
-      const session = await authService.getSession()
-      if (session?.user) {
-        const enrichedUser = await enrichUserWithSubscription(session.user)
-        setUser(enrichedUser)
-      } else {
+      if (!mounted) return
+      
+      setLoading(true) // Only set loading when we're actually checking
+      try {
+        const session = await authService.getSession()
+        if (session?.user) {
+          const enrichedUser = await enrichUserWithSubscription(session.user)
+          setUser(enrichedUser)
+        } else {
+          setUser(null)
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error)
         setUser(null)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
-    getInitialSession()
+    if (mounted) {
+      getInitialSession()
+    }
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true) // Set loading when auth state changes
       try {
         if (session?.user) {
           const enrichedUser = await enrichUserWithSubscription(session.user)
@@ -93,13 +111,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Error in auth state change handler:', error)
         // Set user to null on error to maintain consistent state
         setUser(null)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [mounted])
 
   const signIn = async (email: string, password: string) => {
     setLoading(true)
@@ -220,6 +238,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthState = {
     user,
     loading,
+    mounted,
     signIn,
     signUp,
     signOut,

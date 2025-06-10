@@ -37,6 +37,7 @@ export interface AuthUser extends User {
 export interface AuthState {
   user: AuthUser | null
   loading: boolean
+  mounted: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>

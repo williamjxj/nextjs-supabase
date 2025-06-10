@@ -5,11 +5,17 @@ import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { UserInfoTooltip } from '@/components/ui/user-info-tooltip'
 import { Home, Upload, ImageIcon, User, Crown, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export const Header = () => {
-  const { user, loading } = useAuth()
+  const { user, loading, mounted } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Simplified logic: show auth buttons when no user, show user info when user exists
+  // Only show loading when we're actually checking authentication (mounted && loading)
+  const showAuthButtons = !user && mounted && !loading
+  const showUserInfo = Boolean(user && mounted)
+  const showLoading = mounted && loading
 
   return (
     <header className='sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100'>
@@ -59,9 +65,7 @@ export const Header = () => {
 
         {/* User Actions */}
         <div className='flex items-center space-x-3'>
-          {loading ? (
-            <div className='w-8 h-8 rounded-full bg-gray-200 animate-pulse' />
-          ) : user ? (
+          {showUserInfo ? (
             <div className='flex items-center space-x-3'>
               <UserInfoTooltip placement="bottom">
                 <div className='hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-full cursor-help'>
@@ -69,7 +73,7 @@ export const Header = () => {
                     <User className='w-3 h-3 text-white' />
                   </div>
                   <span className='text-sm text-gray-700 font-medium'>
-                    {user.email?.split('@')[0]}
+                    {user?.email?.split('@')[0] || 'User'}
                   </span>
                 </div>
               </UserInfoTooltip>
@@ -79,6 +83,8 @@ export const Header = () => {
                 className='text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-full'
               />
             </div>
+          ) : showLoading ? (
+            <div className='w-8 h-8 rounded-full bg-gray-200 animate-pulse' />
           ) : (
             <div className='flex items-center space-x-2'>
               <Link href='/login'>
