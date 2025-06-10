@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { checkoutWithStripe, createStripePortal, getSubscription, getUserDetails } from '@/lib/actions/subscription';
+import { createStripePortal, getSubscription, getUserDetails } from '@/lib/actions/subscription-simplified';
 import { createClient } from '@/lib/supabase/server';
 import CustomerPortalForm from './CustomerPortalForm';
 import Pricing from '@/components/ui/pricing';

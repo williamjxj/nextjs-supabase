@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, createContext, useContext } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, Provider } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { AuthState, AuthUser } from '@/types/auth'
 import * as authService from '@/lib/supabase/auth'
@@ -162,9 +162,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true)
     try {
       await authService.signOut()
+      setUser(null) // Clear user on sign out
     } finally {
       setLoading(false)
     }
+  }
+
+  const signInWithSocial = async (provider: Provider) => {
+    setLoading(true)
+    try {
+      await authService.signInWithProvider(provider)
+      // Supabase handles redirection and session management
+      // Auth state will be updated by onAuthStateChange listener
+    } catch (error) {
+      console.error('signInWithSocial error:', error)
+      // Optionally, show a toast notification to the user
+      // setLoading(false) // Important: Keep loading true or manage carefully due to redirect
+      throw error
+    } 
+    // setLoading(false) // Loading state should be managed by the page after redirection or by onAuthStateChange
   }
 
   // Function to manually refresh auth state
@@ -242,9 +258,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
+    signInWithSocial, // Added for social sign-in
     hasSubscriptionAccess,
     refreshAuthState, // Auth state refresh function
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        mounted,
+        signIn,
+        signUp,
+        signOut,
+        signInWithSocial, // Added for social sign-in
+        hasSubscriptionAccess,
+        refreshAuthState,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }

@@ -1,6 +1,7 @@
 import { supabase } from './client'
 import { AuthUser } from '@/types/auth'
 import { SubscriptionType } from '@/lib/stripe'
+import { Provider } from '@supabase/supabase-js'
 
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -25,6 +26,17 @@ export const signUp = async (email: string, password: string) => {
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut()
   if (error) throw error
+}
+
+export const signInWithProvider = async (provider: Provider) => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`, // Ensure this matches your Supabase dashboard config
+    },
+  })
+  if (error) throw error
+  return data
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {

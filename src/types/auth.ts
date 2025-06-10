@@ -41,6 +41,7 @@ export interface AuthState {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  signInWithSocial: (provider: import('@supabase/supabase-js').Provider) => Promise<void> // Added for social sign-in
   hasSubscriptionAccess: (requiredTier?: SubscriptionType) => boolean
   refreshAuthState: () => Promise<void>
 }

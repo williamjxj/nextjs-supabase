@@ -2,13 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkoutWithStripe } from '@/lib/actions/subscription';
-import { useProducts } from '@/hooks/use-products';
+import { checkoutWithStripe } from '@/lib/actions/subscription-simplified';
+import { SUBSCRIPTION_PLANS, SubscriptionPlanType } from '@/lib/subscription-config';
 import { Check, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import type { Tables } from '@/types/types_db';
-
-type Price = Tables<'prices'>;
 
 interface PricingProps {
   className?: string;
@@ -21,12 +18,11 @@ export default function Pricing({
   showTitle = true,
   variant = 'default'
 }: PricingProps) {
-  const [priceIdLoading, setPriceIdLoading] = useState<string>();
-  const { products, loading, error } = useProducts();
+  const [loading, setLoading] = useState<string>();
   const router = useRouter();
 
-  const handleStripeCheckout = async (price: Price) => {
-    setPriceIdLoading(price.id);
+  const handleStripeCheckout = async (planType: SubscriptionPlanType) => {
+    setLoading(planType);
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(
@@ -38,30 +34,13 @@ export default function Pricing({
         router.push('/login');
         return;
       }
-      await checkoutWithStripe({ price });
+      await checkoutWithStripe({ planType, billingInterval: 'monthly' });
     } catch (error) {
       console.error('Error creating checkout session:', error);
     } finally {
-      setPriceIdLoading(undefined);
+      setLoading(undefined);
     }
   };
-
-  if (loading) {
-    return (
-      <div className={cn("text-center py-8", className)}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
-        <p className="mt-2 text-gray-600">Loading pricing plans...</p>
-      </div>
-    );
-  }
-
-  if (products.length === 0) {
-    return (
-      <div className={cn("text-center py-8", className)}>
-        <p className="text-gray-600">No pricing plans available at this time.</p>
-      </div>
-    );
-  }
 
   return (
     <div className={cn("", className)}>
@@ -80,21 +59,12 @@ export default function Pricing({
         "grid gap-6",
         variant === 'compact' ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 md:grid-cols-3"
       )}>
-        {products.map((product) => {
-          const price = product.prices?.[0];
-          if (!price) return null;
-
-          const priceString = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: price.currency!,
-            minimumFractionDigits: 0
-          }).format((price?.unit_amount || 0) / 100);
-
-          const isPopular = product.name === 'Pro';
+        {Object.entries(SUBSCRIPTION_PLANS).map(([planType, plan]) => {
+          const isPopular = planType === 'premium';
 
           return (
             <div
-              key={product.id}
+              key={planType}
               className={cn(
                 'relative rounded-lg border bg-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow',
                 isPopular 
@@ -114,29 +84,25 @@ export default function Pricing({
               <div className="p-6">
                 <div className="text-center">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {product.name}
+                    {plan.name}
                   </h3>
-                  
-                  {product.description && (
-                    <p className="text-sm text-gray-600 mb-4">
-                      {product.description}
-                    </p>
-                  )}
+
+                  <p className="text-sm text-gray-600 mb-4">
+                    {plan.description}
+                  </p>
 
                   <div className="mb-6">
                     <span className="text-4xl font-bold text-gray-900">
-                      {priceString}
+                      ${plan.priceMonthly.toFixed(2)}
                     </span>
-                    {price.interval && (
-                      <span className="text-gray-600">
-                        /{price.interval}
-                      </span>
-                    )}
+                    <span className="text-gray-600">
+                      /month
+                    </span>
                   </div>
                 </div>
 
                 <ul className="space-y-3 mb-6">
-                  {getFeatures(product.name || '').map((feature) => (
+                  {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                       <span className="text-sm text-gray-700">{feature}</span>
@@ -145,17 +111,17 @@ export default function Pricing({
                 </ul>
 
                 <button
-                  onClick={() => handleStripeCheckout(price)}
-                  disabled={!!priceIdLoading}
+                  onClick={() => handleStripeCheckout(planType as SubscriptionPlanType)}
+                  disabled={!!loading}
                   className={cn(
                     'w-full py-3 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2',
                     isPopular
                       ? 'bg-pink-500 hover:bg-pink-600 text-white focus:ring-pink-500'
                       : 'bg-gray-900 hover:bg-gray-800 text-white focus:ring-gray-500',
-                    priceIdLoading === price.id && 'opacity-50 cursor-not-allowed'
+                    loading === planType && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  {priceIdLoading === price.id ? (
+                  {loading === planType ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Processing...
@@ -179,42 +145,4 @@ export default function Pricing({
   );
 }
 
-function getFeatures(productName?: string): string[] {
-  switch (productName?.toLowerCase()) {
-    case 'starter':
-      return [
-        '100 image uploads per month',
-        '1GB storage',
-        'Standard support',
-        'Basic editing tools',
-        'Personal use license'
-      ];
-    case 'pro':
-      return [
-        '1,000 image uploads per month',
-        '10GB storage',
-        'Priority support',
-        'Advanced editing tools',
-        'Commercial use license',
-        'Bulk operations',
-        'Analytics dashboard'
-      ];
-    case 'enterprise':
-      return [
-        'Unlimited image uploads',
-        '100GB storage',
-        '24/7 priority support',
-        'All editing features',
-        'Full commercial license',
-        'API access',
-        'Custom integrations',
-        'Dedicated account manager'
-      ];
-    default:
-      return [
-        'Basic features included',
-        'Standard support',
-        'Personal use license'
-      ];
-  }
-}
+

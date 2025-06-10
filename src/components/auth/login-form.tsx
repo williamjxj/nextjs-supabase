@@ -14,6 +14,7 @@ import {
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { LoginFormData } from '@/types/auth'
+import { Chrome, Facebook } from 'lucide-react' // Assuming lucide-react for icons
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -32,7 +33,7 @@ export const LoginForm = ({
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn } = useAuth()
+  const { signIn, signInWithSocial } = useAuth() // Updated to include signInWithSocial
   const { addToast } = useToast()
 
   // Get redirect URL from search params or use default
@@ -74,6 +75,22 @@ export const LoginForm = ({
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    setIsLoading(true)
+    try {
+      await signInWithSocial(provider)
+      // Redirect will be handled by Supabase
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: `Sign in with ${provider} failed`,
+        description:
+          error instanceof Error ? error.message : 'An unexpected error occurred',
+      })
+      setIsLoading(false) // Only set loading false on error
     }
   }
 
@@ -129,6 +146,38 @@ export const LoginForm = ({
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
+
+        <div className='relative my-6'>
+          <div className='absolute inset-0 flex items-center'>
+            <span className='w-full border-t' />
+          </div>
+          <div className='relative flex justify-center text-xs uppercase'>
+            <span className='bg-card px-2 text-muted-foreground'>
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <div className='space-y-2'>
+          <Button
+            variant='outline'
+            className='w-full'
+            onClick={() => handleSocialLogin('google')}
+            disabled={isLoading}
+          >
+            <Chrome className='mr-2 h-4 w-4' />
+            Sign in with Google
+          </Button>
+          <Button
+            variant='outline'
+            className='w-full'
+            onClick={() => handleSocialLogin('facebook')}
+            disabled={isLoading}
+          >
+            <Facebook className='mr-2 h-4 w-4' />
+            Sign in with Facebook
+          </Button>
+        </div>
 
         <div className='mt-4 text-center text-sm'>
           <span className='text-muted-foreground'>
