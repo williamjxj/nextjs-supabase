@@ -91,19 +91,7 @@ CREATE TRIGGER update_subscriptions_updated_at
   BEFORE UPDATE ON public.subscriptions 
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Insert default subscription plans
-INSERT INTO public.subscriptions (user_id, plan_type, price_monthly, price_yearly, billing_interval, current_period_end, features)
-VALUES 
-  -- These are template records that won't have real user_ids - they serve as plan definitions
-  ('00000000-0000-0000-0000-000000000000'::uuid, 'standard', 9.99, 99.99, 'monthly', NOW() + INTERVAL '1 month',
-   '["Access to standard quality images", "Basic usage rights", "Download up to 50 images/month", "Email support"]'::jsonb),
-  ('00000000-0000-0000-0000-000000000000'::uuid, 'premium', 19.99, 199.99, 'monthly', NOW() + INTERVAL '1 month',
-   '["Access to premium quality images", "Extended usage rights", "Download up to 200 images/month", "Priority email support", "Advanced filters and search"]'::jsonb),
-  ('00000000-0000-0000-0000-000000000000'::uuid, 'commercial', 39.99, 399.99, 'monthly', NOW() + INTERVAL '1 month',
-   '["Access to all images", "Full commercial usage rights", "Unlimited downloads", "Priority phone support", "Early access to new features", "Custom licensing options"]'::jsonb)
-ON CONFLICT DO NOTHING;
-
-COMMENT ON TABLE public.subscriptions IS 'Simplified subscription table that stores both plan definitions and user subscriptions';
-COMMENT ON COLUMN public.subscriptions.user_id IS 'References auth.users.id. Use 00000000-0000-0000-0000-000000000000 for plan templates';
+COMMENT ON TABLE public.subscriptions IS 'User subscription table - contains only actual user subscriptions';
+COMMENT ON COLUMN public.subscriptions.user_id IS 'References auth.users.id - must be a real user';
 COMMENT ON COLUMN public.subscriptions.plan_type IS 'Type of subscription plan: standard, premium, or commercial';
-COMMENT ON COLUMN public.subscriptions.features IS 'JSON array of features included in this plan';
+COMMENT ON COLUMN public.subscriptions.features IS 'JSON array of features included in this subscription';

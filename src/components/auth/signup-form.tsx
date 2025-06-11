@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { SignupFormData } from '@/types/auth'
 import { Chrome, Facebook } from 'lucide-react' // Assuming lucide-react for icons
+import { SocialAuthSection } from './social-auth'
 
 interface SignupFormProps {
   onSuccess?: () => void
@@ -102,28 +103,6 @@ export const SignupForm = ({
     }
   }
 
-  const handleSocialSignup = async (provider: 'google' | 'facebook') => {
-    setIsLoading(true)
-    try {
-      await signInWithSocial(provider) // Using the same social sign-in function
-      // Redirect will be handled by Supabase, and onAuthStateChange will update user state
-      // Potentially show a toast that they might need to complete profile info if it's a new social user
-      addToast({
-        type: 'info',
-        title: 'Redirecting...',
-        description: `Please complete the sign-up with ${provider}.`,
-      })
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: `Sign up with ${provider} failed`,
-        description:
-          error instanceof Error ? error.message : 'An unexpected error occurred',
-      })
-      setIsLoading(false) // Only set loading false on error
-    }
-  }
-
   const isValid =
     formData.email && formData.password && formData.confirmPassword
 
@@ -195,37 +174,10 @@ export const SignupForm = ({
           </Button>
         </form>
 
-        <div className='relative my-6'>
-          <div className='absolute inset-0 flex items-center'>
-            <span className='w-full border-t' />
-          </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-card px-2 text-muted-foreground'>
-              Or sign up with
-            </span>
-          </div>
-        </div>
-
-        <div className='space-y-2'>
-          <Button
-            variant='outline'
-            className='w-full'
-            onClick={() => handleSocialSignup('google')}
-            disabled={isLoading}
-          >
-            <Chrome className='mr-2 h-4 w-4' />
-            Sign up with Google
-          </Button>
-          <Button
-            variant='outline'
-            className='w-full'
-            onClick={() => handleSocialSignup('facebook')}
-            disabled={isLoading}
-          >
-            <Facebook className='mr-2 h-4 w-4' />
-            Sign up with Facebook
-          </Button>
-        </div>
+        <SocialAuthSection 
+          disabled={isLoading}
+          showDivider={true}
+        />
 
         <div className='mt-4 text-center text-sm'>
           <span className='text-muted-foreground'>
