@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { useSubscription } from '@/hooks/use-subscription'
 import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 interface SubscriptionContextType {
@@ -35,9 +34,14 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   children,
 }) => {
   const { user } = useAuth()
-  const { loading, subscription, isActive, isPastDue, isExpired } = useSubscription()
-
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null)
+
+  // Get subscription from user (simplified schema)
+  const subscription = user?.subscription
+  const loading = false // Since subscription is part of user data
+  const isActive = subscription?.status === 'active'
+  const isPastDue = false // Simplified - we don't track past due in our system
+  const isExpired = subscription?.status === 'expired'
 
   // Calculate days remaining in subscription
   useEffect(() => {
@@ -52,18 +56,9 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     }
   }, [subscription])
 
-  // Determine current subscription tier (Vercel schema)
+  // Determine current subscription tier (simplified schema)
   const subscriptionTier = React.useMemo(() => {
-    if (!subscription?.prices?.products?.name) return null
-    
-    // Map product names to subscription types
-    const productNameMap: Record<string, SubscriptionPlanType> = {
-      'Basic Plan': 'standard',
-      'Pro Plan': 'premium',
-      'Premium Plan': 'commercial'
-    }
-    
-    return productNameMap[subscription.prices.products.name] || null
+    return subscription?.plan_type || null
   }, [subscription])
 
   // Grace period logic (past due but not expired)

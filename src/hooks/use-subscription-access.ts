@@ -1,14 +1,13 @@
 'use client'
 
 import { useAuth } from './use-auth'
-import { useSubscription } from './use-subscription'
-import { SubscriptionType } from '@/lib/stripe'
+import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 interface SubscriptionAccessHook {
   loading: boolean
   hasAnySubscription: boolean
-  hasAccess: (requiredTier?: SubscriptionType) => boolean
-  currentTier: SubscriptionType | null
+  hasAccess: (requiredTier?: SubscriptionPlanType) => boolean
+  currentTier: SubscriptionPlanType | null
   isGracePeriod: boolean
   isExpired: boolean
   isActive: boolean
@@ -16,27 +15,20 @@ interface SubscriptionAccessHook {
 
 /**
  * Custom hook for checking subscription access
- * Combines data from auth and subscription hooks
+ * Uses simplified subscription system
  */
 export function useSubscriptionAccess(): SubscriptionAccessHook {
   const { user, loading: authLoading, hasSubscriptionAccess } = useAuth()
-  const {
-    loading: subscriptionLoading,
-    isActive,
-    isTrialing,
-    isExpired,
-    subscription,
-  } = useSubscription()
 
-  const loading = authLoading || subscriptionLoading
-  const hasAnySubscription =
-    !!user?.hasActiveSubscription || isActive || isTrialing
-
-  // Determine current subscription tier from Vercel schema
-  const currentTier = subscription?.prices?.products?.name?.toLowerCase() as SubscriptionType || null
+  const subscription = user?.subscription
+  const isActive = subscription?.status === 'active'
+  const isExpired = subscription?.status === 'expired'
+  const isGracePeriod = false // Simplified - we don't track grace periods
+  const hasAnySubscription = Boolean(subscription && subscription.status === 'active')
+  const currentTier = subscription?.plan_type || null
 
   // Function to check access to a specific tier
-  const hasAccess = (requiredTier?: SubscriptionType): boolean => {
+  const hasAccess = (requiredTier?: SubscriptionPlanType): boolean => {
     // Use the auth context method if available
     if (hasSubscriptionAccess) {
       return hasSubscriptionAccess(requiredTier)
@@ -49,30 +41,27 @@ export function useSubscriptionAccess(): SubscriptionAccessHook {
 
     if (!currentTier) return false // No tier information available
 
-    // Define tier hierarchy based on product names
-    const tierLevels: Record<string, number> = {
-      'basic': 1,
-      'basic plan': 1,
-      'pro': 2,
-      'pro plan': 2,
-      'premium': 3,
-      'premium plan': 3,
+    // Define tier hierarchy
+    const tierLevels: Record<SubscriptionPlanType, number> = {
+      standard: 1,
+      premium: 2,
+      commercial: 3,
     }
 
-    const currentLevel = tierLevels[currentTier.toLowerCase()] || 0
-    const requiredLevel = tierLevels[requiredTier.toLowerCase()] || 1
+    const currentLevel = tierLevels[currentTier] || 0
+    const requiredLevel = tierLevels[requiredTier] || 1
 
     // User's tier must be equal or higher than required tier
     return currentLevel >= requiredLevel
   }
 
   return {
-    loading,
+    loading: authLoading,
     hasAnySubscription,
     hasAccess,
     currentTier,
-    isGracePeriod: isTrialing, // Map trialing to grace period
-    isExpired: isExpired || false, // Convert null to false
-    isActive,
+    isGracePeriod,
+    isExpired: isExpired || false,
+    isActive: isActive || false,
   }
 }

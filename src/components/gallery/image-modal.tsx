@@ -262,7 +262,7 @@ export function ImageModal({
                     : 'Your current plan has reached the download limit.'}
                 </p>
                 <div className="flex gap-3">
-                  <Link href="/pricing">
+                  <Link href="/membership">
                     <Button>View Plans</Button>
                   </Link>
                   <Button variant="outline" onClick={handleUpgradePromptClose}>

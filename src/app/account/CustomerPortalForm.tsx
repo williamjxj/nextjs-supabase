@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { createStripePortal } from '@/lib/actions/subscription';
+import { createStripePortal } from '@/lib/actions/subscription-simplified';
 
 interface Props {
   subscription: any;

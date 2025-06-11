@@ -34,19 +34,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Helper function to enrich user with subscription data
   const enrichUserWithSubscription = async (baseUser: User): Promise<AuthUser> => {
     try {
-      // Fetch user subscription
+      // Fetch user subscription (simplified schema)
       const { data: userSubscriptions, error } = await supabase
         .from('subscriptions')
-        .select(`
-          *,
-          prices (
-            *,
-            products (*)
-          )
-        `)
+        .select('*')
         .eq('user_id', baseUser.id)
-        .in('status', ['active', 'trialing', 'past_due'])
-        .order('created', { ascending: false })
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
         .limit(1)
 
       const subscription = userSubscriptions?.[0] || null
@@ -56,6 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...baseUser,
         subscription,
         hasActiveSubscription,
+        subscriptionTier: subscription?.plan_type || null
       } as AuthUser
 
       return enrichedUser
@@ -65,6 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...baseUser,
         subscription: null,
         hasActiveSubscription: false,
+        subscriptionTier: null
       } as AuthUser
     }
   }
@@ -226,19 +222,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return true // If no specific tier is required, any active subscription is enough
     }
 
-    // Get the user's plan type (Vercel schema)
-    const userPlanType = (() => {
-      if (!user.subscription?.prices?.products?.name) return null
-      
-      // Map product names to subscription types
-      const productNameMap: Record<string, SubscriptionPlanType> = {
-        'Basic Plan': 'standard',
-        'Pro Plan': 'premium',
-        'Premium Plan': 'commercial'
-      }
-      
-      return productNameMap[user.subscription.prices.products.name] || null
-    })()
+    // Get the user's plan type (simplified schema)
+    const userPlanType = user.subscription?.plan_type || null
+
+    if (!userPlanType) {
+      return false
+    }
 
     // Define tier hierarchy
     const tierLevels: Record<SubscriptionPlanType, number> = {

@@ -1,28 +1,19 @@
 import { createServerSupabaseClient } from './server'
 import { AuthUser } from '@/types/auth'
-import { hasActiveSubscription, getUserSubscription } from './subscriptions'
-import { SubscriptionType } from '@/lib/stripe'
+import { hasActiveSubscription, getUserSubscription } from './subscriptions-simplified'
+import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 // Define subscription plan hierarchy for access control
-const planHierarchy: Record<SubscriptionType, number> = {
+const planHierarchy: Record<SubscriptionPlanType, number> = {
   standard: 1,
   premium: 2,
   commercial: 3,
 }
 
-// Helper function to extract subscription plan type safely (Vercel schema)
-const extractPlanType = (subscription: any): SubscriptionType | null => {
+// Helper function to extract subscription plan type safely (simplified schema)
+const extractPlanType = (subscription: any): SubscriptionPlanType | null => {
   try {
-    if (!subscription?.prices?.products?.name) return null
-    
-    // Map product names back to subscription types
-    const productNameMap: Record<string, SubscriptionType> = {
-      'Basic Plan': 'standard',
-      'Pro Plan': 'premium',
-      'Premium Plan': 'commercial'
-    }
-    
-    return productNameMap[subscription.prices.products.name] || null
+    return subscription?.plan_type || null
   } catch (error) {
     console.error('Error accessing subscription plan type:', error)
     return null
@@ -38,7 +29,7 @@ export const userHasSubscription = async (userId: string): Promise<boolean> => {
 // Check if user has a specific subscription type
 export const userHasSubscriptionType = async (
   userId: string,
-  requiredType: SubscriptionType
+  requiredType: SubscriptionPlanType
 ): Promise<boolean> => {
   if (!userId) return false
 

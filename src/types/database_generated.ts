@@ -34,172 +34,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      customers: {
-        Row: {
-          id: string
-          stripe_customer_id: string | null
-        }
-        Insert: {
-          id: string
-          stripe_customer_id?: string | null
-        }
-        Update: {
-          id?: string
-          stripe_customer_id?: string | null
-        }
-        Relationships: []
-      }
-      image_downloads: {
-        Row: {
-          created_at: string | null
-          downloaded_at: string | null
-          id: string
-          image_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          downloaded_at?: string | null
-          id?: string
-          image_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          downloaded_at?: string | null
-          id?: string
-          image_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "image_downloads_image_id_fkey"
-            columns: ["image_id"]
-            isOneToOne: false
-            referencedRelation: "images"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       images: {
         Row: {
           created_at: string | null
           file_size: number
           filename: string
-          height: number
+          height: number | null
           id: string
+          is_featured: boolean | null
           mime_type: string
           original_name: string
+          price_cents: number | null
+          quality_level: string | null
           storage_path: string
           storage_url: string
+          tags: Json | null
+          tier: string | null
           updated_at: string | null
-          user_id: string
-          width: number
+          user_id: string | null
+          width: number | null
         }
         Insert: {
           created_at?: string | null
           file_size: number
           filename: string
-          height: number
+          height?: number | null
           id?: string
+          is_featured?: boolean | null
           mime_type: string
           original_name: string
+          price_cents?: number | null
+          quality_level?: string | null
           storage_path: string
           storage_url: string
+          tags?: Json | null
+          tier?: string | null
           updated_at?: string | null
-          user_id: string
-          width: number
+          user_id?: string | null
+          width?: number | null
         }
         Update: {
           created_at?: string | null
           file_size?: number
           filename?: string
-          height?: number
+          height?: number | null
           id?: string
+          is_featured?: boolean | null
           mime_type?: string
           original_name?: string
+          price_cents?: number | null
+          quality_level?: string | null
           storage_path?: string
           storage_url?: string
+          tags?: Json | null
+          tier?: string | null
           updated_at?: string | null
-          user_id?: string
-          width?: number
+          user_id?: string | null
+          width?: number | null
         }
         Relationships: []
       }
-      prices: {
+      profiles: {
         Row: {
-          active: boolean | null
-          currency: string | null
-          description: string | null
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
           id: string
-          interval: Database["public"]["Enums"]["pricing_plan_interval"] | null
-          interval_count: number | null
-          metadata: Json | null
-          product_id: string | null
-          trial_period_days: number | null
-          type: Database["public"]["Enums"]["pricing_type"] | null
-          unit_amount: number | null
+          stripe_customer_id: string | null
+          updated_at: string | null
         }
         Insert: {
-          active?: boolean | null
-          currency?: string | null
-          description?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
           id: string
-          interval?: Database["public"]["Enums"]["pricing_plan_interval"] | null
-          interval_count?: number | null
-          metadata?: Json | null
-          product_id?: string | null
-          trial_period_days?: number | null
-          type?: Database["public"]["Enums"]["pricing_type"] | null
-          unit_amount?: number | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
         }
         Update: {
-          active?: boolean | null
-          currency?: string | null
-          description?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
           id?: string
-          interval?: Database["public"]["Enums"]["pricing_plan_interval"] | null
-          interval_count?: number | null
-          metadata?: Json | null
-          product_id?: string | null
-          trial_period_days?: number | null
-          type?: Database["public"]["Enums"]["pricing_type"] | null
-          unit_amount?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prices_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      products: {
-        Row: {
-          active: boolean | null
-          description: string | null
-          id: string
-          image: string | null
-          metadata: Json | null
-          name: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          description?: string | null
-          id: string
-          image?: string | null
-          metadata?: Json | null
-          name?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          description?: string | null
-          id?: string
-          image?: string | null
-          metadata?: Json | null
-          name?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -264,109 +182,143 @@ export type Database = {
       }
       subscriptions: {
         Row: {
-          cancel_at: string | null
-          cancel_at_period_end: boolean | null
-          canceled_at: string | null
-          created: string
+          billing_interval: string
+          created_at: string | null
           current_period_end: string
-          current_period_start: string
-          ended_at: string | null
+          current_period_start: string | null
+          features: Json | null
           id: string
-          metadata: Json | null
-          price_id: string | null
-          quantity: number | null
-          status: Database["public"]["Enums"]["subscription_status"] | null
-          trial_end: string | null
-          trial_start: string | null
+          plan_type: string
+          price_monthly: number
+          price_yearly: number
+          status: string
+          stripe_subscription_id: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          cancel_at?: string | null
-          cancel_at_period_end?: boolean | null
-          canceled_at?: string | null
-          created?: string
-          current_period_end?: string
-          current_period_start?: string
-          ended_at?: string | null
-          id: string
-          metadata?: Json | null
-          price_id?: string | null
-          quantity?: number | null
-          status?: Database["public"]["Enums"]["subscription_status"] | null
-          trial_end?: string | null
-          trial_start?: string | null
+          billing_interval?: string
+          created_at?: string | null
+          current_period_end: string
+          current_period_start?: string | null
+          features?: Json | null
+          id?: string
+          plan_type: string
+          price_monthly: number
+          price_yearly: number
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          cancel_at?: string | null
-          cancel_at_period_end?: boolean | null
-          canceled_at?: string | null
-          created?: string
+          billing_interval?: string
+          created_at?: string | null
           current_period_end?: string
-          current_period_start?: string
-          ended_at?: string | null
+          current_period_start?: string | null
+          features?: Json | null
           id?: string
-          metadata?: Json | null
-          price_id?: string | null
-          quantity?: number | null
-          status?: Database["public"]["Enums"]["subscription_status"] | null
-          trial_end?: string | null
-          trial_start?: string | null
+          plan_type?: string
+          price_monthly?: number
+          price_yearly?: number
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_downloads: {
+        Row: {
+          created_at: string | null
+          download_type: string
+          downloaded_at: string | null
+          file_size: number | null
+          id: string
+          image_id: string
+          purchase_id: string | null
+          subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          download_type: string
+          downloaded_at?: string | null
+          file_size?: number | null
+          id?: string
+          image_id: string
+          purchase_id?: string | null
+          subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          download_type?: string
+          downloaded_at?: string | null
+          file_size?: number | null
+          id?: string
+          image_id?: string
+          purchase_id?: string | null
+          subscription_id?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "subscriptions_price_id_fkey"
-            columns: ["price_id"]
+            foreignKeyName: "user_downloads_image_id_fkey"
+            columns: ["image_id"]
             isOneToOne: false
-            referencedRelation: "prices"
+            referencedRelation: "images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_downloads_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_downloads_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
-      }
-      users: {
-        Row: {
-          avatar_url: string | null
-          billing_address: Json | null
-          full_name: string | null
-          id: string
-          payment_method: Json | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          billing_address?: Json | null
-          full_name?: string | null
-          id: string
-          payment_method?: Json | null
-        }
-        Update: {
-          avatar_url?: string | null
-          billing_address?: Json | null
-          full_name?: string | null
-          id?: string
-          payment_method?: Json | null
-        }
-        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_user_image_access: {
+        Args: { p_user_id: string; p_image_id: string }
+        Returns: {
+          has_access: boolean
+          access_type: string
+          subscription_plan: string
+          download_count: number
+          monthly_limit: number
+        }[]
+      }
+      get_user_gallery_access: {
+        Args: { p_user_id: string }
+        Returns: {
+          subscription_plan: string
+          subscription_status: string
+          monthly_downloads: number
+          monthly_limit: number
+          purchased_images_count: number
+          access_tiers: string[]
+        }[]
+      }
+      record_download: {
+        Args: { p_user_id: string; p_image_id: string; p_file_size?: number }
+        Returns: boolean
+      }
     }
     Enums: {
-      pricing_plan_interval: "day" | "week" | "month" | "year"
-      pricing_type: "one_time" | "recurring"
-      subscription_status:
-        | "trialing"
-        | "active"
-        | "canceled"
-        | "incomplete"
-        | "incomplete_expired"
-        | "past_due"
-        | "unpaid"
-        | "paused"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -484,20 +436,7 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {
-      pricing_plan_interval: ["day", "week", "month", "year"],
-      pricing_type: ["one_time", "recurring"],
-      subscription_status: [
-        "trialing",
-        "active",
-        "canceled",
-        "incomplete",
-        "incomplete_expired",
-        "past_due",
-        "unpaid",
-        "paused",
-      ],
-    },
+    Enums: {},
   },
 } as const
 

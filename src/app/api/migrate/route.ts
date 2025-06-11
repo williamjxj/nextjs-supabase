@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { SUBSCRIPTION_PRICE_CONFIG } from '@/lib/stripe'
+import { SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
 import { NextResponse } from 'next/server'
 
 // This API route will create subscription tables and seed the plans
@@ -39,17 +39,17 @@ export async function POST() {
 
     // First, try to seed the subscription plans directly
     // If the table doesn't exist, we'll get an error and create it manually
-    const plans = Object.entries(SUBSCRIPTION_PRICE_CONFIG).map(
+    const plans = Object.entries(SUBSCRIPTION_PLANS).map(
       ([type, config]) => ({
         type,
         name: config.name,
         description: config.description,
-        price: config.amount / 100, // Convert cents to dollars
-        currency: config.currency,
-        interval: config.interval,
-        stripe_price_id: config.stripe_price_id || null,
+        price: config.priceMonthly, // Use monthly price
+        currency: 'usd',
+        interval: 'month',
+        stripe_price_id: null, // We handle Stripe IDs separately
         is_active: true,
-        features: getFeatures(type),
+        features: config.features,
       })
     )
 

@@ -71,7 +71,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     label: 'Pricing',
-    href: '/pricing',
+    href: '/membership',
     requireAuth: true,
     icon: (
       <svg

@@ -43,25 +43,25 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
   }
 
   // Determine access level based on subscription
-  const productName = subscription.prices?.products?.name?.toLowerCase() || '';
+  const planType = subscription.plan_type;
   let accessLevel: SubscriptionAccess['accessLevel'] = 'basic';
   const imagesViewable = undefined; // Unlimited
   let downloadsRemaining = undefined; // Unlimited
 
-  if (productName.includes('basic')) {
+  if (planType === 'standard') {
     accessLevel = 'basic';
     downloadsRemaining = 50; // Basic: 50 downloads per month
-  } else if (productName.includes('pro')) {
+  } else if (planType === 'premium') {
     accessLevel = 'pro';
     downloadsRemaining = 200; // Pro: 200 downloads per month
-  } else if (productName.includes('enterprise')) {
+  } else if (planType === 'commercial') {
     accessLevel = 'enterprise';
     // Enterprise: unlimited
   }
 
   return {
     hasActiveSubscription: true,
-    subscriptionType: productName,
+    subscriptionType: planType,
     imagesViewable,
     downloadsRemaining,
     canDownload: true,

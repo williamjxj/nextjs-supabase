@@ -1,29 +1,18 @@
 import { User } from '@supabase/supabase-js'
-import { SubscriptionType } from '@/lib/stripe'
+import { UserSubscription, SubscriptionPlanType } from '@/lib/subscription-config'
 import type { Tables } from '@/types/types_db'
 
 export interface Subscription {
   id: string
-  status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing'
-  current_period_start: string
+  plan_type: SubscriptionPlanType
+  status: 'active' | 'cancelled' | 'expired'
+  current_period_start?: string
   current_period_end: string
-  cancel_at_period_end: boolean
-  canceled_at?: string | null
   stripe_subscription_id?: string
-  prices?: {
-    id: string
-    unit_amount: number
-    currency: string
-    interval: string
-    interval_count: number
-    products?: {
-      id: string
-      name: string
-      description?: string
-      active: boolean
-      metadata?: Record<string, any>
-    }
-  }
+  features: string[]
+  price_monthly: number
+  price_yearly: number
+  billing_interval: 'monthly' | 'yearly'
 }
 
 export interface AuthUser extends User {
@@ -31,7 +20,7 @@ export interface AuthUser extends User {
   email?: string
   subscription?: Subscription | null
   hasActiveSubscription?: boolean
-  subscriptionTier?: SubscriptionType | null
+  subscriptionTier?: SubscriptionPlanType | null
 }
 
 export interface AuthState {
@@ -42,7 +31,7 @@ export interface AuthState {
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   signInWithSocial: (provider: import('@supabase/supabase-js').Provider) => Promise<void> // Added for social sign-in
-  hasSubscriptionAccess: (requiredTier?: SubscriptionType) => boolean
+  hasSubscriptionAccess: (requiredTier?: SubscriptionPlanType) => boolean
   refreshAuthState: () => Promise<void>
 }
 

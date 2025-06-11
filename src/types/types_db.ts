@@ -18,22 +18,9 @@ export type TablesUpdate<T extends keyof GeneratedDatabase['public']['Tables']> 
 export type Enums<T extends keyof GeneratedDatabase['public']['Enums']> = 
   GeneratedDatabase['public']['Enums'][T];
 
-// Specific type exports for subscription system
-export type Product = Tables<'products'>;
-export type Price = Tables<'prices'>;
+// Specific type exports for current simplified schema
 export type Subscription = Tables<'subscriptions'>;
-export type Customer = Tables<'customers'>;
-export type User = Tables<'users'>;
-
-// Extended types for UI components (following Vercel template)
-export interface ProductWithPrices extends Product {
-  prices?: Price[];
-}
-
-export interface PriceWithProduct extends Price {
-  products?: Product | null;
-}
-
-export interface SubscriptionWithPriceAndProduct extends Subscription {
-  prices?: PriceWithProduct | null;
-}
+export type Image = Tables<'images'>;
+export type Purchase = Tables<'purchases'>;
+export type Profile = Tables<'profiles'>;
+export type UserDownload = Tables<'user_downloads'>;

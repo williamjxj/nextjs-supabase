@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { User, CreditCard, Image, Settings, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useSubscription } from '@/hooks/use-subscription'
+import { useAuth } from '@/hooks/use-auth'
 import { useSubscriptionAccess } from '@/hooks/use-subscription-access'
 
 const accountNavItems = [
@@ -42,8 +42,12 @@ export default function AccountLayout({
   const [username, setUsername] = useState<string | null>(null)
   const [email, setEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const { subscription, isActive, isGracePeriod } = useSubscription()
+  const { user } = useAuth()
   const { currentTier } = useSubscriptionAccess()
+
+  const subscription = user?.subscription
+  const isActive = subscription?.status === 'active'
+  const isGracePeriod = false // Simplified - we don't track grace periods
 
   // Helper function to safely get tier name
   const getTierName = () => {

@@ -3,11 +3,11 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
-import { SubscriptionType } from '@/lib/stripe'
+import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 interface SubscriptionGuardProps {
   children: React.ReactNode
-  requiredTier?: SubscriptionType
+  requiredTier?: SubscriptionPlanType
   fallback?: React.ReactNode
   redirectTo?: string
 }
@@ -85,7 +85,7 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
           <button
             onClick={() =>
               router.push(
-                `/pricing${requiredTier ? `?tier=${requiredTier}` : ''}`
+                `/membership${requiredTier ? `?tier=${requiredTier}` : ''}`
               )
             }
             className='mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
