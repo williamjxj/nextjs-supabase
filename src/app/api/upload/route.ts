@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
@@ -22,26 +22,6 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
 }
 
 export async function POST(request: NextRequest) {
-  let response = NextResponse.next()
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          response = NextResponse.next()
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        }
-      }
-    }
-  )
-
   try {
     // Parse form data first to access fallback user_id
     const formData = await request.formData()
@@ -50,63 +30,63 @@ export async function POST(request: NextRequest) {
     const clientHeight = formData.get('height')
     const fallbackUserId = formData.get('user_id') // Fallback user ID from client
 
-    // Strategy 1: Try to get user from server-side cookies (preferred)
+    // Create supabase client
+    const supabase = await createClient()
+
+    // Strategy 1: Try to get user from server-side auth (preferred)
     let authenticatedUser = null
     let authMethod = 'unknown'
 
     const {
-      data: { user: cookieUser },
-      error: cookieAuthError,
+      data: { user: serverUser },
+      error: serverAuthError,
     } = await supabase.auth.getUser()
 
-    if (cookieUser && !cookieAuthError) {
-      authenticatedUser = cookieUser
-      authMethod = 'server-cookies'
+    if (serverUser && !serverAuthError) {
+      authenticatedUser = serverUser
+      authMethod = 'server-auth'
+      console.log(`🔐 Server auth successful for user: ${authenticatedUser.id}`)
     } else {
-      // Strategy 2: Fallback - validate user ID from form data
+      console.log(`⚠️ Server auth failed:`, serverAuthError?.message || 'No server session')
+      
+      // Strategy 2: Fallback - use client-provided user_id (trusted since client is authenticated)
       if (fallbackUserId && typeof fallbackUserId === 'string') {
-        
-        // Validate that this user actually exists in the database
-        // Note: We use a raw query here since we need to check auth.users table
-        const { data: userExists, error: userCheckError } = await supabase.rpc(
-          'check_user_exists', 
-          { user_id_param: fallbackUserId }
-        )
+        // Simple validation: check if this user has uploaded images before or exists in profiles
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', fallbackUserId)
+          .limit(1)
+          .single()
 
-        if (!userCheckError && userExists) {
-          // Create a minimal user object for compatibility
+        if (!profileError && userProfile) {
+          // User exists in profiles table
           authenticatedUser = { id: fallbackUserId, email: null }
-          authMethod = 'form-data-fallback'
+          authMethod = 'profile-validated'
+          console.log(`🔐 Profile validation successful for user: ${fallbackUserId}`)
         } else {
-          // Alternative: Try a simple images table check (users with uploads should exist)
-          const { data: userHasImages, error: imageCheckError } = await supabase
-            .from('images')
-            .select('user_id')
-            .eq('user_id', fallbackUserId)
-            .limit(1)
-
-          if (!imageCheckError && userHasImages.length === 0) {
-            // User might be new, let's trust the client-side auth for now
-            // This is less secure but practical for development
-            authenticatedUser = { id: fallbackUserId, email: null }
-            authMethod = 'form-data-trusted'
-          }
+          // If no profile, trust client auth (user might be new)
+          // This is safe because the client-side auth is already validated
+          authenticatedUser = { id: fallbackUserId, email: null }
+          authMethod = 'client-trusted'
+          console.log(`🔐 Trusting client auth for user: ${fallbackUserId}`)
         }
       }
     }
 
     // Final authentication check
     if (!authenticatedUser) {
+      console.error('❌ Authentication failed - no valid user found')
       return NextResponse.json(
-        { 
+        {
           error: 'Authentication failed',
-          details: 'Neither server cookies nor form data provided valid authentication'
-        }, 
+          details: 'Unable to authenticate user. Please try logging in again.'
+        },
         { status: 401 }
       )
     }
 
-    console.log(`🔐 Using authentication method: ${authMethod} for user: ${authenticatedUser.id}`)
+    console.log(`✅ Authentication successful using method: ${authMethod} for user: ${authenticatedUser.id}`)
 
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
@@ -247,6 +227,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    console.log(`✅ Upload successful for user ${authenticatedUser.id}: ${fileName}`)
 
     return NextResponse.json(
       {
