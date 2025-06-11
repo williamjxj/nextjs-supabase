@@ -11,9 +11,9 @@ import { ImageModal } from "./image-modal"
 import { SimpleImageViewer } from "./simple-image-viewer"
 import { EnhancedImageViewer } from "./enhanced-image-viewer"
 import { DeleteConfirm } from "./delete-confirm"
-import { LicenseSelector } from "./license-selector"
 import { PaymentOptionsModal } from "./payment-options-modal"
 import { useSubscriptionAccess } from "@/hooks/use-subscription-access"
+import { useAuth } from "@/hooks/use-auth"
 import { GalleryFilters, type GalleryFilters as FilterType } from "./gallery-filters"
 import { Pagination } from "./pagination"
 import { useGallery } from "@/hooks/use-gallery"
@@ -40,6 +40,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     downloadImageFile,
   } = useGallery()
   const { showToast } = useToast()
+  const { user } = useAuth()
 
   // Modal states
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null)
@@ -52,7 +53,6 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [checkoutImage, setCheckoutImage] = useState<ImageType | null>(null)
-  const [isLicenseSelectorOpen, setIsLicenseSelectorOpen] = useState(false)
   const [isPaymentOptionsOpen, setIsPaymentOptionsOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list" | "masonry">("masonry")
   const [showFilters, setShowFilters] = useState(false)
@@ -127,52 +127,38 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     setIsPaymentOptionsOpen(true)
   }
 
-  const handleLicenseCheckout = async (image: ImageType, licenseType: "standard" | "premium" | "commercial") => {
-    try {
-      showToast("Redirecting to checkout...", "info")
-
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageId: image.id,
-          licenseType,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to create checkout session")
-      }
-
-      const { url } = await response.json()
-
-      if (url) {
-        window.location.href = url
-      } else {
-        throw new Error("No checkout URL received")
-      }
-    } catch (error) {
-      console.error("Error initiating checkout:", error)
-      showToast("Failed to start checkout process", "error")
-    }
-  }
-
-  const handlePaymentMethodSelect = async (method: "stripe" | "paypal" | "cybercurrency") => {
+  const handlePaymentMethodSelect = async (method: "stripe" | "paypal" | "cryptocurrency") => {
     if (!checkoutImage) return
+
+    // Check authentication for all payment methods (required for API)
+    if (!user) {
+      showToast(`Please login to purchase with ${method}`, "error")
+      // Redirect to login page
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+      return
+    }
+
+    // Use standard license and pricing as default
+    const defaultLicense = "standard"
+    const defaultAmount = 500 // $5.00 in cents
 
     try {
       if (method === "stripe") {
+        showToast("Redirecting to Stripe checkout...", "info")
+        
         const response = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             imageId: checkoutImage.id,
-            licenseType: checkoutImage.licenseType || "standard",
+            licenseType: defaultLicense,
+            userId: user.id, // Pass user ID as fallback for server-side auth
           }),
         })
 
         if (!response.ok) {
-          throw new Error("Failed to create Stripe checkout session")
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to create Stripe checkout session")
         }
 
         const { url } = await response.json()
@@ -182,9 +168,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
           throw new Error("No checkout URL received")
         }
       } else if (method === "paypal") {
-        window.location.href = `/paypal/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || "standard"}&amount=${checkoutImage.amount || 100}`
-      } else if (method === "cybercurrency") {
-        window.location.href = `/crypto/checkout?imageId=${checkoutImage.id}&licenseType=${checkoutImage.licenseType || "standard"}`
+        showToast("Redirecting to PayPal checkout...", "info")
+        window.location.href = `/paypal/checkout?imageId=${checkoutImage.id}&licenseType=${defaultLicense}&amount=${defaultAmount}`
+      } else if (method === "cryptocurrency") {
+        showToast("Redirecting to crypto checkout...", "info")
+        window.location.href = `/crypto/checkout?imageId=${checkoutImage.id}&licenseType=${defaultLicense}&amount=${defaultAmount}`
       }
     } catch (error) {
       console.error("Error initiating payment:", error)
@@ -463,24 +451,16 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         isDeleting={isDeleting}
       />
 
-      {checkoutImage && (
-        <LicenseSelector
-          image={checkoutImage}
-          isOpen={isLicenseSelectorOpen}
-          onClose={() => {
-            setIsLicenseSelectorOpen(false)
-            setCheckoutImage(null)
-          }}
-          onCheckout={handleLicenseCheckout}
-        />
-      )}
-
       {/* Payment Options Modal */}
       {checkoutImage && (
         <PaymentOptionsModal
           isOpen={isPaymentOptionsOpen}
-          onClose={() => setIsPaymentOptionsOpen(false)}
+          onClose={() => {
+            setIsPaymentOptionsOpen(false)
+            setCheckoutImage(null)
+          }}
           onSelectPaymentMethod={handlePaymentMethodSelect}
+          isAuthenticated={!!user}
         />
       )}
     </div>

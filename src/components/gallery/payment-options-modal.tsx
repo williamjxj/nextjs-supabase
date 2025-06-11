@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button'
 interface PaymentOptionsModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelectPaymentMethod: (method: 'stripe' | 'paypal' | 'cybercurrency') => void
+  onSelectPaymentMethod: (method: 'stripe' | 'paypal' | 'cryptocurrency') => void
+  isAuthenticated?: boolean
 }
 
 export function PaymentOptionsModal({
   isOpen,
   onClose,
   onSelectPaymentMethod,
+  isAuthenticated = false,
 }: PaymentOptionsModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} className='max-w-md'>
@@ -24,19 +26,19 @@ export function PaymentOptionsModal({
             onClick={() => onSelectPaymentMethod('stripe')}
             className='w-full bg-blue-500 hover:bg-blue-600 text-white'
           >
-            Pay with Stripe
+            Pay with Stripe {!isAuthenticated && '(Login Required)'}
           </Button>
           <Button
             onClick={() => onSelectPaymentMethod('paypal')}
             className='w-full bg-yellow-500 hover:bg-yellow-600 text-white'
           >
-            Pay with PayPal
+            Pay with PayPal {!isAuthenticated && '(Login Required)'}
           </Button>
           <Button
-            onClick={() => onSelectPaymentMethod('cybercurrency')}
+            onClick={() => onSelectPaymentMethod('cryptocurrency')}
             className='w-full bg-gray-800 hover:bg-gray-900 text-white'
           >
-            Pay with CyberCurrency
+            Pay with Cryptocurrency {!isAuthenticated && '(Login Required)'}
           </Button>
         </div>
       </div>

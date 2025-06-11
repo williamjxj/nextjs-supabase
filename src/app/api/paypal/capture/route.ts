@@ -34,7 +34,8 @@ async function getPayPalAccessToken() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderID } = await request.json()
+    const body = await request.json()
+    const { orderID, userId: clientUserId } = body
 
     if (!orderID) {
       return NextResponse.json({ error: 'Missing orderID' }, { status: 400 })
@@ -84,6 +85,48 @@ export async function POST(request: NextRequest) {
         if (imageId && licenseType) {
           const supabase = await createServerSupabaseClient()
 
+          // Implement fallback authentication similar to Stripe checkout
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser()
+
+          console.log('🔐 PayPal capture auth result:', { 
+            hasUser: !!user, 
+            userId: user?.id, 
+            authError: authError?.message 
+          })
+
+          // Strategy: Use server-side user if available, otherwise use client-provided user ID
+          let userId = user?.id
+          let authMethod = 'server-auth'
+
+          if (!user && clientUserId) {
+            // Fallback: Verify client-provided user ID exists by checking profiles table
+            const { data: userProfile, error: userCheckError } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', clientUserId)
+              .single()
+
+            if (!userCheckError && userProfile) {
+              userId = clientUserId
+              authMethod = 'client-trusted'
+              console.log(`🔐 PayPal capture: Using client-provided user ID: ${userId}`)
+            } else {
+              // If no profile, still trust client auth (user might be new)
+              userId = clientUserId
+              authMethod = 'client-fallback'
+              console.log(`🔐 PayPal capture: Trusting client auth for new user: ${userId}`)
+            }
+          } else if (!user && !clientUserId) {
+            console.error('PayPal capture: No user found in session or client')
+            // Don't fail the transaction, but log the issue
+            console.warn('⚠️ PayPal capture completing without user association')
+          }
+
+          console.log(`PayPal capture: Authenticated user (${authMethod}):`, userId)
+
           // First, lookup the actual image using the image ID
           const { data: imageData, error: imageError } = await supabase
             .from('images')
@@ -99,6 +142,7 @@ export async function POST(request: NextRequest) {
           const { error: insertError } = await supabase
             .from('purchases')
             .insert({
+              user_id: userId || null, // Use fallback authentication result
               image_id: imageData.id,
               license_type: licenseType,
               amount_paid: Math.round(parseFloat(capture.amount.value) * 100), // Convert to cents

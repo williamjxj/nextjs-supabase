@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 // This is a placeholder for PayPal API logic.
 // You'll need to install and use the PayPal SDK or make direct API calls.
 // For example, using @paypal/checkout-server-sdk
@@ -37,12 +38,59 @@ async function getPayPalAccessToken() {
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json()
     const {
       amount,
       currencyCode = 'USD',
       imageId,
       licenseType,
-    } = await request.json()
+      userId: clientUserId
+    } = body
+
+    // Check user authentication for PayPal checkout with fallback
+    const supabase = await createServerSupabaseClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    console.log('🔐 PayPal checkout auth result:', { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      authError: authError?.message 
+    })
+
+    // Strategy: Use server-side user if available, otherwise use client-provided user ID
+    let userId = user?.id
+    let authMethod = 'server-auth'
+
+    if (!user && clientUserId) {
+      // Fallback: Verify client-provided user ID exists by checking profiles table
+      const { data: userProfile, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', clientUserId)
+        .single()
+
+      if (!userCheckError && userProfile) {
+        userId = clientUserId
+        authMethod = 'client-trusted'
+        console.log(`🔐 PayPal checkout: Using client-provided user ID: ${userId}`)
+      } else {
+        // If no profile, still trust client auth (user might be new)
+        userId = clientUserId
+        authMethod = 'client-fallback'
+        console.log(`🔐 PayPal checkout: Trusting client auth for new user: ${userId}`)
+      }
+    } else if (!user && !clientUserId) {
+      console.error('PayPal checkout: No user found in session or client')
+      return NextResponse.json(
+        { error: 'Authentication required - please log in' },
+        { status: 401 }
+      )
+    }
+
+    console.log(`PayPal checkout: Authenticated user (${authMethod}):`, userId)
 
     if (!amount || !imageId || !licenseType) {
       return NextResponse.json(

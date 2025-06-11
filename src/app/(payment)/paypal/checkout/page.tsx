@@ -4,8 +4,10 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
+import { useAuth } from '@/hooks/use-auth'
 
 function PayPalCheckoutPage() {
+  const { user } = useAuth()
   const searchParams = useSearchParams()
   const amount = searchParams.get('amount')
   const licenseType = searchParams.get('licenseType')
@@ -29,6 +31,7 @@ function PayPalCheckoutPage() {
         licenseType,
         imageId,
         currencyCode: 'USD', // Or your desired currency
+        userId: user?.id, // Pass user ID for fallback authentication
       }),
     })
       .then(response => {
@@ -63,6 +66,7 @@ function PayPalCheckoutPage() {
       },
       body: JSON.stringify({
         orderID: data.orderID,
+        userId: user?.id, // Pass user ID for fallback authentication
       }),
     })
       .then(response => {

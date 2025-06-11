@@ -28,6 +28,9 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event.data.object as any)
+        break
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         await handleSubscriptionChange(event.data.object as any)
@@ -141,4 +144,60 @@ async function handlePaymentFailed(invoice: any) {
       throw error
     }
   }
+}
+
+async function handleCheckoutSessionCompleted(session: any) {
+  console.log(`Processing checkout session completed: ${session.id}`)
+  
+  // Only handle one-time payments (image purchases), not subscriptions
+  if (session.mode !== 'payment') {
+    console.log(`Skipping subscription checkout session: ${session.id}`)
+    return
+  }
+
+  // Extract metadata from session
+  const imageId = session.metadata?.imageId
+  const licenseType = session.metadata?.licenseType
+  const userId = session.metadata?.userId
+
+  if (!imageId) {
+    console.error(`No imageId in metadata for session ${session.id}`)
+    return
+  }
+
+  // Check if purchase already exists
+  const { data: existingPurchase } = await supabaseAdmin
+    .from('purchases')
+    .select('id')
+    .eq('stripe_session_id', session.id)
+    .single()
+
+  if (existingPurchase) {
+    console.log(`Purchase already exists for session ${session.id}`)
+    return
+  }
+
+  // Create purchase record
+  const purchaseData = {
+    image_id: imageId,
+    user_id: userId && userId !== 'anonymous' ? userId : null,
+    license_type: licenseType || 'standard',
+    amount_paid: session.amount_total || 0,
+    currency: session.currency || 'usd',
+    stripe_session_id: session.id,
+    payment_method: 'stripe',
+    payment_status: 'completed',
+    purchased_at: new Date().toISOString(),
+  }
+
+  const { error: insertError } = await supabaseAdmin
+    .from('purchases')
+    .insert([purchaseData])
+
+  if (insertError) {
+    console.error('Error creating purchase record:', insertError)
+    throw insertError
+  }
+
+  console.log(`Purchase record created successfully for session ${session.id}`)
 }

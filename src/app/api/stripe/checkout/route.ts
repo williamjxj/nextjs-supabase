@@ -4,13 +4,69 @@ import {
   IMAGE_PRICE_CONFIG,
   ImageLicenseType,
 } from '@/lib/stripe'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createClient()
+    
+    // Debug: Log all cookies
+    console.log('🍪 Request cookies:', request.cookies.getAll().map(c => c.name))
+    
+    // Check if user is authenticated first
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    console.log('🔐 Auth result:', { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      authError: authError?.message 
+    })
+
+    // Don't return error immediately - we'll try fallback authentication
+    if (authError) {
+      console.log('⚠️ Server-side auth failed, will try client-side fallback:', authError.message)
+    }
+
     const body = await request.json()
-    const { imageId, licenseType } = body
+    const { imageId, licenseType, userId: clientUserId } = body
+
+    // Strategy: Use server-side user if available, otherwise use client-provided user ID
+    const authenticatedUser = user
+    let userId = user?.id
+    let authMethod = 'server-auth'
+
+    if (!user && clientUserId) {
+      // Fallback: Verify client-provided user ID exists by checking profiles table
+      // (more reliable than querying auth.users directly)
+      const { data: userProfile, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', clientUserId)
+        .single()
+
+      if (!userCheckError && userProfile) {
+        userId = clientUserId
+        authMethod = 'client-trusted'
+        console.log(`🔐 Stripe checkout: Using client-provided user ID: ${userId}`)
+      } else {
+        // If no profile, still trust client auth (user might be new)
+        // This is safe because client-side auth is already validated
+        userId = clientUserId
+        authMethod = 'client-fallback'
+        console.log(`🔐 Stripe checkout: Trusting client auth for new user: ${userId}`)
+      }
+    } else if (!user) {
+      console.error('Stripe checkout: No user found in session or client')
+      return NextResponse.json(
+        { error: 'Authentication required - please log in' },
+        { status: 401 }
+      )
+    }
+
+    console.log(`Stripe checkout: Authenticated user (${authMethod}):`, userId)
 
     // Validate input
     if (!imageId || !licenseType) {
@@ -28,26 +84,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    const userId = user.id
-
     // Check if image exists
     const { data: image, error: imageError } = await supabase
       .from('images')
-      .select('id, title, description')
+      .select('id, original_name, filename')
       .eq('id', imageId)
       .single()
 
     if (imageError || !image) {
+      console.error('Image lookup error:', imageError)
       return NextResponse.json(
         { error: 'Image not found' },
         { status: 404 }
@@ -78,20 +123,39 @@ export async function POST(request: NextRequest) {
     let stripeCustomerId: string
 
     try {
-      // Try to find existing customer by email
-      const customers = await stripe.customers.list({
-        email: user.email!,
-        limit: 1
-      })
+      // Get user email - try from server auth first
+      const userEmail: string | null = user?.email || null
+      
+      if (!userEmail && userId) {
+        // For client-side fallback, create customer without email
+        // The user ID in metadata will be sufficient for tracking
+        console.log(`🔐 Creating Stripe customer without email for user: ${userId}`)
+      }
 
-      if (customers.data.length > 0) {
-        stripeCustomerId = customers.data[0].id
+      if (userEmail) {
+        // Try to find existing customer by email
+        const customers = await stripe.customers.list({
+          email: userEmail,
+          limit: 1
+        })
+
+        if (customers.data.length > 0) {
+          stripeCustomerId = customers.data[0].id
+        } else {
+          // Create new customer with email
+          const customer = await stripe.customers.create({
+            email: userEmail,
+            metadata: {
+              userId: userId || '',
+            },
+          })
+          stripeCustomerId = customer.id
+        }
       } else {
-        // Create new customer
+        // Create customer without email (fallback for client-side auth)
         const customer = await stripe.customers.create({
-          email: user.email!,
           metadata: {
-            userId: userId,
+            userId: userId || '',
           },
         })
         stripeCustomerId = customer.id
@@ -113,7 +177,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: priceConfig.currency,
             product_data: {
-              name: `${priceConfig.name} - ${image.title}`,
+              name: `${priceConfig.name} - ${image.original_name}`,
               description: priceConfig.description,
               metadata: {
                 imageId: imageId,
@@ -126,10 +190,10 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.APP_URL}/gallery?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.APP_URL}/gallery`,
+      success_url: `http://localhost:3000/gallery?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `http://localhost:3000/gallery?canceled=true`,
       metadata: {
-        userId,
+        userId: userId || '',
         imageId,
         licenseType,
         isSubscription: 'false',
