@@ -5,7 +5,7 @@ import { User, Provider } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { AuthState, AuthUser } from '@/types/auth'
 import * as authService from '@/lib/supabase/auth'
-import { SubscriptionType } from '@/lib/stripe'
+import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 const AuthContext = createContext<AuthState | null>(null)
 
@@ -217,7 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   // Check if user has access to specific subscription tier
-  const hasSubscriptionAccess = (requiredTier?: SubscriptionType): boolean => {
+  const hasSubscriptionAccess = (requiredTier?: SubscriptionPlanType): boolean => {
     if (!user || !user.hasActiveSubscription || !user.subscription) {
       return false
     }
@@ -231,7 +231,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!user.subscription?.prices?.products?.name) return null
       
       // Map product names to subscription types
-      const productNameMap: Record<string, SubscriptionType> = {
+      const productNameMap: Record<string, SubscriptionPlanType> = {
         'Basic Plan': 'standard',
         'Pro Plan': 'premium',
         'Premium Plan': 'commercial'
@@ -241,7 +241,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     })()
 
     // Define tier hierarchy
-    const tierLevels: Record<SubscriptionType, number> = {
+    const tierLevels: Record<SubscriptionPlanType, number> = {
       standard: 1,
       premium: 2,
       commercial: 3,

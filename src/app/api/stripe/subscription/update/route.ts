@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import {
   stripe,
-  SubscriptionType,
-  SUBSCRIPTION_PRICE_CONFIG,
 } from '@/lib/stripe'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { getSubscriptionPlanByType } from '@/lib/supabase/subscriptions'
+import { createClient } from '@/lib/supabase/server'
+import { SUBSCRIPTION_PLANS, SubscriptionPlanType, STRIPE_PRICE_IDS } from '@/lib/subscription-config'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate plan type
-    if (!Object.keys(SUBSCRIPTION_PRICE_CONFIG).includes(newPlanType)) {
+    if (!Object.keys(SUBSCRIPTION_PLANS).includes(newPlanType)) {
       return NextResponse.json(
         { error: 'Invalid subscription plan type' },
         { status: 400 }
@@ -29,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user is logged in and owns this subscription
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createClient()
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -57,13 +55,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Get new subscription plan details
-    const newPlan = await getSubscriptionPlanByType(
-      newPlanType as SubscriptionType
-    )
+    const newPlan = SUBSCRIPTION_PLANS[newPlanType as SubscriptionPlanType]
 
-    if (!newPlan || !newPlan.stripe_price_id) {
+    if (!newPlan) {
       return NextResponse.json(
-        { error: 'New subscription plan not found or has no Stripe price ID' },
+        { error: 'New subscription plan not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get the monthly price ID (you could also add logic for yearly)
+    const priceId = STRIPE_PRICE_IDS[newPlan.type]?.monthly
+
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Price ID not found for the selected plan' },
         { status: 404 }
       )
     }
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest) {
       customer: updatedSubscription.customer as string,
       line_items: [
         {
-          price: newPlan.stripe_price_id,
+          price: priceId,
           quantity: 1,
         },
       ],

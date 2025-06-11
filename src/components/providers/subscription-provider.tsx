@@ -3,16 +3,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useSubscription } from '@/hooks/use-subscription'
-import { SubscriptionType } from '@/lib/stripe'
+import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 interface SubscriptionContextType {
   loading: boolean
   isSubscribed: boolean
-  subscriptionTier: SubscriptionType | null
+  subscriptionTier: SubscriptionPlanType | null
   isGracePeriod: boolean
   isExpired: boolean
   daysRemaining: number | null
-  hasAccess: (requiredTier?: SubscriptionType) => boolean
+  hasAccess: (requiredTier?: SubscriptionPlanType) => boolean
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null)
@@ -35,8 +35,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   children,
 }) => {
   const { user } = useAuth()
-  const { loading, subscription, isActive, isPastDue, isExpired } =
-    useSubscription()
+  const { loading, subscription, isActive, isPastDue, isExpired } = useSubscription()
 
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null)
 
@@ -58,7 +57,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     if (!subscription?.prices?.products?.name) return null
     
     // Map product names to subscription types
-    const productNameMap: Record<string, SubscriptionType> = {
+    const productNameMap: Record<string, SubscriptionPlanType> = {
       'Basic Plan': 'standard',
       'Pro Plan': 'premium',
       'Premium Plan': 'commercial'
@@ -72,7 +71,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   const expired = isExpired ?? true
 
   // Function to check access to a specific tier
-  const hasAccess = (requiredTier?: SubscriptionType): boolean => {
+  const hasAccess = (requiredTier?: SubscriptionPlanType): boolean => {
     if (!isActive && !isGracePeriod) return false
 
     if (!requiredTier) return true // Any subscription is sufficient
@@ -80,7 +79,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     if (!subscriptionTier) return false // No tier information available
 
     // Define tier hierarchy
-    const tierLevels: Record<SubscriptionType, number> = {
+    const tierLevels: Record<SubscriptionPlanType, number> = {
       standard: 1,
       premium: 2,
       commercial: 3,

@@ -19,7 +19,7 @@ interface CheckoutParams {
 export async function checkoutWithStripe({ price, redirectPath = '/account' }: CheckoutParams) {
   try {
     // Get the user from Supabase auth
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       error,
       data: { user }
@@ -100,7 +100,7 @@ export async function checkoutWithStripe({ price, redirectPath = '/account' }: C
 
 export async function createStripePortal(currentPath: string) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       error,
       data: { user }
@@ -150,7 +150,7 @@ export async function createStripePortal(currentPath: string) {
 }
 
 export async function getSubscription() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -159,7 +159,7 @@ export async function getSubscription() {
     return null;
   }
 
-  const { data: subscription } = await supabase
+  const { data: subscription } = await (await supabase)
     .from('subscriptions')
     .select('*, prices(*, products(*))')
     .eq('user_id', user.id)
@@ -170,7 +170,7 @@ export async function getSubscription() {
 }
 
 export async function getUserDetails() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -179,7 +179,7 @@ export async function getUserDetails() {
     return null;
   }
 
-  const { data: userDetails } = await supabase
+  const { data: userDetails } = await (await supabase)
     .from('users')
     .select('*')
     .eq('id', user.id)
@@ -189,7 +189,7 @@ export async function getUserDetails() {
 }
 
 export async function updateUserName(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -200,7 +200,7 @@ export async function updateUserName(formData: FormData) {
 
   const fullName = formData.get('fullName') as string;
 
-  const { error } = await supabase
+  const { error } = await (await supabase)
     .from('users')
     .update({ full_name: fullName })
     .eq('id', user.id);
@@ -214,7 +214,7 @@ export async function updateUserName(formData: FormData) {
 }
 
 export async function updateUserEmail(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();

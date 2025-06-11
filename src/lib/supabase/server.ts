@@ -31,9 +31,10 @@ export const createServerSupabaseClient = async () => {
 }
 
 // Synchronous client for route handlers (Next.js 15)
-export function createClient() {
+// Changed to async to correctly handle cookies()
+export async function createClient() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies() // Added await
 
     return createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

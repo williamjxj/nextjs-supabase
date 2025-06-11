@@ -12,7 +12,7 @@ export interface SubscriptionAccess {
 }
 
 export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -96,7 +96,7 @@ export async function canDownloadImage(imageId: string): Promise<boolean> {
 
   // For limited plans, check download count
   if (access.downloadsRemaining !== undefined) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user }
     } = await supabase.auth.getUser();
@@ -107,7 +107,7 @@ export async function canDownloadImage(imageId: string): Promise<boolean> {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data: downloads, error } = await supabase
+      const { data: downloads, error } = await (await supabase)
         .from('image_downloads')
         .select('id')
         .eq('user_id', user.id)
@@ -127,13 +127,13 @@ export async function canDownloadImage(imageId: string): Promise<boolean> {
 }
 
 export async function recordImageDownload(imageId: string): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { error } = await supabase
+    const { error } = await (await supabase)
       .from('image_downloads')
       .insert({
         user_id: user.id,

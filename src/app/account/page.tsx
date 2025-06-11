@@ -4,10 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 import CustomerPortalForm from './CustomerPortalForm';
 import Pricing from '@/components/ui/pricing';
 
-export default async function Account() {
-  const supabase = createClient();
+export default async function AccountPage() {
+  const supabase = await createClient();
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {

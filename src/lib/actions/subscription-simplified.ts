@@ -15,7 +15,7 @@ interface CheckoutParams {
 }
 
 export async function checkoutWithStripe({ planType, billingInterval, redirectPath = '/account' }: CheckoutParams) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error
@@ -89,7 +89,7 @@ export async function checkoutWithStripe({ planType, billingInterval, redirectPa
 
 export async function createStripePortal(currentPath: string) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       error,
       data: { user }
@@ -137,7 +137,7 @@ export async function createStripePortal(currentPath: string) {
 }
 
 export async function getSubscription() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -150,7 +150,7 @@ export async function getSubscription() {
 }
 
 export async function getUserDetails() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -169,7 +169,7 @@ export async function getUserDetails() {
 }
 
 export async function updateUserName(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -193,7 +193,7 @@ export async function updateUserName(formData: FormData) {
 }
 
 export async function updateUserEmail(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();

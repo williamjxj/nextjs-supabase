@@ -12,10 +12,10 @@ export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Simplified logic: show auth buttons when no user, show user info when user exists
-  // Only show loading when we're actually checking authentication (mounted && loading)
-  const showAuthButtons = !user && mounted && !loading
+  // Show auth buttons immediately when mounted and no user (even during loading)
+  const showAuthButtons = !user && mounted
   const showUserInfo = Boolean(user && mounted)
-  const showLoading = mounted && loading
+  const showLoading = mounted && loading && !user
 
   return (
     <header className='sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100'>
@@ -53,10 +53,10 @@ export const Header = () => {
                 </button>
               </Link>
 
-              <Link href='/pricing'>
+              <Link href='/membership'>
                 <button className='flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
                   <Crown className='w-4 h-4' />
-                  <span className='text-sm font-medium'>Pricing</span>
+                  <span className='text-sm font-medium'>Membership</span>
                 </button>
               </Link>
             </>
@@ -145,10 +145,10 @@ export const Header = () => {
                   </button>
                 </Link>
 
-                <Link href='/pricing'>
+                <Link href='/membership'>
                   <button className='flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
                     <Crown className='w-5 h-5' />
-                    <span className='font-medium'>Pricing</span>
+                    <span className='font-medium'>Membership</span>
                   </button>
                 </Link>
               </>
