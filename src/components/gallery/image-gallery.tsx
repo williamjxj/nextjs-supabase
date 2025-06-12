@@ -12,6 +12,7 @@ import { SimpleImageViewer } from "./simple-image-viewer"
 import { EnhancedImageViewer } from "./enhanced-image-viewer"
 import { DeleteConfirm } from "./delete-confirm"
 import { PaymentOptionsModal } from "./payment-options-modal"
+import { StripeSuccessHandler } from "./stripe-success-handler"
 import { useSubscriptionAccess } from "@/hooks/use-subscription-access"
 import { useAuth } from "@/hooks/use-auth"
 import { GalleryFilters, type GalleryFilters as FilterType } from "./gallery-filters"
@@ -238,6 +239,9 @@ export function ImageGallery({ className }: ImageGalleryProps) {
 
   return (
     <div className={cn("min-h-screen bg-gray-50", className)}>
+      {/* Stripe Success Handler */}
+      <StripeSuccessHandler />
+      
       <div className="container mx-auto px-6 py-8">
         {/* Header - Krea.ai style */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
