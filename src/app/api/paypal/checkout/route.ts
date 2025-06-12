@@ -54,11 +54,7 @@ export async function POST(request: NextRequest) {
       error: authError,
     } = await supabase.auth.getUser()
 
-    console.log('🔐 PayPal checkout auth result:', { 
-      hasUser: !!user, 
-      userId: user?.id, 
-      authError: authError?.message 
-    })
+    // PayPal checkout auth check completed
 
     // Strategy: Use server-side user if available, otherwise use client-provided user ID
     let userId = user?.id
@@ -75,12 +71,12 @@ export async function POST(request: NextRequest) {
       if (!userCheckError && userProfile) {
         userId = clientUserId
         authMethod = 'client-trusted'
-        console.log(`🔐 PayPal checkout: Using client-provided user ID: ${userId}`)
+        // Using client-provided user ID
       } else {
         // If no profile, still trust client auth (user might be new)
         userId = clientUserId
         authMethod = 'client-fallback'
-        console.log(`🔐 PayPal checkout: Trusting client auth for new user: ${userId}`)
+        // Trusting client auth for new user
       }
     } else if (!user && !clientUserId) {
       console.error('PayPal checkout: No user found in session or client')
@@ -90,7 +86,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`PayPal checkout: Authenticated user (${authMethod}):`, userId)
+    // Authentication successful
 
     if (!amount || !imageId || !licenseType) {
       return NextResponse.json(

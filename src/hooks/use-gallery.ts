@@ -265,6 +265,10 @@ export const useGallery = () => {
     })
   }, [fetchImages])
 
+  const refetch = useCallback(() => {
+    fetchImages({}, { offset: 0 })
+  }, [fetchImages])
+
   // Initial fetch on component mount (gallery is public, no user required)
   useEffect(() => {
     // Use the fetchImages function for consistency
@@ -282,6 +286,6 @@ export const useGallery = () => {
     goToPage,
     goToNextPage,
     goToPrevPage,
-    refetch: () => fetchImages({}, { offset: 0 }),
+    refetch,
   }
 }

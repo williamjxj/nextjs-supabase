@@ -8,13 +8,6 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
 
-  console.log('Auth callback received:', { 
-    code: code ? 'present' : 'missing', 
-    error, 
-    errorDescription,
-    allParams: Object.fromEntries(searchParams.entries())
-  })
-
   // Handle OAuth errors
   if (error) {
     console.error('OAuth error:', error, errorDescription)
@@ -91,7 +84,6 @@ export async function GET(request: NextRequest) {
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   
   if (user && !userError) {
-    console.log('User already authenticated, redirecting to:', next)
     return NextResponse.redirect(`${origin}${next}`)
   }
 

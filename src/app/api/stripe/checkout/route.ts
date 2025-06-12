@@ -10,24 +10,15 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     
-    // Debug: Log all cookies
-    console.log('🍪 Request cookies:', request.cookies.getAll().map(c => c.name))
-    
     // Check if user is authenticated first
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
 
-    console.log('🔐 Auth result:', { 
-      hasUser: !!user, 
-      userId: user?.id, 
-      authError: authError?.message 
-    })
-
     // Don't return error immediately - we'll try fallback authentication
     if (authError) {
-      console.log('⚠️ Server-side auth failed, will try client-side fallback:', authError.message)
+      console.log('Server-side auth failed, will try client-side fallback:', authError.message)
     }
 
     const body = await request.json()
@@ -50,13 +41,11 @@ export async function POST(request: NextRequest) {
       if (!userCheckError && userProfile) {
         userId = clientUserId
         authMethod = 'client-trusted'
-        console.log(`🔐 Stripe checkout: Using client-provided user ID: ${userId}`)
       } else {
         // If no profile, still trust client auth (user might be new)
         // This is safe because client-side auth is already validated
         userId = clientUserId
         authMethod = 'client-fallback'
-        console.log(`🔐 Stripe checkout: Trusting client auth for new user: ${userId}`)
       }
     } else if (!user) {
       console.error('Stripe checkout: No user found in session or client')
@@ -65,8 +54,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
-
-    console.log(`Stripe checkout: Authenticated user (${authMethod}):`, userId)
 
     // Validate input
     if (!imageId || !licenseType) {
@@ -129,7 +116,6 @@ export async function POST(request: NextRequest) {
       if (!userEmail && userId) {
         // For client-side fallback, create customer without email
         // The user ID in metadata will be sufficient for tracking
-        console.log(`🔐 Creating Stripe customer without email for user: ${userId}`)
       }
 
       if (userEmail) {

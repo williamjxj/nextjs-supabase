@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
     if (serverUser && !serverAuthError) {
       authenticatedUser = serverUser
       authMethod = 'server-auth'
-      console.log(`🔐 Server auth successful for user: ${authenticatedUser.id}`)
+      // Server auth successful
     } else {
-      console.log(`⚠️ Server auth failed:`, serverAuthError?.message || 'No server session')
+      // Server auth failed, will try client-side fallback
       
       // Strategy 2: Fallback - use client-provided user_id (trusted since client is authenticated)
       if (fallbackUserId && typeof fallbackUserId === 'string') {
@@ -63,13 +63,13 @@ export async function POST(request: NextRequest) {
           // User exists in profiles table
           authenticatedUser = { id: fallbackUserId, email: null }
           authMethod = 'profile-validated'
-          console.log(`🔐 Profile validation successful for user: ${fallbackUserId}`)
+          // Profile validation successful
         } else {
           // If no profile, trust client auth (user might be new)
           // This is safe because the client-side auth is already validated
           authenticatedUser = { id: fallbackUserId, email: null }
           authMethod = 'client-trusted'
-          console.log(`🔐 Trusting client auth for user: ${fallbackUserId}`)
+          // Trusting client auth for new user
         }
       }
     }
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`✅ Authentication successful using method: ${authMethod} for user: ${authenticatedUser.id}`)
+    // Authentication successful
 
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`✅ Upload successful for user ${authenticatedUser.id}: ${fileName}`)
+    // Upload successful
 
     return NextResponse.json(
       {

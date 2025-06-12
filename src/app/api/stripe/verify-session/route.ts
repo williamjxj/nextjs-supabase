@@ -19,8 +19,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`🔍 Processing Stripe session: ${sessionId}`)
-
     // Retrieve the checkout session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     
@@ -30,13 +28,6 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       )
     }
-
-    console.log(`📋 Session details:`, {
-      id: session.id,
-      paymentStatus: session.payment_status,
-      mode: session.mode,
-      metadata: session.metadata
-    })
 
     // Only process completed payments for one-time purchases
     if (session.payment_status !== 'paid' || session.mode !== 'payment') {
@@ -66,7 +57,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingPurchase) {
-      console.log(`✅ Purchase already exists for session ${session.id}`)
       return NextResponse.json({
         success: true,
         message: 'Purchase already recorded',
@@ -87,8 +77,6 @@ export async function POST(request: NextRequest) {
       purchased_at: new Date().toISOString(),
     }
 
-    console.log(`💰 Creating purchase record:`, purchaseData)
-
     const { data: newPurchase, error: insertError } = await supabaseAdmin
       .from('purchases')
       .insert([purchaseData])
@@ -96,14 +84,12 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('❌ Error creating purchase record:', insertError)
+      console.error('Error creating purchase record:', insertError)
       return NextResponse.json(
         { error: 'Failed to create purchase record', details: insertError.message },
         { status: 500 }
       )
     }
-
-    console.log(`✅ Purchase record created successfully:`, newPurchase.id)
 
     return NextResponse.json({
       success: true,
@@ -112,7 +98,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Stripe verification error:', error)
+    console.error('Stripe verification error:', error)
     return NextResponse.json(
       { 
         error: 'Failed to process Stripe session',

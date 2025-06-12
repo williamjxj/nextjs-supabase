@@ -240,7 +240,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   return (
     <div className={cn("min-h-screen bg-gray-50", className)}>
       {/* Stripe Success Handler */}
-      <StripeSuccessHandler />
+      <StripeSuccessHandler onPurchaseSuccess={refetch} />
       
       <div className="container mx-auto px-6 py-8">
         {/* Header - Krea.ai style */}

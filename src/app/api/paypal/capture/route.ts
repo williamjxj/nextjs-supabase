@@ -91,11 +91,7 @@ export async function POST(request: NextRequest) {
             error: authError,
           } = await supabase.auth.getUser()
 
-          console.log('🔐 PayPal capture auth result:', { 
-            hasUser: !!user, 
-            userId: user?.id, 
-            authError: authError?.message 
-          })
+          // PayPal capture auth check completed
 
           // Strategy: Use server-side user if available, otherwise use client-provided user ID
           let userId = user?.id
@@ -112,12 +108,12 @@ export async function POST(request: NextRequest) {
             if (!userCheckError && userProfile) {
               userId = clientUserId
               authMethod = 'client-trusted'
-              console.log(`🔐 PayPal capture: Using client-provided user ID: ${userId}`)
+              // Using client-provided user ID
             } else {
               // If no profile, still trust client auth (user might be new)
               userId = clientUserId
               authMethod = 'client-fallback'
-              console.log(`🔐 PayPal capture: Trusting client auth for new user: ${userId}`)
+              // Trusting client auth for new user
             }
           } else if (!user && !clientUserId) {
             console.error('PayPal capture: No user found in session or client')
@@ -125,7 +121,7 @@ export async function POST(request: NextRequest) {
             console.warn('⚠️ PayPal capture completing without user association')
           }
 
-          console.log(`PayPal capture: Authenticated user (${authMethod}):`, userId)
+          // Authentication successful
 
           // First, lookup the actual image using the image ID
           const { data: imageData, error: imageError } = await supabase
@@ -157,7 +153,7 @@ export async function POST(request: NextRequest) {
           if (insertError) {
             console.error('Failed to save purchase to database:', insertError)
           } else {
-            console.log('Purchase saved successfully for image:', imageId)
+            // Purchase saved successfully
           }
         }
       } catch (dbError) {

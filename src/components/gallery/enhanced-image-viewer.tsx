@@ -140,10 +140,10 @@ export function EnhancedImageViewer({
       // Event handlers
       on={{
         view: ({ index }) => {
-          console.log(`Viewing image ${index + 1} of ${images.length}: ${images[index]?.original_name}`)
+          // Viewing current image
         },
         click: ({ index }) => {
-          console.log(`Clicked on image ${index + 1}`)
+          // Image clicked
         },
       }}
     />

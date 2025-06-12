@@ -7,7 +7,7 @@ export async function POST() {
   try {
     const supabase = createServiceRoleClient()
 
-    console.log('Starting migration...')
+    // Starting migration
 
     // Helper function to get features for each plan type
     function getFeatures(type: string): string[] {
@@ -53,7 +53,7 @@ export async function POST() {
       })
     )
 
-    console.log('Attempting to seed plans:', plans)
+    // Attempting to seed plans
 
     // Try to insert plans - this will fail if table doesn't exist
     const { data, error: seedError } = await supabase
@@ -107,7 +107,7 @@ CREATE POLICY "Anyone can view active subscription plans"
       return NextResponse.json({ error: 'Failed to seed subscription plans', details: seedError }, { status: 500 })
     }
 
-    console.log('Plans seeded successfully:', data)
+    // Plans seeded successfully
 
     return NextResponse.json({
       success: true,

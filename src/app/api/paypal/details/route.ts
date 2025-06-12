@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-  console.log('Fetching PayPal purchase details...')
+  // Fetching PayPal purchase details
   try {
     const { searchParams } = new URL(request.url)
     const paymentId = searchParams.get('payment_id')

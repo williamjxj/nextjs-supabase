@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useToast } from '@/components/ui/toast'
 
-export function StripeSuccessHandler() {
+interface StripeSuccessHandlerProps {
+  onPurchaseSuccess?: () => void
+}
+
+export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandlerProps) {
   const searchParams = useSearchParams()
   const { addToast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -15,8 +19,6 @@ export function StripeSuccessHandler() {
 
     if (success === 'true' && sessionId && !isProcessing) {
       setIsProcessing(true)
-      
-      console.log('🎉 Stripe payment successful, processing session:', sessionId)
       
       // Call our verification endpoint to create the purchase record
       fetch('/api/stripe/verify-session', {
@@ -34,7 +36,14 @@ export function StripeSuccessHandler() {
               title: 'Payment Successful!',
               description: 'Your purchase has been processed successfully.',
             })
-            console.log('✅ Purchase record created:', data.purchase)
+            
+            // Trigger gallery refresh to show updated purchase status
+            if (onPurchaseSuccess) {
+              // Small delay to ensure purchase record is properly indexed
+              setTimeout(() => {
+                onPurchaseSuccess()
+              }, 500)
+            }
           } else {
             console.error('❌ Failed to process purchase:', data.error)
             addToast({
@@ -76,7 +85,7 @@ export function StripeSuccessHandler() {
       url.searchParams.delete('canceled')
       window.history.replaceState({}, '', url.toString())
     }
-  }, [searchParams, addToast, isProcessing])
+  }, [searchParams, addToast, isProcessing, onPurchaseSuccess])
 
   return null // This component doesn't render anything
 }
