@@ -70,10 +70,10 @@ export const useGallery = () => {
       // Get current state synchronously to avoid race conditions
       let finalFilters: GalleryFilters = {
         search: '',
-        sortBy: 'created_at', 
+        sortBy: 'created_at',
         sortOrder: 'desc',
       }
-      
+
       setGalleryState(prev => {
         finalFilters = {
           search: '',
@@ -124,7 +124,9 @@ export const useGallery = () => {
         if (!response.ok) {
           const errorText = await response.text()
           console.error('API error response:', errorText)
-          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+          throw new Error(
+            `HTTP error! status: ${response.status} - ${errorText}`
+          )
         }
 
         const data = await response.json()

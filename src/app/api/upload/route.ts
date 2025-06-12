@@ -4,16 +4,18 @@ import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
 
 // Helper function to extract image dimensions using sharp
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+async function getImageDimensions(
+  file: File
+): Promise<{ width: number; height: number }> {
   try {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     const metadata = await sharp(buffer).metadata()
-    
+
     if (!metadata.width || !metadata.height) {
       throw new Error('Could not extract image dimensions')
     }
-    
+
     return { width: metadata.width, height: metadata.height }
   } catch (error) {
     console.error('Error extracting image dimensions:', error)
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
       // Server auth successful
     } else {
       // Server auth failed, will try client-side fallback
-      
+
       // Strategy 2: Fallback - use client-provided user_id (trusted since client is authenticated)
       if (fallbackUserId && typeof fallbackUserId === 'string') {
         // Simple validation: check if this user has uploaded images before or exists in profiles
@@ -80,7 +82,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Authentication failed',
-          details: 'Unable to authenticate user. Please try logging in again.'
+          details: 'Unable to authenticate user. Please try logging in again.',
         },
         { status: 401 }
       )
@@ -161,13 +163,18 @@ export async function POST(request: NextRequest) {
     // Extract image dimensions using sharp (with client fallback)
     let width: number
     let height: number
-    
+
     // Try to use client-provided dimensions first
     if (clientWidth && clientHeight) {
       const parsedWidth = parseInt(clientWidth.toString(), 10)
       const parsedHeight = parseInt(clientHeight.toString(), 10)
-      
-      if (!isNaN(parsedWidth) && !isNaN(parsedHeight) && parsedWidth > 0 && parsedHeight > 0) {
+
+      if (
+        !isNaN(parsedWidth) &&
+        !isNaN(parsedHeight) &&
+        parsedWidth > 0 &&
+        parsedHeight > 0
+      ) {
         width = parsedWidth
         height = parsedHeight
       } else {

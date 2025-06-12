@@ -24,7 +24,9 @@ export function useSubscriptionAccess(): SubscriptionAccessHook {
   const isActive = subscription?.status === 'active'
   const isExpired = subscription?.status === 'expired'
   const isGracePeriod = false // Simplified - we don't track grace periods
-  const hasAnySubscription = Boolean(subscription && subscription.status === 'active')
+  const hasAnySubscription = Boolean(
+    subscription && subscription.status === 'active'
+  )
   const currentTier = subscription?.plan_type || null
 
   // Function to check access to a specific tier

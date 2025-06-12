@@ -10,9 +10,10 @@ const compat = new FlatCompat({
 })
 
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals'),
+  ...compat.extends('next/core-web-vitals', 'plugin:prettier/recommended'),
   {
     rules: {
+      'prettier/prettier': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
     },

@@ -174,10 +174,7 @@ export const SignupForm = ({
           </Button>
         </form>
 
-        <SocialAuthSection 
-          disabled={isLoading}
-          showDivider={true}
-        />
+        <SocialAuthSection disabled={isLoading} showDivider={true} />
 
         <div className='mt-4 text-center text-sm'>
           <span className='text-muted-foreground'>

@@ -59,7 +59,7 @@ export default function SubscriptionsPage() {
 
   const handleCancelSubscription = async () => {
     if (!subscription) return
-    
+
     setCancelling(true)
     try {
       // This would need to be implemented - for now just show a message
@@ -163,11 +163,14 @@ export default function SubscriptionsPage() {
                 <CreditCard className='w-5 h-5 mr-2' />
                 <span>
                   {formatCurrency(
-                    subscription.billing_interval === 'yearly' 
-                      ? subscription.price_yearly 
+                    subscription.billing_interval === 'yearly'
+                      ? subscription.price_yearly
                       : subscription.price_monthly
                   )}{' '}
-                  / {subscription.billing_interval === 'yearly' ? 'year' : 'month'}
+                  /{' '}
+                  {subscription.billing_interval === 'yearly'
+                    ? 'year'
+                    : 'month'}
                 </span>
               </div>
 
@@ -249,7 +252,10 @@ export default function SubscriptionsPage() {
             </h4>
             <div className='grid md:grid-cols-2 gap-2'>
               {currentPlan.features.map((feature, index) => (
-                <div key={index} className='flex items-center text-sm text-gray-600 dark:text-gray-300'>
+                <div
+                  key={index}
+                  className='flex items-center text-sm text-gray-600 dark:text-gray-300'
+                >
                   <CheckCircle className='w-4 h-4 mr-2 text-green-500' />
                   {feature}
                 </div>
@@ -294,10 +300,7 @@ export default function SubscriptionsPage() {
           ))}
         </div>
         <div className='mt-6'>
-          <Button
-            onClick={() => router.push('/membership')}
-            className='w-full'
-          >
+          <Button onClick={() => router.push('/membership')} className='w-full'>
             View All Plans & Change Subscription
           </Button>
         </div>

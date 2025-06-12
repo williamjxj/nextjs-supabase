@@ -10,7 +10,10 @@ export interface SubscriptionPlan {
   features: string[]
 }
 
-export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanType, SubscriptionPlan> = {
+export const SUBSCRIPTION_PLANS: Record<
+  SubscriptionPlanType,
+  SubscriptionPlan
+> = {
   standard: {
     type: 'standard',
     name: 'Standard Plan',
@@ -21,8 +24,8 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanType, SubscriptionPlan> 
       'Access to standard quality images',
       'Basic usage rights',
       'Download up to 50 images/month',
-      'Email support'
-    ]
+      'Email support',
+    ],
   },
   premium: {
     type: 'premium',
@@ -35,8 +38,8 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanType, SubscriptionPlan> 
       'Extended usage rights',
       'Download up to 200 images/month',
       'Priority email support',
-      'Advanced filters and search'
-    ]
+      'Advanced filters and search',
+    ],
   },
   commercial: {
     type: 'commercial',
@@ -50,25 +53,60 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanType, SubscriptionPlan> 
       'Unlimited downloads',
       'Priority phone support',
       'Early access to new features',
-      'Custom licensing options'
-    ]
-  }
+      'Custom licensing options',
+    ],
+  },
 }
 
-// Stripe price IDs (you'll need to create these in Stripe dashboard)
+// Stripe price IDs - these can be environment variables or hardcoded
+// For development, you can create these in your Stripe Dashboard
 export const STRIPE_PRICE_IDS = {
   standard: {
-    monthly: 'price_standard_monthly', // Replace with actual Stripe price ID
-    yearly: 'price_standard_yearly'
+    monthly:
+      process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID || 'price_standard_monthly',
+    yearly:
+      process.env.STRIPE_STANDARD_YEARLY_PRICE_ID || 'price_standard_yearly',
   },
   premium: {
-    monthly: 'price_premium_monthly',
-    yearly: 'price_premium_yearly'
+    monthly:
+      process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || 'price_premium_monthly',
+    yearly:
+      process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID || 'price_premium_yearly',
   },
   commercial: {
-    monthly: 'price_commercial_monthly',
-    yearly: 'price_commercial_yearly'
+    monthly:
+      process.env.STRIPE_COMMERCIAL_MONTHLY_PRICE_ID ||
+      'price_commercial_monthly',
+    yearly:
+      process.env.STRIPE_COMMERCIAL_YEARLY_PRICE_ID ||
+      'price_commercial_yearly',
+  },
+}
+
+// Helper function to get plan details by Stripe price ID
+export function getPlanByPriceId(priceId: string | undefined): {
+  planType: SubscriptionPlanType
+  billingInterval: BillingInterval
+} | null {
+  if (!priceId) return null
+
+  // Create reverse mapping from price IDs
+  for (const [planType, priceIds] of Object.entries(STRIPE_PRICE_IDS)) {
+    if (priceIds.monthly === priceId) {
+      return {
+        planType: planType as SubscriptionPlanType,
+        billingInterval: 'monthly',
+      }
+    }
+    if (priceIds.yearly === priceId) {
+      return {
+        planType: planType as SubscriptionPlanType,
+        billingInterval: 'yearly',
+      }
+    }
   }
+
+  return null
 }
 
 export type SubscriptionStatus = 'active' | 'cancelled' | 'expired'

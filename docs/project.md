@@ -7,20 +7,26 @@ I would like assistance with researching and analyzing the current application, 
 ## Target Features
 
 ### Authentication (Sign In/Sign Up)
+
 - Support for email/password and social login options (Google, Facebook, etc.) using Supabase Auth.
 
 ### Payment System
+
 Users can:
+
 - Purchase individual images via one-time checkout.
 - Subscribe to monthly or yearly membership plans for premium access.
 
 ### Unified User Identity
+
 - `user.id` from `auth.users` will serve as the primary foreign key across all authentication, image, and payment-related tables.
 
 ## Proposed Database Changes
+
 To streamline and simplify the schema:
 
 ### Tables to Remove
+
 - `public.users` (replace with `auth.users` from Supabase)
 - `products`
 - `prices`
@@ -28,6 +34,7 @@ To streamline and simplify the schema:
 - `customers`
 
 ### Tables to Retain and Adjust
+
 - `images`
 - `purchases`
 - `subscriptions`

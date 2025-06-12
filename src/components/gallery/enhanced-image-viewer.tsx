@@ -33,7 +33,7 @@ export function EnhancedImageViewer({
   if (!mounted || !images.length) return null
 
   // Convert our image types to lightbox slides format
-  const slides = images.map((image) => ({
+  const slides = images.map(image => ({
     src: image.storage_url,
     alt: image.original_name,
     width: image.width || 1920,
@@ -47,7 +47,6 @@ export function EnhancedImageViewer({
       index={Math.max(0, Math.min(currentIndex, slides.length - 1))}
       slides={slides}
       plugins={[Zoom, Fullscreen, Thumbnails, Counter]}
-      
       // Enhanced zoom configuration for Pixea-like experience
       zoom={{
         maxZoomPixelRatio: 5, // Allow more zoom for detailed viewing
@@ -60,83 +59,75 @@ export function EnhancedImageViewer({
         pinchZoomDistanceFactor: 100,
         scrollToZoom: true,
       }}
-      
       // Carousel settings
       carousel={{
         finite: false,
         preload: 2,
-        padding: "16px",
-        spacing: "30%",
-        imageFit: "contain",
+        padding: '16px',
+        spacing: '30%',
+        imageFit: 'contain',
       }}
-      
       // Animation settings for smooth transitions
       animation={{
         fade: 300,
         swipe: 500,
         easing: {
-          fade: "ease-out",
-          swipe: "ease-out", 
-          navigation: "ease-in-out"
-        }
+          fade: 'ease-out',
+          swipe: 'ease-out',
+          navigation: 'ease-in-out',
+        },
       }}
-      
       // Controller settings for enhanced interaction
       controller={{
         focus: true,
         aria: true,
-        touchAction: "none",
+        touchAction: 'none',
         closeOnPullUp: true,
         closeOnPullDown: true,
         closeOnBackdropClick: true,
       }}
-      
       // Thumbnails configuration for navigation
       thumbnails={{
-        position: "bottom",
+        position: 'bottom',
         width: 100,
         height: 60,
         border: 2,
         borderRadius: 6,
         padding: 4,
         gap: 12,
-        imageFit: "cover",
+        imageFit: 'cover',
         vignette: true,
       }}
-      
       // Counter configuration
       counter={{
-        container: { 
-          style: { 
-            top: "20px",
-            bottom: "unset",
-            right: "20px",
-            left: "unset",
-            fontSize: "14px",
-            fontWeight: "500",
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            borderRadius: "16px",
-            padding: "6px 12px",
-            backdropFilter: "blur(8px)",
-          } 
-        }
+        container: {
+          style: {
+            top: '20px',
+            bottom: 'unset',
+            right: '20px',
+            left: 'unset',
+            fontSize: '14px',
+            fontWeight: '500',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            borderRadius: '16px',
+            padding: '6px 12px',
+            backdropFilter: 'blur(8px)',
+          },
+        },
       }}
-      
       // Custom styles for Pixea-like appearance
       styles={{
         root: {
-          "--yarl__color_backdrop": "rgba(0, 0, 0, 0.98)",
+          '--yarl__color_backdrop': 'rgba(0, 0, 0, 0.98)',
         },
         container: {
-          backgroundColor: "rgba(0, 0, 0, 0.98)",
-        }
+          backgroundColor: 'rgba(0, 0, 0, 0.98)',
+        },
       }}
-      
       // Toolbar configuration with essential buttons
       toolbar={{
-        buttons: ["fullscreen", "close"]
+        buttons: ['fullscreen', 'close'],
       }}
-      
       // Event handlers
       on={{
         view: ({ index }) => {

@@ -18,11 +18,12 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createServerSupabaseClient()
-    
+
     try {
       // Exchange code for session
-      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
-      
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.exchangeCodeForSession(code)
+
       if (sessionError) {
         console.error('Session exchange error:', sessionError)
         return NextResponse.redirect(
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
         if (profileError && profileError.code === 'PGRST116') {
           const metadata = sessionData.user.user_metadata || {}
           const appMetadata = sessionData.user.app_metadata || {}
-          
+
           const { error: insertError } = await supabase
             .from('profiles')
             .insert({
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
               email: sessionData.user.email,
               full_name: metadata.full_name || metadata.name || null,
               avatar_url: metadata.avatar_url || metadata.picture || null,
-              provider: appMetadata.provider || 'email'
+              provider: appMetadata.provider || 'email',
             })
 
           if (insertError) {
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
         // Successful authentication - redirect to intended destination
         const forwardedHost = request.headers.get('x-forwarded-host')
         const isLocalEnv = process.env.NODE_ENV === 'development'
-        
+
         if (isLocalEnv) {
           return NextResponse.redirect(`${origin}${next}`)
         } else if (forwardedHost) {
@@ -81,13 +82,20 @@ export async function GET(request: NextRequest) {
 
   // Check if user is already authenticated (sometimes happens with social auth)
   const supabase = await createServerSupabaseClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
   if (user && !userError) {
     return NextResponse.redirect(`${origin}${next}`)
   }
 
   // No code parameter and no authenticated user - this indicates an issue
-  console.error('No code parameter and no authenticated user - possible OAuth issue')
-  return NextResponse.redirect(`${origin}/login?error=no_code&message=${encodeURIComponent('Authentication process incomplete. Please try again.')}`)
+  console.error(
+    'No code parameter and no authenticated user - possible OAuth issue'
+  )
+  return NextResponse.redirect(
+    `${origin}/login?error=no_code&message=${encodeURIComponent('Authentication process incomplete. Please try again.')}`
+  )
 }

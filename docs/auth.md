@@ -16,4 +16,3 @@ Open: https://console.cloud.google.com/
 ### 4 Update Authorized Redirect URIs
 
 - `http://127.0.0.1:54321/auth/v1/callback`
-

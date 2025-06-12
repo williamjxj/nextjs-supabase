@@ -55,17 +55,17 @@ export function SimpleImageViewer({
           size='sm'
           onClick={onClose}
           className='text-white hover:bg-white/20 cursor-pointer shrink-0'
-          title="Close viewer (ESC)"
+          title='Close viewer (ESC)'
         >
           <X className='h-6 w-6' />
         </Button>
       </div>
 
       {/* Image Container - Full screen with proper aspect ratio */}
-      <div 
+      <div
         className='absolute inset-0 flex items-center justify-center cursor-pointer'
         onClick={onClose}
-        title="Click to close"
+        title='Click to close'
       >
         <div className='relative w-full h-full max-w-[98vw] max-h-[98vh] flex items-center justify-center'>
           <Image
@@ -74,7 +74,7 @@ export function SimpleImageViewer({
             fill
             className='object-contain'
             priority
-            sizes="98vw"
+            sizes='98vw'
             style={{
               maxWidth: '98vw',
               maxHeight: '98vh',
@@ -88,7 +88,9 @@ export function SimpleImageViewer({
         <div className='flex items-center justify-between text-sm'>
           <div className='flex items-center gap-6'>
             {image.width && image.height && (
-              <span className='font-medium'>{image.width} × {image.height} px</span>
+              <span className='font-medium'>
+                {image.width} × {image.height} px
+              </span>
             )}
             <span>{(image.file_size / (1024 * 1024)).toFixed(2)} MB</span>
           </div>

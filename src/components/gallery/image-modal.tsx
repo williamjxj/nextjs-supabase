@@ -41,7 +41,11 @@ export function ImageModal({
   const [isLoading, setIsLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
-  const { hasAccess, currentTier, loading: accessLoading } = useSubscriptionAccess()
+  const {
+    hasAccess,
+    currentTier,
+    loading: accessLoading,
+  } = useSubscriptionAccess()
 
   useEffect(() => {
     if (image && images.length > 0) {
@@ -89,7 +93,7 @@ export function ImageModal({
 
   const handleDownloadClick = () => {
     if (!currentImage) return
-    
+
     // Check if user can download based on subscription
     if (hasAccess()) {
       onDownload(currentImage)
@@ -104,19 +108,20 @@ export function ImageModal({
 
   const handleViewFullSize = () => {
     if (!currentImage) return
-    
+
     // Construct the direct public URL to the full-size image
     // This avoids hydration issues by not using the Supabase client during SSR
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
     const fullSizeUrl = `${supabaseUrl}/storage/v1/object/public/images/${currentImage.storage_path}`
-    
+
     // Open the direct URL in a new tab for full resolution viewing
     window.open(fullSizeUrl, '_blank')
   }
 
   const handleDownload = async () => {
     if (!currentImage) return
-    
+
     // Check if user can download based on subscription
     if (hasAccess()) {
       setIsLoading(true)
@@ -173,7 +178,7 @@ export function ImageModal({
               size='sm'
               onClick={handleViewFullSize}
               className='text-white hover:bg-white/20 cursor-pointer'
-              title="Open full size in new tab"
+              title='Open full size in new tab'
             >
               <ExternalLink className='h-4 w-4' />
               View Large
@@ -184,7 +189,7 @@ export function ImageModal({
               onClick={handleDownload}
               disabled={isLoading}
               className='text-white hover:bg-white/20 cursor-pointer'
-              title="Download image"
+              title='Download image'
             >
               <Download className='h-4 w-4' />
               Download
@@ -194,7 +199,7 @@ export function ImageModal({
               size='sm'
               onClick={handleDelete}
               className='text-red-400 hover:bg-red-500/20 cursor-pointer'
-              title="Delete image"
+              title='Delete image'
             >
               <Trash2 className='h-4 w-4' />
               Delete
@@ -204,7 +209,7 @@ export function ImageModal({
               size='sm'
               onClick={onClose}
               className='text-white hover:bg-white/20 cursor-pointer'
-              title="Close modal"
+              title='Close modal'
             >
               <X className='h-4 w-4' />
             </Button>
@@ -212,7 +217,11 @@ export function ImageModal({
         </div>
 
         {/* Image Container */}
-        <div className='relative flex-1 flex items-center justify-center cursor-pointer' onClick={handleViewFullSize} title="Click to view large">
+        <div
+          className='relative flex-1 flex items-center justify-center cursor-pointer'
+          onClick={handleViewFullSize}
+          title='Click to view large'
+        >
           {!imageError ? (
             <Image
               src={currentImage.storage_url}
@@ -236,7 +245,7 @@ export function ImageModal({
                 size='sm'
                 onClick={goToPrevious}
                 className='absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 cursor-pointer'
-                title="Previous image"
+                title='Previous image'
               >
                 <ChevronLeft className='h-6 w-6' />
               </Button>
@@ -245,7 +254,7 @@ export function ImageModal({
                 size='sm'
                 onClick={goToNext}
                 className='absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 cursor-pointer'
-                title="Next image"
+                title='Next image'
               >
                 <ChevronRight className='h-6 w-6' />
               </Button>
@@ -254,18 +263,18 @@ export function ImageModal({
 
           {showUpgradePrompt && currentImage && (
             <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/70'>
-              <div className="bg-white p-6 rounded-lg max-w-md mx-4">
-                <h3 className="text-lg font-semibold mb-4">Upgrade Required</h3>
-                <p className="text-gray-600 mb-4">
-                  {!currentTier 
+              <div className='bg-white p-6 rounded-lg max-w-md mx-4'>
+                <h3 className='text-lg font-semibold mb-4'>Upgrade Required</h3>
+                <p className='text-gray-600 mb-4'>
+                  {!currentTier
                     ? 'You need an active subscription to download images.'
                     : 'Your current plan has reached the download limit.'}
                 </p>
-                <div className="flex gap-3">
-                  <Link href="/membership">
+                <div className='flex gap-3'>
+                  <Link href='/membership'>
                     <Button>View Plans</Button>
                   </Link>
-                  <Button variant="outline" onClick={handleUpgradePromptClose}>
+                  <Button variant='outline' onClick={handleUpgradePromptClose}>
                     Close
                   </Button>
                 </div>

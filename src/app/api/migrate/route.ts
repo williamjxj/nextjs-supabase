@@ -16,14 +16,14 @@ export async function POST() {
           'Access to standard quality images',
           'Basic usage rights',
           'Download up to 50 images/month',
-          'Email support'
+          'Email support',
         ],
         premium: [
           'Access to premium quality images',
           'Extended usage rights',
           'Download up to 200 images/month',
           'Priority email support',
-          'Advanced filters and search'
+          'Advanced filters and search',
         ],
         commercial: [
           'Access to all images',
@@ -31,27 +31,25 @@ export async function POST() {
           'Unlimited downloads',
           'Priority phone support',
           'Early access to new features',
-          'Custom licensing options'
-        ]
+          'Custom licensing options',
+        ],
       }
       return featuresMap[type] || []
     }
 
     // First, try to seed the subscription plans directly
     // If the table doesn't exist, we'll get an error and create it manually
-    const plans = Object.entries(SUBSCRIPTION_PLANS).map(
-      ([type, config]) => ({
-        type,
-        name: config.name,
-        description: config.description,
-        price: config.priceMonthly, // Use monthly price
-        currency: 'usd',
-        interval: 'month',
-        stripe_price_id: null, // We handle Stripe IDs separately
-        is_active: true,
-        features: config.features,
-      })
-    )
+    const plans = Object.entries(SUBSCRIPTION_PLANS).map(([type, config]) => ({
+      type,
+      name: config.name,
+      description: config.description,
+      price: config.priceMonthly, // Use monthly price
+      currency: 'usd',
+      interval: 'month',
+      stripe_price_id: null, // We handle Stripe IDs separately
+      is_active: true,
+      features: config.features,
+    }))
 
     // Attempting to seed plans
 
@@ -64,14 +62,19 @@ export async function POST() {
       })
 
     if (seedError) {
-      console.error('Error seeding subscription plans (table might not exist):', seedError)
-      
+      console.error(
+        'Error seeding subscription plans (table might not exist):',
+        seedError
+      )
+
       // If it's a "relation does not exist" error, we need to create the tables manually
       if (seedError.code === '42P01') {
-        return NextResponse.json({
-          error: 'subscription_plans table does not exist',
-          message: 'Please run the database migration first. You can either run `supabase db push` if you have the CLI set up, or manually create the tables in your Supabase dashboard.',
-          sqlToRun: `
+        return NextResponse.json(
+          {
+            error: 'subscription_plans table does not exist',
+            message:
+              'Please run the database migration first. You can either run `supabase db push` if you have the CLI set up, or manually create the tables in your Supabase dashboard.',
+            sqlToRun: `
 -- Create subscription_plans table
 CREATE TABLE IF NOT EXISTS public.subscription_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -100,11 +103,16 @@ CREATE POLICY "Anyone can view active subscription plans"
   ON public.subscription_plans FOR SELECT 
   USING (is_active = TRUE);
           `,
-          plans: plans
-        }, { status: 400 })
+            plans: plans,
+          },
+          { status: 400 }
+        )
       }
-      
-      return NextResponse.json({ error: 'Failed to seed subscription plans', details: seedError }, { status: 500 })
+
+      return NextResponse.json(
+        { error: 'Failed to seed subscription plans', details: seedError },
+        { status: 500 }
+      )
     }
 
     // Plans seeded successfully
@@ -113,11 +121,13 @@ CREATE POLICY "Anyone can view active subscription plans"
       success: true,
       message: 'Subscription plans seeded successfully',
       plansSeeded: plans.length,
-      data: data
+      data: data,
     })
-
   } catch (error) {
     console.error('Error in migrate API:', error)
-    return NextResponse.json({ error: 'Internal server error', details: error }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error', details: error },
+      { status: 500 }
+    )
   }
 }

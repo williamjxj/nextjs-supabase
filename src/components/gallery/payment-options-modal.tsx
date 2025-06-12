@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 interface PaymentOptionsModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelectPaymentMethod: (method: 'stripe' | 'paypal' | 'cryptocurrency') => void
+  onSelectPaymentMethod: (
+    method: 'stripe' | 'paypal' | 'cryptocurrency'
+  ) => void
   isAuthenticated?: boolean
 }
 

@@ -1,5 +1,8 @@
 import { User } from '@supabase/supabase-js'
-import { UserSubscription, SubscriptionPlanType } from '@/lib/subscription-config'
+import {
+  UserSubscription,
+  SubscriptionPlanType,
+} from '@/lib/subscription-config'
 import type { Tables } from '@/types/types_db'
 
 export interface Subscription {
@@ -30,9 +33,12 @@ export interface AuthState {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
-  signInWithSocial: (provider: import('@supabase/supabase-js').Provider) => Promise<void> // Added for social sign-in
+  signInWithSocial: (
+    provider: import('@supabase/supabase-js').Provider
+  ) => Promise<void> // Added for social sign-in
   hasSubscriptionAccess: (requiredTier?: SubscriptionPlanType) => boolean
   refreshAuthState: () => Promise<void>
+  syncAuthSession: () => Promise<boolean> // Added for session synchronization
 }
 
 export interface LoginFormData {

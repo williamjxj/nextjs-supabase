@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  stripe,
-  IMAGE_PRICE_CONFIG,
-  ImageLicenseType,
-} from '@/lib/stripe'
+import { stripe, IMAGE_PRICE_CONFIG, ImageLicenseType } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    
+
     // Check if user is authenticated first
     const {
       data: { user },
@@ -18,7 +14,10 @@ export async function POST(request: NextRequest) {
 
     // Don't return error immediately - we'll try fallback authentication
     if (authError) {
-      console.log('Server-side auth failed, will try client-side fallback:', authError.message)
+      console.log(
+        'Server-side auth failed, will try client-side fallback:',
+        authError.message
+      )
     }
 
     const body = await request.json()
@@ -80,10 +79,7 @@ export async function POST(request: NextRequest) {
 
     if (imageError || !image) {
       console.error('Image lookup error:', imageError)
-      return NextResponse.json(
-        { error: 'Image not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
     }
 
     // Get price config for the license type
@@ -112,7 +108,7 @@ export async function POST(request: NextRequest) {
     try {
       // Get user email - try from server auth first
       const userEmail: string | null = user?.email || null
-      
+
       if (!userEmail && userId) {
         // For client-side fallback, create customer without email
         // The user ID in metadata will be sufficient for tracking
@@ -122,7 +118,7 @@ export async function POST(request: NextRequest) {
         // Try to find existing customer by email
         const customers = await stripe.customers.list({
           email: userEmail,
-          limit: 1
+          limit: 1,
         })
 
         if (customers.data.length > 0) {

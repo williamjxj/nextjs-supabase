@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       currencyCode = 'USD',
       imageId,
       licenseType,
-      userId: clientUserId
+      userId: clientUserId,
     } = body
 
     // Check user authentication for PayPal checkout with fallback

@@ -103,7 +103,8 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
   }
 
   const getToastStyles = (type: ToastType) => {
-    const baseStyles = 'backdrop-blur-lg rounded-xl border shadow-lg shadow-black/5'
+    const baseStyles =
+      'backdrop-blur-lg rounded-xl border shadow-lg shadow-black/5'
 
     switch (type) {
       case 'success':
@@ -125,7 +126,7 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
     switch (type) {
       case 'success':
         return (
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+          <div className='flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50'>
             <svg
               className={`${iconClass} text-emerald-600 dark:text-emerald-400`}
               fill='currentColor'
@@ -141,7 +142,7 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
         )
       case 'error':
         return (
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50">
+          <div className='flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50'>
             <svg
               className={`${iconClass} text-red-600 dark:text-red-400`}
               fill='currentColor'
@@ -157,7 +158,7 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
         )
       case 'warning':
         return (
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50">
+          <div className='flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50'>
             <svg
               className={`${iconClass} text-amber-600 dark:text-amber-400`}
               fill='currentColor'
@@ -173,7 +174,7 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
         )
       case 'info':
         return (
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50">
+          <div className='flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50'>
             <svg
               className={`${iconClass} text-blue-600 dark:text-blue-400`}
               fill='currentColor'
@@ -195,8 +196,8 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
       className={cn(
         'transform transition-all duration-300 ease-out p-4',
         getToastStyles(toast.type),
-        isVisible 
-          ? 'translate-x-0 opacity-100 scale-100' 
+        isVisible
+          ? 'translate-x-0 opacity-100 scale-100'
           : 'translate-x-full opacity-0 scale-95'
       )}
     >
@@ -217,7 +218,7 @@ const ToastItem = ({ toast, onRemove }: ToastItemProps) => {
         <button
           onClick={handleRemove}
           className='flex-shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors'
-          aria-label="Dismiss notification"
+          aria-label='Dismiss notification'
         >
           <svg
             className='w-4 h-4'

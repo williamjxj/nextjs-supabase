@@ -21,10 +21,10 @@ interface UserInfoTooltipProps {
   className?: string
 }
 
-export const UserInfoTooltip = ({ 
-  children, 
+export const UserInfoTooltip = ({
+  children,
   placement = 'bottom',
-  className 
+  className,
 }: UserInfoTooltipProps) => {
   const { user, loading } = useAuth()
   const [userInfo, setUserInfo] = useState<UserInfoData | null>(null)
@@ -35,8 +35,11 @@ export const UserInfoTooltip = ({
 
       try {
         // Get current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         // Extract JWT claims if available
         let jwtClaims = null
         if (session?.access_token) {
@@ -50,17 +53,17 @@ export const UserInfoTooltip = ({
         }
 
         // Calculate session expiry
-        const sessionExpiry = session?.expires_at 
+        const sessionExpiry = session?.expires_at
           ? new Date(session.expires_at * 1000).toLocaleString()
           : 'Unknown'
 
         // Get subscription info
-        const subscriptionInfo = user.subscription 
-          ? `${user.subscription.status} - ${user.subscription.prices?.products?.name || 'Unknown Plan'}`
+        const subscriptionInfo = user.subscription
+          ? `${user.subscription.status} - ${user.subscription.plan_type || 'Unknown Plan'}`
           : 'No active subscription'
 
         // Get basic cookie info (we can't access httpOnly cookies from client)
-        const cookieInfo = document.cookie 
+        const cookieInfo = document.cookie
           ? `${document.cookie.split(';').length} cookies set`
           : 'No accessible cookies'
 
@@ -70,7 +73,7 @@ export const UserInfoTooltip = ({
           sessionExpiry,
           subscriptionInfo,
           cookieInfo,
-          jwtClaims
+          jwtClaims,
         })
       } catch (error) {
         console.error('Error fetching user info:', error)
@@ -90,55 +93,67 @@ export const UserInfoTooltip = ({
   }
 
   const tooltipContent = (
-    <div className="max-w-sm p-4 space-y-4">
-      <div className="text-center border-b border-gray-300/30 dark:border-gray-500/30 pb-3">
-        <h3 className="font-semibold text-base text-white dark:text-gray-50">
+    <div className='max-w-sm p-4 space-y-4'>
+      <div className='text-center border-b border-gray-300/30 dark:border-gray-500/30 pb-3'>
+        <h3 className='font-semibold text-base text-white dark:text-gray-50'>
           Account Information
         </h3>
       </div>
-      
-      <div className="space-y-3 text-sm">
+
+      <div className='space-y-3 text-sm'>
         {/* Basic User Info */}
         <div>
-          <span className="font-semibold text-gray-100 dark:text-gray-200">User ID:</span>
-          <div className="font-mono text-xs text-gray-200 dark:text-gray-300 break-all mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg">
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            User ID:
+          </span>
+          <div className='font-mono text-xs text-gray-200 dark:text-gray-300 break-all mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg'>
             {userInfo.user.id}
           </div>
         </div>
 
         <div>
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Email:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Email:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {userInfo.user.email || 'N/A'}
           </div>
         </div>
 
         <div>
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Created:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Created:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {formatDate(userInfo.user.created_at)}
           </div>
         </div>
 
         <div>
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Last Sign In:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Last Sign In:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {formatDate(userInfo.user.last_sign_in_at)}
           </div>
         </div>
 
         {/* Session Info */}
-        <div className="border-t border-gray-300/30 dark:border-gray-500/30 pt-3">
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Session Expires:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+        <div className='border-t border-gray-300/30 dark:border-gray-500/30 pt-3'>
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Session Expires:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {userInfo.sessionExpiry}
           </div>
         </div>
 
         {/* Subscription Info */}
         <div>
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Subscription:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Subscription:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {userInfo.subscriptionInfo}
           </div>
         </div>
@@ -146,45 +161,57 @@ export const UserInfoTooltip = ({
         {/* JWT Claims */}
         {userInfo.jwtClaims && (
           <div>
-            <span className="font-semibold text-gray-100 dark:text-gray-200">JWT Role:</span>
-            <div className="text-gray-200 dark:text-gray-300 mt-1">
+            <span className='font-semibold text-gray-100 dark:text-gray-200'>
+              JWT Role:
+            </span>
+            <div className='text-gray-200 dark:text-gray-300 mt-1'>
               {userInfo.jwtClaims.role || 'authenticated'}
             </div>
           </div>
         )}
 
         {/* App Metadata */}
-        {userInfo.user.app_metadata && Object.keys(userInfo.user.app_metadata).length > 0 && (
-          <div>
-            <span className="font-semibold text-gray-100 dark:text-gray-200">App Metadata:</span>
-            <div className="text-gray-200 dark:text-gray-300 font-mono text-xs mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg">
-              {JSON.stringify(userInfo.user.app_metadata, null, 2)}
+        {userInfo.user.app_metadata &&
+          Object.keys(userInfo.user.app_metadata).length > 0 && (
+            <div>
+              <span className='font-semibold text-gray-100 dark:text-gray-200'>
+                App Metadata:
+              </span>
+              <div className='text-gray-200 dark:text-gray-300 font-mono text-xs mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg'>
+                {JSON.stringify(userInfo.user.app_metadata, null, 2)}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* User Metadata */}
-        {userInfo.user.user_metadata && Object.keys(userInfo.user.user_metadata).length > 0 && (
-          <div>
-            <span className="font-semibold text-gray-100 dark:text-gray-200">User Metadata:</span>
-            <div className="text-gray-200 dark:text-gray-300 font-mono text-xs mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg">
-              {JSON.stringify(userInfo.user.user_metadata, null, 2)}
+        {userInfo.user.user_metadata &&
+          Object.keys(userInfo.user.user_metadata).length > 0 && (
+            <div>
+              <span className='font-semibold text-gray-100 dark:text-gray-200'>
+                User Metadata:
+              </span>
+              <div className='text-gray-200 dark:text-gray-300 font-mono text-xs mt-1 bg-slate-800/50 dark:bg-slate-700/50 p-2 rounded-lg'>
+                {JSON.stringify(userInfo.user.user_metadata, null, 2)}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Cookie Info */}
-        <div className="border-t border-gray-300/30 dark:border-gray-500/30 pt-3">
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Browser Cookies:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+        <div className='border-t border-gray-300/30 dark:border-gray-500/30 pt-3'>
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Browser Cookies:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {userInfo.cookieInfo}
           </div>
         </div>
 
         {/* Email Verification Status */}
         <div>
-          <span className="font-semibold text-gray-100 dark:text-gray-200">Email Verified:</span>
-          <div className="text-gray-200 dark:text-gray-300 mt-1">
+          <span className='font-semibold text-gray-100 dark:text-gray-200'>
+            Email Verified:
+          </span>
+          <div className='text-gray-200 dark:text-gray-300 mt-1'>
             {userInfo.user.email_confirmed_at ? '✓ Verified' : '✗ Unverified'}
           </div>
         </div>
@@ -192,9 +219,12 @@ export const UserInfoTooltip = ({
         {/* Phone Verification Status */}
         {userInfo.user.phone && (
           <div>
-            <span className="font-semibold text-gray-100 dark:text-gray-200">Phone:</span>
-            <div className="text-gray-200 dark:text-gray-300 mt-1">
-              {userInfo.user.phone} {userInfo.user.phone_confirmed_at ? '(✓)' : '(✗)'}
+            <span className='font-semibold text-gray-100 dark:text-gray-200'>
+              Phone:
+            </span>
+            <div className='text-gray-200 dark:text-gray-300 mt-1'>
+              {userInfo.user.phone}{' '}
+              {userInfo.user.phone_confirmed_at ? '(✓)' : '(✗)'}
             </div>
           </div>
         )}
@@ -203,12 +233,12 @@ export const UserInfoTooltip = ({
   )
 
   return (
-    <Tooltip 
+    <Tooltip
       content={tooltipContent}
       placement={placement}
-      trigger="click"
+      trigger='click'
       className={className}
-      contentClassName="max-w-md"
+      contentClassName='max-w-md'
       showCloseButton={true}
       persistOnHover={false}
     >

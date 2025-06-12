@@ -33,10 +33,10 @@ export default function Home() {
                   <source src='/hailuo-1.mp4' type='video/mp4' />
                   {/* Fallback gradient will show if video fails to load */}
                 </video>
-                
+
                 {/* Overlay for better text readability */}
                 <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-5'></div>
-                
+
                 <div className='relative z-10'>
                   <div className='inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium mb-4'>
                     <Sparkles className='w-3 h-3' />
@@ -71,10 +71,10 @@ export default function Home() {
                   <source src='/jimeng-1.mp4' type='video/mp4' />
                   {/* Fallback gradient will show if video fails to load */}
                 </video>
-                
+
                 {/* Overlay for better text readability */}
                 <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-5'></div>
-                
+
                 <div className='relative z-10'>
                   <div className='inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium mb-4'>
                     <Zap className='w-3 h-3' />

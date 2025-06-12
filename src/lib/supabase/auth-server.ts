@@ -1,6 +1,9 @@
 import { createServerSupabaseClient } from './server'
 import { AuthUser } from '@/types/auth'
-import { hasActiveSubscription, getUserSubscription } from './subscriptions-simplified'
+import {
+  hasActiveSubscription,
+  getUserSubscription,
+} from './subscriptions-simplified'
 import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 // Define subscription plan hierarchy for access control
@@ -52,7 +55,10 @@ export const getUserWithSubscription = async (userId: string) => {
   if (!userId) return null
 
   const supabase = await createServerSupabaseClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
   if (error || !user) return null
 
   const subscription = await getUserSubscription(userId)
@@ -67,7 +73,7 @@ export const getUserWithSubscription = async (userId: string) => {
 // Determine user's highest subscription tier
 export const getUserSubscriptionTier = async (
   userId: string
-): Promise<SubscriptionType | null> => {
+): Promise<SubscriptionPlanType | null> => {
   if (!userId) return null
 
   const subscription = await getUserSubscription(userId)

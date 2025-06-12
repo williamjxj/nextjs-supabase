@@ -104,7 +104,12 @@ const DragDropZone = ({
       {children || (
         <div className='space-y-6'>
           <div className='mx-auto w-16 h-16 text-gray-400'>
-            <svg fill='none' stroke='currentColor' viewBox='0 0 24 24' strokeWidth={1.5}>
+            <svg
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              strokeWidth={1.5}
+            >
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
@@ -114,12 +119,11 @@ const DragDropZone = ({
           </div>
           <div>
             <p className='text-lg font-semibold text-gray-900 mb-2'>
-              {isDragOver
-                ? 'Drop your images here'
-                : 'Drag & drop images here'}
+              {isDragOver ? 'Drop your images here' : 'Drag & drop images here'}
             </p>
             <p className='text-gray-600 mb-4'>
-              or <span className='text-blue-600 font-medium'>click to browse</span>
+              or{' '}
+              <span className='text-blue-600 font-medium'>click to browse</span>
             </p>
             <p className='text-sm text-gray-500'>
               Support for JPG, PNG, WebP • Max 10MB per file
@@ -168,7 +172,7 @@ const ThumbnailPreview = ({ file, onRemove }: ThumbnailPreviewProps) => {
       <button
         onClick={onRemove}
         className='absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg cursor-pointer'
-        title="Remove file"
+        title='Remove file'
       >
         ×
       </button>
@@ -368,7 +372,9 @@ export const ImageUploader = () => {
 
         {uploading && progress.length > 0 && (
           <div className='space-y-3'>
-            <h3 className='text-lg font-semibold text-gray-900'>Upload Progress</h3>
+            <h3 className='text-lg font-semibold text-gray-900'>
+              Upload Progress
+            </h3>
             <div className='space-y-3'>
               {progress.map((item, index) => (
                 <UploadProgress
@@ -459,10 +465,10 @@ export const ImageUploader = () => {
           </Button>
 
           {selectedFiles.length > 0 && !uploading && (
-            <Button 
-              variant='outline' 
+            <Button
+              variant='outline'
               onClick={() => setSelectedFiles([])}
-              className="krea-button"
+              className='krea-button'
             >
               Clear All
             </Button>

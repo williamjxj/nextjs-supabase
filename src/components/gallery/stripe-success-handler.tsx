@@ -8,7 +8,9 @@ interface StripeSuccessHandlerProps {
   onPurchaseSuccess?: () => void
 }
 
-export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandlerProps) {
+export function StripeSuccessHandler({
+  onPurchaseSuccess,
+}: StripeSuccessHandlerProps) {
   const searchParams = useSearchParams()
   const { addToast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -19,7 +21,7 @@ export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandler
 
     if (success === 'true' && sessionId && !isProcessing) {
       setIsProcessing(true)
-      
+
       // Call our verification endpoint to create the purchase record
       fetch('/api/stripe/verify-session', {
         method: 'POST',
@@ -36,7 +38,7 @@ export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandler
               title: 'Payment Successful!',
               description: 'Your purchase has been processed successfully.',
             })
-            
+
             // Trigger gallery refresh to show updated purchase status
             if (onPurchaseSuccess) {
               // Small delay to ensure purchase record is properly indexed
@@ -49,7 +51,9 @@ export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandler
             addToast({
               type: 'error',
               title: 'Processing Error',
-              description: data.error || 'Failed to process your purchase. Please contact support.',
+              description:
+                data.error ||
+                'Failed to process your purchase. Please contact support.',
             })
           }
         })
@@ -58,7 +62,8 @@ export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandler
           addToast({
             type: 'error',
             title: 'Verification Error',
-            description: 'Failed to verify your payment. Please contact support.',
+            description:
+              'Failed to verify your payment. Please contact support.',
           })
         })
         .finally(() => {
@@ -79,7 +84,7 @@ export function StripeSuccessHandler({ onPurchaseSuccess }: StripeSuccessHandler
         title: 'Payment Canceled',
         description: 'Your payment was canceled. You can try again anytime.',
       })
-      
+
       // Clean up URL parameters
       const url = new URL(window.location.href)
       url.searchParams.delete('canceled')

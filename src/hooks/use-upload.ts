@@ -63,10 +63,10 @@ export const useUpload = () => {
       // Create FormData
       const formData = new FormData()
       formData.append('file', file)
-      
+
       // Add user.id as fallback for server-side auth
       formData.append('user_id', user.id)
-      
+
       // Add dimensions if available
       if (dimensions) {
         formData.append('width', dimensions.width.toString())

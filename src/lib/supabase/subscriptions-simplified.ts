@@ -1,7 +1,10 @@
 // Simplified subscription utilities
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { SUBSCRIPTION_PLANS, SubscriptionPlanType, UserSubscription } from '@/lib/subscription-config'
-import type { Tables } from '@/types/database_simplified'
+import {
+  SUBSCRIPTION_PLANS,
+  SubscriptionPlanType,
+  UserSubscription,
+} from '@/lib/subscription-config'
 
 export type SubscriptionStatus = 'active' | 'cancelled' | 'expired'
 
@@ -30,7 +33,9 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 }
 
 // Get user's current subscription details
-export async function getUserSubscription(userId: string): Promise<UserSubscription | null> {
+export async function getUserSubscription(
+  userId: string
+): Promise<UserSubscription | null> {
   if (!userId) return null
 
   const supabase = await createServerSupabaseClient()
@@ -49,7 +54,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
 
   return {
     ...data,
-    features: Array.isArray(data.features) ? data.features as string[] : []
+    features: Array.isArray(data.features) ? (data.features as string[]) : [],
   } as UserSubscription
 }
 
@@ -72,7 +77,7 @@ export async function createUserSubscription(
 ): Promise<UserSubscription | null> {
   const supabase = await createServerSupabaseClient()
   const plan = SUBSCRIPTION_PLANS[planType]
-  
+
   if (!plan) {
     throw new Error(`Invalid plan type: ${planType}`)
   }
@@ -96,7 +101,7 @@ export async function createUserSubscription(
       stripe_subscription_id: stripeSubscriptionId,
       current_period_start: new Date().toISOString(),
       current_period_end: currentPeriodEnd.toISOString(),
-      features: plan.features
+      features: plan.features,
     })
     .select()
     .single()
@@ -108,7 +113,7 @@ export async function createUserSubscription(
 
   return {
     ...data,
-    features: Array.isArray(data.features) ? data.features as string[] : []
+    features: Array.isArray(data.features) ? (data.features as string[]) : [],
   } as UserSubscription
 }
 
@@ -118,7 +123,7 @@ export async function updateSubscriptionStatus(
   status: SubscriptionStatus
 ): Promise<boolean> {
   const supabase = await createServerSupabaseClient()
-  
+
   const { error } = await supabase
     .from('subscriptions')
     .update({ status })

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer base {
   :root {
@@ -50,7 +50,15 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
     sans-serif;
 }
 
@@ -80,7 +88,9 @@ body {
 }
 
 .krea-hero-card video {
-  transition: transform 0.5s ease, filter 0.3s ease;
+  transition:
+    transform 0.5s ease,
+    filter 0.3s ease;
 }
 
 .krea-hero-card:hover video {
@@ -99,17 +109,23 @@ body {
 
 .krea-gallery-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
 
 .krea-gallery-item::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 30%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }

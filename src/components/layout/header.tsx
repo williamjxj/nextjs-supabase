@@ -67,7 +67,7 @@ export const Header = () => {
         <div className='flex items-center space-x-3'>
           {showUserInfo ? (
             <div className='flex items-center space-x-3'>
-              <UserInfoTooltip placement="bottom">
+              <UserInfoTooltip placement='bottom'>
                 <div className='hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-full cursor-help'>
                   <div className='w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
                     <User className='w-3 h-3 text-white' />

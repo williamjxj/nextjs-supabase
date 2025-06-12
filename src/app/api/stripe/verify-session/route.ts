@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   try {
     const { sessionId } = await request.json()
-    
+
     if (!sessionId) {
       return NextResponse.json(
         { error: 'Session ID is required' },
@@ -21,12 +21,9 @@ export async function POST(request: NextRequest) {
 
     // Retrieve the checkout session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId)
-    
+
     if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
     // Only process completed payments for one-time purchases
@@ -60,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Purchase already recorded',
-        purchaseId: existingPurchase.id
+        purchaseId: existingPurchase.id,
       })
     }
 
@@ -86,7 +83,10 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Error creating purchase record:', insertError)
       return NextResponse.json(
-        { error: 'Failed to create purchase record', details: insertError.message },
+        {
+          error: 'Failed to create purchase record',
+          details: insertError.message,
+        },
         { status: 500 }
       )
     }
@@ -94,15 +94,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Purchase recorded successfully',
-      purchase: newPurchase
+      purchase: newPurchase,
     })
-
   } catch (error) {
     console.error('Stripe verification error:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to process Stripe session',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )

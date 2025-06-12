@@ -118,7 +118,9 @@ export async function POST(request: NextRequest) {
           } else if (!user && !clientUserId) {
             console.error('PayPal capture: No user found in session or client')
             // Don't fail the transaction, but log the issue
-            console.warn('⚠️ PayPal capture completing without user association')
+            console.warn(
+              '⚠️ PayPal capture completing without user association'
+            )
           }
 
           // Authentication successful

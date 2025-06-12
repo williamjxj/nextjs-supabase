@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  stripe,
-} from '@/lib/stripe'
+import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
-import { SUBSCRIPTION_PLANS, SubscriptionPlanType, STRIPE_PRICE_IDS } from '@/lib/subscription-config'
+import {
+  SUBSCRIPTION_PLANS,
+  SubscriptionPlanType,
+  STRIPE_PRICE_IDS,
+} from '@/lib/subscription-config'
 
 export async function POST(request: NextRequest) {
   try {
