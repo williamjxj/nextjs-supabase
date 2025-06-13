@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 function GalleryContent() {
   return (
     <div className='bg-gray-50 min-h-screen'>
-      <ImageGallery />
+      <Suspense fallback={<div>Loading gallery...</div>}>
+        <ImageGallery />
+      </Suspense>
     </div>
   )
 }

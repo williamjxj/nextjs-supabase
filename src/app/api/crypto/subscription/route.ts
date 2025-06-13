@@ -8,6 +8,29 @@ import {
 const COINBASE_COMMERCE_API_KEY = process.env.COINBASE_COMMERCE_API_KEY
 const COINBASE_COMMERCE_BASE_URL = 'https://api.commerce.coinbase.com'
 
+async function createCoinbaseCharge(chargeData: any) {
+  if (!COINBASE_COMMERCE_API_KEY) {
+    throw new Error('Coinbase Commerce API key not configured')
+  }
+
+  const response = await fetch(`${COINBASE_COMMERCE_BASE_URL}/charges`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CC-Api-Key': COINBASE_COMMERCE_API_KEY,
+      'X-CC-Version': '2018-03-22',
+    },
+    body: JSON.stringify(chargeData),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(`Coinbase Commerce API error: ${JSON.stringify(error)}`)
+  }
+
+  return await response.json()
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -52,34 +75,26 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         plan_type: planType,
         billing_interval: billingInterval,
-        subscription_type: 'subscription',
-        user_email: user.email || '',
+        subscription_type: 'crypto',
       },
-      redirect_url: `${process.env.APP_URL}/account/subscriptions?success=true`,
-      cancel_url: `${process.env.APP_URL}/membership?cancelled=true`,
+      redirect_url: `${process.env.APP_URL}/account/subscriptions?success=true&provider=crypto`,
+      cancel_url: `${process.env.APP_URL}/membership?cancelled=true&provider=crypto`,
     }
 
-    const response = await fetch(`${COINBASE_COMMERCE_BASE_URL}/charges`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CC-Api-Key': COINBASE_COMMERCE_API_KEY!,
-        'X-CC-Version': '2018-03-22',
-      },
-      body: JSON.stringify(chargeData),
-    })
-
-    const result = await response.json()
-
-    if (!response.ok) {
-      console.error('Coinbase Commerce charge creation failed:', result)
+    let charge
+    try {
+      const response = await createCoinbaseCharge(chargeData)
+      charge = response.data
+    } catch (error) {
+      console.error('Error creating Coinbase charge:', error)
       return NextResponse.json(
-        { error: 'Failed to create cryptocurrency payment', details: result },
-        { status: 400 }
+        {
+          error: 'Failed to create crypto payment',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
       )
     }
-
-    const charge = result.data
 
     return NextResponse.json({
       chargeId: charge.id,

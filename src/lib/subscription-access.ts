@@ -9,66 +9,95 @@ export interface SubscriptionAccess {
   canDownload: boolean
   canViewGallery: boolean
   accessLevel: 'free' | 'basic' | 'pro' | 'enterprise'
+  isTrialing?: boolean
+  subscriptionExpiresAt?: string | null
+  features?: string[]
+  usage?: Record<string, any>
 }
 
 export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-  if (!user) {
+    if (authError || !user) {
+      return {
+        hasActiveSubscription: false,
+        subscriptionType: null,
+        canDownload: false,
+        canViewGallery: false,
+        accessLevel: 'free',
+        isTrialing: false,
+        features: [],
+        usage: {},
+      }
+    }
+
+    const subscription = await getSubscription()
+
+    if (!subscription || !['active', 'trialing'].includes(subscription.status)) {
+      // Free tier access
+      return {
+        hasActiveSubscription: false,
+        subscriptionType: null,
+        imagesViewable: 10, // Free users can view 10 images
+        downloadsRemaining: 0,
+        canDownload: false,
+        canViewGallery: true,
+        accessLevel: 'free',
+        isTrialing: false,
+        features: [],
+        usage: {},
+      }
+    }
+
+    // Enhanced subscription access
+    const planType = subscription.plan_type
+    const isTrialing = subscription.status === 'active' // For now, treat active as the valid status
+    let accessLevel: SubscriptionAccess['accessLevel'] = 'basic'
+    const imagesViewable = undefined // Unlimited
+    let downloadsRemaining = undefined // Unlimited
+
+    if (planType === 'standard') {
+      accessLevel = 'basic'
+      downloadsRemaining = 50 // Basic: 50 downloads per month
+    } else if (planType === 'premium') {
+      accessLevel = 'pro'
+      downloadsRemaining = 200 // Pro: 200 downloads per month
+    } else if (planType === 'commercial') {
+      accessLevel = 'enterprise'
+      // Enterprise: unlimited
+    }
+
+    return {
+      hasActiveSubscription: true,
+      subscriptionType: planType,
+      imagesViewable,
+      downloadsRemaining,
+      canDownload: true,
+      canViewGallery: true,
+      accessLevel,
+      isTrialing: false, // Based on status
+      subscriptionExpiresAt: subscription.current_period_end || null,
+      features: subscription.features || [],
+      usage: {}, // Usage tracking to be implemented
+    }
+  } catch (error) {
+    console.error('Error checking subscription access:', error)
     return {
       hasActiveSubscription: false,
       subscriptionType: null,
       canDownload: false,
       canViewGallery: false,
       accessLevel: 'free',
+      isTrialing: false,
+      features: [],
+      usage: {},
     }
   }
-
-  const subscription = await getSubscription()
-
-  if (!subscription || subscription.status !== 'active') {
-    // Free tier access
-    return {
-      hasActiveSubscription: false,
-      subscriptionType: null,
-      imagesViewable: 10, // Free users can view 10 images
-      downloadsRemaining: 0,
-      canDownload: false,
-      canViewGallery: true,
-      accessLevel: 'free',
-    }
-  }
-
-  // Determine access level based on subscription
-  const planType = subscription.plan_type
-  let accessLevel: SubscriptionAccess['accessLevel'] = 'basic'
-  const imagesViewable = undefined // Unlimited
-  let downloadsRemaining = undefined // Unlimited
-
-  if (planType === 'standard') {
-    accessLevel = 'basic'
-    downloadsRemaining = 50 // Basic: 50 downloads per month
-  } else if (planType === 'premium') {
-    accessLevel = 'pro'
-    downloadsRemaining = 200 // Pro: 200 downloads per month
-  } else if (planType === 'commercial') {
-    accessLevel = 'enterprise'
-    // Enterprise: unlimited
-  }
-
-  return {
-    hasActiveSubscription: true,
-    subscriptionType: planType,
-    imagesViewable,
-    downloadsRemaining,
-    canDownload: true,
-    canViewGallery: true,
-    accessLevel,
-  }
-}
 
 export async function canAccessImage(imageId: string): Promise<boolean> {
   const access = await checkSubscriptionAccess()

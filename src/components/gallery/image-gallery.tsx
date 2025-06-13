@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Upload,
   RefreshCw,
@@ -9,6 +10,9 @@ import {
   Search,
   Filter,
   LayoutGrid,
+  X,
+  AlertCircle,
+  CheckCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -37,6 +41,7 @@ interface ImageGalleryProps {
 }
 
 export function ImageGallery({ className }: ImageGalleryProps) {
+  const searchParams = useSearchParams()
   const {
     images,
     loading,
@@ -53,6 +58,43 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   } = useGallery()
   const { showToast } = useToast()
   const { user } = useAuth()
+
+  // Check for PayPal-related URL parameters
+  useEffect(() => {
+    const paypalCancelled = searchParams.get('paypal_cancelled')
+    const paypalError = searchParams.get('paypal_error')
+    const paypalSuccess = searchParams.get('paypal_success')
+
+    if (paypalCancelled === 'true') {
+      showToast(
+        'PayPal payment was cancelled. You can try again anytime.',
+        'warning'
+      )
+      // Clean up URL parameters
+      const url = new URL(window.location.href)
+      url.searchParams.delete('paypal_cancelled')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    if (paypalError) {
+      showToast(
+        `PayPal payment error: ${paypalError}. Please try again.`,
+        'error'
+      )
+      // Clean up URL parameters
+      const url = new URL(window.location.href)
+      url.searchParams.delete('paypal_error')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    if (paypalSuccess === 'true') {
+      showToast('Payment successful! Your order is being processed.', 'success')
+      // Clean up URL parameters
+      const url = new URL(window.location.href)
+      url.searchParams.delete('paypal_success')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [searchParams, showToast])
 
   // Modal states
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null)
@@ -219,6 +261,26 @@ export function ImageGallery({ className }: ImageGalleryProps) {
       setIsRefreshing(false)
     }
   }
+
+  // Handle PayPal return URL
+  useEffect(() => {
+    const handlePaypalReturn = async () => {
+      const token = searchParams.get('token')
+      const PayerID = searchParams.get('PayerID')
+
+      if (token && PayerID) {
+        // TODO: Verify PayPal payment and fulfill order
+        showToast(
+          'Payment successful! Your order is being processed.',
+          'success'
+        )
+        // Redirect to gallery or order details page
+        window.location.href = '/gallery'
+      }
+    }
+
+    handlePaypalReturn()
+  }, [searchParams, showToast])
 
   // Calculate pagination info
   const currentPage = pagination

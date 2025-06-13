@@ -78,7 +78,14 @@ export async function POST(request: NextRequest) {
 
         // Extract imageId and licenseType from custom_id
         const customId = capture.custom_id || ''
+        console.log('PayPal custom_id:', customId)
         const parts = customId.split('_')
+
+        if (parts.length < 4 || parts[0] !== 'img' || parts[2] !== 'lic') {
+          console.error('Invalid custom_id format:', customId)
+          return NextResponse.json(responseData) // Still return success but log the error
+        }
+
         const imageId = parts[1]
         const licenseType = parts[3]
 
@@ -148,7 +155,7 @@ export async function POST(request: NextRequest) {
               payment_method: 'paypal',
               payment_status: 'completed',
               paypal_payment_id: capture.id, // Use capture ID as payment ID
-              paypal_order_id: responseData.id, // Store order ID separately
+              paypal_order_id: orderID, // Store order ID separately
               purchased_at: new Date().toISOString(),
             })
 

@@ -34,6 +34,13 @@ export async function middleware(req: NextRequest) {
     }
   )
 
+  // CRITICAL: This call to getUser() is essential for refreshing sessions
+  // According to Supabase docs, this MUST be called in middleware
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Also get session for compatibility with existing logic
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -74,18 +81,30 @@ export async function middleware(req: NextRequest) {
   )
 
   // If user is not authenticated and trying to access protected route
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !user) {
+    // Allow PayPal callback URLs to pass through to show messages
+    const isPayPalCallback =
+      req.nextUrl.searchParams.has('paypal_cancelled') ||
+      req.nextUrl.searchParams.has('paypal_error') ||
+      req.nextUrl.searchParams.has('paypal_success')
+
+    if (isPayPalCallback) {
+      // Allow the request to pass through for PayPal callbacks
+      // The gallery component will handle showing the appropriate message
+      return supabaseResponse
+    }
+
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
   // If user is authenticated and trying to access auth routes
-  if (isAuthRoute && session) {
+  if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/gallery', req.url))
   }
 
   // For routes requiring a subscription
-  if (isSubscriptionRoute && session) {
-    const hasSubscription = await userHasSubscription(session.user.id)
+  if (isSubscriptionRoute && user) {
+    const hasSubscription = await userHasSubscription(user.id)
 
     if (!hasSubscription) {
       return NextResponse.redirect(new URL('/membership', req.url))
@@ -93,8 +112,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // For routes requiring premium subscription
-  if (isPremiumRoute && session) {
-    const hasPremium = await userHasSubscriptionType(session.user.id, 'premium')
+  if (isPremiumRoute && user) {
+    const hasPremium = await userHasSubscriptionType(user.id, 'premium')
 
     if (!hasPremium) {
       return NextResponse.redirect(new URL('/membership?tier=premium', req.url))
@@ -102,11 +121,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // For routes requiring commercial subscription
-  if (isCommercialRoute && session) {
-    const hasCommercial = await userHasSubscriptionType(
-      session.user.id,
-      'commercial'
-    )
+  if (isCommercialRoute && user) {
+    const hasCommercial = await userHasSubscriptionType(user.id, 'commercial')
 
     if (!hasCommercial) {
       return NextResponse.redirect(

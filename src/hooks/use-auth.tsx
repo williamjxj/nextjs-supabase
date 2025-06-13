@@ -46,12 +46,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as AuthUser
       }
 
-      // Fetch user subscription (simplified schema)
+      // Fetch user subscription with enhanced query
       const { data: userSubscriptions, error } = await supabase
         .from('subscriptions')
-        .select('*')
+        .select(
+          `
+          *,
+          features,
+          created_at,
+          updated_at,
+          current_period_end
+        `
+        )
         .eq('user_id', baseUser.id)
-        .eq('status', 'active')
+        .in('status', ['active'])
         .order('created_at', { ascending: false })
         .limit(1)
 
@@ -59,18 +67,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Log subscription fetch errors, but don't throw - continue with null subscription
         console.warn(
           'Error fetching user subscription (continuing with null):',
-          error.message
+          error
         )
       }
 
       const subscription = userSubscriptions?.[0] || null
-      const hasActiveSubscription = subscription?.status === 'active'
+      const hasActiveSubscription =
+        subscription && ['active'].includes(subscription.status)
 
+      // Enhanced subscription data
       const enrichedUser = {
         ...baseUser,
         subscription,
         hasActiveSubscription,
         subscriptionTier: subscription?.plan_type || null,
+        subscriptionFeatures: subscription?.features || [],
+        subscriptionUsage: {}, // Usage tracking to be implemented
+        subscriptionExpiresAt: subscription?.current_period_end || null,
+        isTrialing: false, // Based on current status model
       } as AuthUser
 
       return enrichedUser
@@ -85,6 +99,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         subscription: null,
         hasActiveSubscription: false,
         subscriptionTier: null,
+        subscriptionFeatures: [],
+        subscriptionUsage: {},
+        subscriptionExpiresAt: null,
+        isTrialing: false,
       } as AuthUser
     }
   }

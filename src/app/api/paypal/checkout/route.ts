@@ -109,7 +109,15 @@ export async function POST(request: NextRequest) {
           custom_id: `img_${imageId}_lic_${licenseType}`, // Optional: for your reference
         },
       ],
-      // Add application_context for return_url and cancel_url if not using JS SDK's onApprove
+      application_context: {
+        return_url: `${process.env.APP_URL || 'http://localhost:3000'}/purchase/success?method=paypal`,
+        cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_cancelled=true`,
+        brand_name: 'Gallery Purchase',
+        locale: 'en-US',
+        landing_page: 'NO_PREFERENCE',
+        shipping_preference: 'NO_SHIPPING',
+        user_action: 'PAY_NOW',
+      },
     }
 
     const response = await fetch(`${PAYPAL_API_URL}/v2/checkout/orders`, {
@@ -130,8 +138,16 @@ export async function POST(request: NextRequest) {
         responseData.details?.[0]?.description ||
         responseData.message ||
         'Failed to create PayPal order.'
+
+      // If this is a client-side error, we can't redirect directly
+      // The client will handle this error response
       return NextResponse.json(
-        { error: errorMessage, details: responseData },
+        {
+          error: errorMessage,
+          details: responseData,
+          // Provide a redirect URL for client-side handling
+          redirectUrl: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
+        },
         { status: response.status }
       )
     }

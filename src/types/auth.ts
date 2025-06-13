@@ -24,6 +24,10 @@ export interface AuthUser extends User {
   subscription?: Subscription | null
   hasActiveSubscription?: boolean
   subscriptionTier?: SubscriptionPlanType | null
+  subscriptionFeatures?: string[]
+  subscriptionUsage?: Record<string, any>
+  subscriptionExpiresAt?: string | null
+  isTrialing?: boolean
 }
 
 export interface AuthState {

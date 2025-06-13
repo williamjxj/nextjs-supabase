@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    console.log('PayPal Details - Looking for payment ID:', paymentId)
+
     // Get purchase details from database using PayPal order ID
     const supabase = await createServerSupabaseClient()
     const { data: purchase, error: purchaseError } = await supabase
@@ -32,6 +34,9 @@ export async function GET(request: NextRequest) {
       )
       .or(`paypal_order_id.eq.${paymentId},paypal_payment_id.eq.${paymentId}`)
       .single()
+
+    console.log('PayPal Details - Purchase found:', purchase)
+    console.log('PayPal Details - Purchase error:', purchaseError)
 
     if (purchaseError || !purchase) {
       console.error('Purchase lookup error:', purchaseError)

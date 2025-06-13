@@ -51,7 +51,17 @@ function PayPalCheckoutPage() {
       })
       .catch(err => {
         console.error('PayPal createOrder error:', err)
+        // If the server provided a redirect URL, use it
+        const redirectUrl =
+          err.redirectUrl ||
+          `/gallery?paypal_error=${encodeURIComponent(err.message)}`
+
+        // Show error message and redirect after a delay
         alert(`Error creating PayPal order: ${err.message}`)
+        setTimeout(() => {
+          window.location.href = redirectUrl
+        }, 2000)
+
         throw err // Re-throw to be caught by PayPalButtons
       })
   }
@@ -79,12 +89,14 @@ function PayPalCheckoutPage() {
       })
       .then(details => {
         console.log('Payment captured:', details)
-        // alert(
-        //   `Transaction completed by ${details.payer?.name?.given_name || 'customer'}!`
-        // )
-        // Redirect to a success page, e.g., /purchase/success
-        // router.push('/purchase/success?paymentId=${details.id}&method=paypal');
-        window.location.href = `/purchase/success?paymentId=${details.id}&method=paypal&imageId=${imageId}&licenseType=${licenseType}`
+
+        // Extract the capture ID for the purchase lookup
+        const captureId =
+          details.purchase_units?.[0]?.payments?.captures?.[0]?.id
+        const finalPaymentId = captureId || details.id || data.orderID
+
+        // Redirect to a success page with the PayPal payment details
+        window.location.href = `/purchase/success?paymentId=${finalPaymentId}&method=paypal&imageId=${imageId}&licenseType=${licenseType}`
       })
       .catch(err => {
         console.error('PayPal onApprove error:', err)

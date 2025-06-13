@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Test</title>
+</head>
+<body>
+    <h1>Development Mode Stripe Test</h1>
+    <button id="testBtn">Test Stripe Checkout</button>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/stripe/checkout/subscription-fallback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        priceId: 'price_commercial_monthly',
+                        userId: 'dev-test-user-123',
+                        userEmail: 'test@example.com',
+                        successUrl: window.location.origin + '/account?success=true',
+                        cancelUrl: window.location.origin + '/membership'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sessionId) {
+                    resultDiv.innerHTML = `✅ Success! Session ID: ${data.sessionId}`;
+                    console.log('Session created:', data);
+                    
+                    // In a real app, you would redirect to Stripe checkout here
+                    resultDiv.innerHTML += '<br>🔄 Would redirect to Stripe checkout now...';
+                } else {
+                    resultDiv.innerHTML = `❌ Error: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `💥 Request failed: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
