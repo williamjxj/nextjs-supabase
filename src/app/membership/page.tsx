@@ -99,9 +99,9 @@ export default function MembershipPage() {
         return
       }
 
-      // For Stripe, skip server session validation since we use fallback approach
-      if (method !== 'stripe') {
-        // For other payment methods, try server session validation first
+      // For Stripe and PayPal, skip server session validation since we use fallback approach
+      if (method !== 'stripe' && method !== 'paypal') {
+        // For other payment methods (crypto), try server session validation first
         try {
           console.log('🔍 Validating server session for', method)
           const sessionCheck = await fetch('/api/auth/session-check', {
@@ -155,20 +155,22 @@ export default function MembershipPage() {
         }
       }
 
-      // Debug: Send client session info to server for comparison
-      try {
-        await fetch('/api/debug/client-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            hasUser: !!effectiveUser,
-            userId: effectiveUser?.id,
-            userEmail: effectiveUser?.email,
-          }),
-        })
-      } catch (debugError) {
-        console.warn('Debug call failed:', debugError)
+      // Debug: Send client session info to server for comparison (only for non-fallback methods)
+      if (method !== 'stripe' && method !== 'paypal') {
+        try {
+          await fetch('/api/debug/client-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              hasUser: !!effectiveUser,
+              userId: effectiveUser?.id,
+              userEmail: effectiveUser?.email,
+            }),
+          })
+        } catch (debugError) {
+          console.warn('Debug call failed:', debugError)
+        }
       }
 
       switch (method) {
@@ -237,59 +239,42 @@ export default function MembershipPage() {
           break
 
         case 'paypal':
-          const paypalResponse = await fetch('/api/paypal/subscription', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              planType: subscribeModal.planType,
-              billingInterval,
-            }),
-          })
+          console.log('💰 Processing PayPal checkout with fallback approach...')
+
+          // Use fallback approach directly for PayPal, similar to Stripe
+          const paypalResponse = await fetch(
+            '/api/paypal/subscription-fallback',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                planType: subscribeModal.planType,
+                billingInterval,
+                userId: effectiveUser.id,
+                userEmail: effectiveUser.email,
+              }),
+            }
+          )
 
           if (!paypalResponse.ok) {
-            if (paypalResponse.status === 401) {
-              // Enhanced error handling for PayPal
-              try {
-                const errorData = await paypalResponse.json()
-                console.warn('PayPal API authentication failed:', errorData)
+            const errorData = await paypalResponse.json()
+            console.error('PayPal fallback failed:', errorData)
 
-                if (user?.id) {
-                  showToast(
-                    'Session synchronization issue detected. Please refresh and try again.',
-                    'error',
-                    'Session Sync Error'
-                  )
-                  setTimeout(() => window.location.reload(), 2000)
-                } else {
-                  showToast(
-                    'Please log in to continue with your subscription',
-                    'error',
-                    'Authentication Required'
-                  )
-                  router.push('/login')
-                }
-              } catch (jsonError) {
-                if (user) {
-                  showToast(
-                    'Your session has expired. Please log in again.',
-                    'error',
-                    'Session Expired'
-                  )
-                } else {
-                  showToast(
-                    'Please log in to continue with your subscription',
-                    'error',
-                    'Authentication Required'
-                  )
-                }
-                router.push('/login')
-              }
+            if (paypalResponse.status === 401) {
+              showToast(
+                'Authentication session expired. Please log in again.',
+                'error',
+                'Session Expired'
+              )
+              router.push('/login')
               setLoading(null)
               return
             }
-            const errorMessage = `HTTP ${paypalResponse.status}: ${paypalResponse.statusText}`
-            throw new Error(errorMessage)
+
+            throw new Error(
+              `PayPal checkout failed: ${errorData.error || 'Unknown error'}`
+            )
           }
 
           const paypalData = await paypalResponse.json()
