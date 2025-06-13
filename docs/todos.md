@@ -14,3 +14,11 @@ and apply them to this app's current codes?
 - Monthly Active Users
 - Personally Identifiable Information (PII),
 - supabase.auth.getUser()
+
+
+- manus.im
+- [nextjs-subscription-payments](https://github.com/vercel/nextjs-subscription-payments)
+- [supabase](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+- [with-supabase](https://github.com/vercel/next.js/tree/canary/examples/with-supabase)
+
+- Auth: apple, twitter
