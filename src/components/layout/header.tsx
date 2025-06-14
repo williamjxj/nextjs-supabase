@@ -4,12 +4,11 @@ import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { UserInfoTooltip } from '@/components/ui/user-info-tooltip'
-import { Home, Upload, ImageIcon, User, Crown, Menu, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Navigation, MobileNavigation } from './navigation'
+import { ImageIcon, User } from 'lucide-react'
 
 export const Header = () => {
   const { user, loading, mounted } = useAuth()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Simplified logic: show auth buttons when no user, show user info when user exists
   // Show auth buttons immediately when mounted and no user (even during loading)
@@ -29,39 +28,9 @@ export const Header = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className='hidden md:flex items-center space-x-1'>
-          <Link href='/'>
-            <button className='flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-              <Home className='w-4 h-4' />
-              <span className='text-sm font-medium'>Home</span>
-            </button>
-          </Link>
-
-          {user && (
-            <>
-              <Link href='/gallery'>
-                <button className='flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                  <ImageIcon className='w-4 h-4' />
-                  <span className='text-sm font-medium'>Gallery</span>
-                </button>
-              </Link>
-
-              <Link href='/upload'>
-                <button className='flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                  <Upload className='w-4 h-4' />
-                  <span className='text-sm font-medium'>Upload</span>
-                </button>
-              </Link>
-
-              <Link href='/membership'>
-                <button className='flex items-center space-x-2 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                  <Crown className='w-4 h-4' />
-                  <span className='text-sm font-medium'>Membership</span>
-                </button>
-              </Link>
-            </>
-          )}
-        </nav>
+        <div className='hidden md:flex'>
+          <Navigation orientation='horizontal' className='space-x-1' />
+        </div>
 
         {/* User Actions */}
         <div className='flex items-center space-x-3'>
@@ -104,58 +73,10 @@ export const Header = () => {
             </div>
           )}
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className='md:hidden p-2 rounded-full hover:bg-gray-50 hover:cursor-pointer transition-colors'
-          >
-            {mobileMenuOpen ? (
-              <X className='w-5 h-5 text-gray-600' />
-            ) : (
-              <Menu className='w-5 h-5 text-gray-600' />
-            )}
-          </button>
+          {/* Mobile Navigation */}
+          <MobileNavigation />
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className='md:hidden bg-white border-t border-gray-100'>
-          <div className='px-6 py-4 space-y-2'>
-            <Link href='/'>
-              <button className='flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                <Home className='w-5 h-5' />
-                <span className='font-medium'>Home</span>
-              </button>
-            </Link>
-
-            {user && (
-              <>
-                <Link href='/gallery'>
-                  <button className='flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                    <ImageIcon className='w-5 h-5' />
-                    <span className='font-medium'>Gallery</span>
-                  </button>
-                </Link>
-
-                <Link href='/upload'>
-                  <button className='flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                    <Upload className='w-5 h-5' />
-                    <span className='font-medium'>Upload</span>
-                  </button>
-                </Link>
-
-                <Link href='/membership'>
-                  <button className='flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:cursor-pointer transition-all duration-200'>
-                    <Crown className='w-5 h-5' />
-                    <span className='font-medium'>Membership</span>
-                  </button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   )
 }
