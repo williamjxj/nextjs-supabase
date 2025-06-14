@@ -305,8 +305,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     return (
       <div className='flex items-center justify-center py-20'>
         <div className='text-center'>
-          <LoadingSpinner size='lg' />
-          <p className='mt-4 text-gray-600'>Loading your gallery...</p>
+          <LoadingSpinner
+            size='xl'
+            variant='gradient'
+            text='Loading your gallery...'
+          />
         </div>
       </div>
     )

@@ -102,11 +102,25 @@ export const Navigation = ({
   showIcons = true,
 }: NavigationProps) => {
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, loading, mounted } = useAuth()
 
-  const filteredItems = navigationItems.filter(
-    item => !item.requireAuth || (item.requireAuth && user)
-  )
+  // During loading or before mount, show a stable set of navigation items
+  // This prevents the navigation from disappearing during auth state changes
+  const shouldShowAuthItems = mounted && user && !loading
+  const shouldShowLoadingState = !mounted || (loading && !user)
+
+  // Ensure we always have a stable array of items to prevent flashing
+  const filteredItems = React.useMemo(() => {
+    return navigationItems.filter(item => {
+      if (!item.requireAuth) {
+        return true // Always show non-auth items like Home
+      }
+
+      // For auth-required items, show them if we have a user or if we're in an uncertain state
+      // This prevents them from disappearing during loading/transitions
+      return shouldShowAuthItems || !mounted || loading
+    })
+  }, [shouldShowAuthItems, mounted, loading])
 
   const containerClasses = cn(
     'flex',
@@ -114,23 +128,47 @@ export const Navigation = ({
     className
   )
 
+  // Show loading placeholder if auth state is uncertain and we're horizontal (desktop)
+  if (shouldShowLoadingState && orientation === 'horizontal') {
+    return (
+      <nav className={containerClasses}>
+        <div className='flex items-center space-x-1'>
+          {/* Home link placeholder */}
+          <div className='w-16 h-10 bg-gray-100 rounded-full animate-pulse' />
+          {/* Auth items placeholders */}
+          <div className='w-20 h-10 bg-gray-100 rounded-full animate-pulse' />
+          <div className='w-18 h-10 bg-gray-100 rounded-full animate-pulse' />
+          <div className='w-24 h-10 bg-gray-100 rounded-full animate-pulse' />
+        </div>
+      </nav>
+    )
+  }
+
   return (
     <nav className={containerClasses}>
       {filteredItems.map(item => {
         const isActive = pathname === item.href
 
+        // For auth-required items, show them as disabled if user is not authenticated
+        const isDisabled = item.requireAuth && !shouldShowAuthItems
+
         return (
           <Link
-            key={item.href}
-            href={item.href}
+            key={`nav-${item.href}-${mounted}-${loading}-${!!user}`}
+            href={isDisabled ? '#' : item.href}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              'hover:bg-accent hover:text-accent-foreground hover:cursor-pointer',
-              isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground',
-              orientation === 'vertical' && 'justify-start w-full'
+              'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
+              !isDisabled &&
+                'hover:bg-gray-50 hover:text-gray-900 hover:cursor-pointer hover:scale-105',
+              isActive && !isDisabled
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                : isDisabled
+                  ? 'text-gray-400 cursor-not-allowed opacity-60'
+                  : 'text-gray-600',
+              orientation === 'vertical' &&
+                'justify-start w-full rounded-xl px-4 py-3'
             )}
+            onClick={isDisabled ? e => e.preventDefault() : undefined}
           >
             {showIcons && item.icon && (
               <span className='flex-shrink-0'>{item.icon}</span>
@@ -146,17 +184,27 @@ export const Navigation = ({
 // Mobile Navigation with hamburger menu
 export const MobileNavigation = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, loading, mounted } = useAuth()
 
-  const filteredItems = navigationItems.filter(
-    item => !item.requireAuth || (item.requireAuth && user)
-  )
+  // Use same logic as desktop navigation to prevent disappearing items
+  const shouldShowAuthItems = mounted && user && !loading
+
+  const filteredItems = navigationItems.filter(item => {
+    if (!item.requireAuth) {
+      return true
+    }
+    return shouldShowAuthItems || !mounted || loading
+  })
 
   return (
     <div className='md:hidden relative'>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='p-2 rounded-md hover:bg-accent hover:cursor-pointer'
+        className={cn(
+          'p-2 rounded-full transition-all duration-200',
+          'hover:bg-gray-100 hover:cursor-pointer hover:scale-110',
+          isOpen && 'bg-gray-100'
+        )}
         aria-label='Toggle navigation menu'
       >
         <svg
@@ -185,8 +233,8 @@ export const MobileNavigation = () => {
       </button>
 
       {isOpen && (
-        <div className='absolute top-12 right-0 bg-background border rounded-lg shadow-lg p-4 min-w-48 z-50'>
-          <Navigation orientation='vertical' className='space-y-2' />
+        <div className='absolute top-12 right-0 bg-white border border-gray-200 rounded-xl shadow-xl p-4 min-w-48 z-50 animate-in slide-in-from-top-2 duration-200'>
+          <Navigation orientation='vertical' className='space-y-1' />
         </div>
       )}
     </div>

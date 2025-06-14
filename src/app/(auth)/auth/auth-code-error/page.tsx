@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Suspense } from 'react'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 function AuthErrorContent() {
   const searchParams = useSearchParams()
@@ -123,7 +124,11 @@ export default function AuthErrorPage() {
         <div className='min-h-screen flex items-center justify-center p-4'>
           <Card className='w-full max-w-md'>
             <CardHeader className='text-center'>
-              <div className='w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4' />
+              <LoadingSpinner
+                size='lg'
+                variant='gradient'
+                className='mx-auto mb-4'
+              />
               <CardTitle>Loading...</CardTitle>
             </CardHeader>
           </Card>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { ImageGallery } from '@/components/gallery/image-gallery'
 import { Suspense } from 'react'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 export const metadata: Metadata = {
   title: 'Gallery | NextJS Supabase Gallery',
@@ -10,7 +11,17 @@ export const metadata: Metadata = {
 function GalleryContent() {
   return (
     <div className='bg-gray-50 min-h-screen'>
-      <Suspense fallback={<div>Loading gallery...</div>}>
+      <Suspense
+        fallback={
+          <div className='flex items-center justify-center py-20'>
+            <LoadingSpinner
+              size='xl'
+              variant='gradient'
+              text='Loading gallery content...'
+            />
+          </div>
+        }
+      >
         <ImageGallery />
       </Suspense>
     </div>
@@ -23,8 +34,11 @@ export default function GalleryPage() {
       fallback={
         <div className='bg-gray-50 min-h-screen flex items-center justify-center'>
           <div className='text-center'>
-            <div className='w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4' />
-            <p className='text-gray-600'>Loading gallery...</p>
+            <LoadingSpinner
+              size='xl'
+              variant='gradient'
+              text='Loading Gallery...'
+            />
           </div>
         </div>
       }

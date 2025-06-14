@@ -1,6 +1,7 @@
 import { AuthGuard } from '@/components/auth/auth-guard'
 import { LoginForm } from '@/components/auth/login-form'
 import { Suspense } from 'react'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 function LoginPageContent() {
   return (
@@ -17,7 +18,11 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className='min-h-screen flex items-center justify-center p-4'>
-          <div>Loading...</div>
+          <LoadingSpinner
+            size='lg'
+            variant='gradient'
+            text='Loading login...'
+          />
         </div>
       }
     >

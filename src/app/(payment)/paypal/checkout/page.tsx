@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
 import { useAuth } from '@/hooks/use-auth'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 function PayPalCheckoutPage() {
   const { user } = useAuth()
@@ -151,7 +152,17 @@ function PayPalCheckoutPage() {
 
 export default function PayPalCheckoutPageWrapper() {
   return (
-    <Suspense fallback={<div>Loading payment details...</div>}>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center p-4'>
+          <LoadingSpinner
+            size='lg'
+            variant='gradient'
+            text='Loading payment details...'
+          />
+        </div>
+      }
+    >
       <PayPalCheckoutPage />
     </Suspense>
   )
