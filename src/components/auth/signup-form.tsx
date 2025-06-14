@@ -83,12 +83,7 @@ export const SignupForm = ({
     setIsLoading(true)
 
     try {
-      console.log('Starting signup with:', {
-        email: formData.email,
-        fullName: formData.fullName,
-      })
       await signUp(formData.email, formData.password, formData.fullName)
-      console.log('Signup successful')
       addToast({
         type: 'success',
         title: 'Account created successfully',
@@ -101,7 +96,6 @@ export const SignupForm = ({
         router.push(redirectTo)
       }
     } catch (error) {
-      console.error('Signup error:', error)
       addToast({
         type: 'error',
         title: 'Signup failed',
@@ -111,7 +105,6 @@ export const SignupForm = ({
             : 'An error occurred during signup',
       })
     } finally {
-      console.log('Setting loading to false')
       setIsLoading(false)
     }
   }

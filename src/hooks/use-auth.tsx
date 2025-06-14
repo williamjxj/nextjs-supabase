@@ -140,7 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true) // Set loading when auth state changes
+      setLoading(true)
       try {
         if (session?.user) {
           const enrichedUser = await enrichUserWithSubscription(session.user)
@@ -149,11 +149,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null)
         }
       } catch (error) {
-        // Only log authentication errors, not subscription errors
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error'
         console.warn('Error in auth state change handler:', errorMessage)
-        // Set user to null on error to maintain consistent state
         setUser(null)
       } finally {
         setLoading(false)
@@ -183,7 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Also do a delayed refresh to ensure consistency
       setTimeout(async () => {
         await refreshAuthState()
-      }, 500)
+      }, 100)
     } catch (error) {
       // Keep login errors as errors since they're important for users
       console.error('signIn error:', error)
@@ -205,12 +203,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const signOut = async () => {
-    setLoading(true)
     try {
       await authService.signOut()
-      setUser(null) // Clear user on sign out
-    } finally {
-      setLoading(false)
+
+      // Fallback to ensure user state is cleared
+      setTimeout(() => {
+        if (user) {
+          setUser(null)
+          setLoading(false)
+        }
+      }, 100)
+    } catch (error) {
+      throw error
     }
   }
 
@@ -238,7 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await supabase.auth.refreshSession()
 
       // Wait a moment for the refresh to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 100))
 
       // First try to get the session
       const session = await authService.getSession()
