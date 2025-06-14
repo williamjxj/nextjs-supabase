@@ -29,11 +29,6 @@ export default function StripeSubscriptionHandler() {
       setIsProcessing(true)
 
       try {
-        console.log('🔄 Processing Stripe subscription success...', {
-          success,
-          sessionId,
-        })
-
         showToast(
           'Verifying your Stripe subscription...',
           'info',
@@ -52,7 +47,6 @@ export default function StripeSubscriptionHandler() {
 
           if (response.ok) {
             const data = await response.json()
-            console.log('✅ Stripe subscription activated:', data)
 
             showToast(
               'Your Stripe subscription has been activated successfully!',
@@ -61,7 +55,6 @@ export default function StripeSubscriptionHandler() {
             )
           } else {
             const errorData = await response.json()
-            console.warn('⚠️ Stripe subscription activation failed:', errorData)
             showToast(
               'Payment processed, but activation failed. Please contact support.',
               'warning',

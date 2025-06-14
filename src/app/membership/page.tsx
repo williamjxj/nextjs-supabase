@@ -42,14 +42,14 @@ export default function MembershipPage() {
   const { showToast } = useToast()
   const { user, syncAuthSession } = useAuth()
 
-  // Debug: Log user state on component mount and when user changes
+  // Debug: Log user state in development mode only
   useEffect(() => {
-    console.log('🔍 MembershipPage user state:', {
-      hasUser: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-      subscriptionTier: user?.subscriptionTier,
-    })
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User state:', {
+        hasUser: !!user,
+        subscriptionTier: user?.subscriptionTier,
+      })
+    }
   }, [user])
 
   // Development mode: Create mock user for testing when no auth
@@ -58,7 +58,6 @@ export default function MembershipPage() {
 
     // In development, create a mock user for testing
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Using mock user for testing')
       return {
         id: 'dev-test-user-123',
         email: 'test@example.com',
@@ -103,14 +102,13 @@ export default function MembershipPage() {
       if (method !== 'stripe' && method !== 'paypal') {
         // For other payment methods (crypto), try server session validation first
         try {
-          console.log('🔍 Validating server session for', method)
+          // Check server session validation for other payment methods
           const sessionCheck = await fetch('/api/auth/session-check', {
             method: 'GET',
             credentials: 'include',
           })
 
           if (!sessionCheck.ok) {
-            console.warn('Server session validation failed, attempting sync...')
             const syncSuccess = await syncAuthSession()
 
             if (!syncSuccess) {
@@ -179,10 +177,7 @@ export default function MembershipPage() {
           const priceId =
             STRIPE_PRICE_IDS[subscribeModal.planType][billingInterval]
 
-          console.log('💳 Processing Stripe checkout with fallback approach...')
-
-          // Since server session is unreliable, use fallback approach directly
-          // when user is authenticated on client-side
+          // Use fallback approach when user is authenticated on client-side
           const stripeResponse = await fetch(
             '/api/stripe/checkout/subscription-fallback',
             {
@@ -239,8 +234,6 @@ export default function MembershipPage() {
           break
 
         case 'paypal':
-          console.log('💰 Processing PayPal checkout with fallback approach...')
-
           // Store PayPal checkout data for later activation
           localStorage.setItem('paypal_plan_type', subscribeModal.planType)
           localStorage.setItem('paypal_billing_interval', billingInterval)

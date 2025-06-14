@@ -12,34 +12,12 @@ export default function PayPalSubscriptionHandler() {
 
   useEffect(() => {
     const handlePayPalSuccess = async () => {
-      // Debug: Log all search params
-      const allParams: Record<string, string> = {}
-      searchParams.forEach((value, key) => {
-        allParams[key] = value
-      })
-      console.log('🔍 All URL search params:', allParams)
-
-      // Debug: Log localStorage data
-      console.log('🔍 localStorage data:', {
-        planType: localStorage.getItem('paypal_plan_type'),
-        billingInterval: localStorage.getItem('paypal_billing_interval'),
-        userId: localStorage.getItem('paypal_user_id'),
-      })
-
       // Check if this is a PayPal subscription success
       const payment = searchParams.get('payment')
       const subscriptionId = searchParams.get('subscription_id')
       const success = searchParams.get('success')
 
-      console.log('🔍 PayPal handler checking conditions:', {
-        payment,
-        subscriptionId,
-        success,
-        willProcess: payment === 'paypal' && subscriptionId && success,
-      })
-
       if (!payment || payment !== 'paypal' || !subscriptionId || !success) {
-        console.log('❌ PayPal handler conditions not met, skipping')
         return
       }
 
@@ -86,8 +64,6 @@ export default function PayPalSubscriptionHandler() {
         if (!response.ok) {
           throw new Error(data.error || 'Failed to activate subscription')
         }
-
-        console.log('✅ PayPal subscription activated:', data)
 
         showToast(
           'Your PayPal subscription has been activated successfully!',
