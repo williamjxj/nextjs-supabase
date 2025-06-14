@@ -23,7 +23,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(false) // Start with false to show login buttons immediately
+  const [loading, setLoading] = useState(true) // Start with true during initial auth check
   const [mounted, setMounted] = useState(false)
 
   // Handle hydration
@@ -108,52 +108,78 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   useEffect(() => {
-    // Get initial session only after component is mounted
-    const getInitialSession = async () => {
-      if (!mounted) return
+    // Only run after mount to avoid hydration issues
+    if (!mounted) return
 
-      setLoading(true) // Only set loading when we're actually checking
+    console.log('🔍 Starting simple auth initialization...')
+
+    // Get initial session - trust Supabase's session management
+    const initializeAuth = async () => {
       try {
-        const session = await authService.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        console.log('🔍 Initial session:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userEmail: session?.user?.email,
+        })
+
         if (session?.user) {
-          const enrichedUser = await enrichUserWithSubscription(session.user)
-          setUser(enrichedUser)
+          try {
+            const enrichedUser = await enrichUserWithSubscription(session.user)
+            setUser(enrichedUser)
+          } catch (enrichError) {
+            // If enrichment fails, still set basic user data
+            setUser({
+              ...session.user,
+              subscription: null,
+              hasActiveSubscription: false,
+              subscriptionTier: null,
+            } as AuthUser)
+          }
         } else {
           setUser(null)
         }
       } catch (error) {
-        // Only log authentication errors, not subscription errors
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error'
-        console.warn('Error getting initial session:', errorMessage)
+        console.error('🔍 Auth initialization error:', error)
         setUser(null)
       } finally {
         setLoading(false)
       }
     }
 
-    if (mounted) {
-      getInitialSession()
-    }
+    initializeAuth()
 
-    // Listen for auth changes
+    // Simple auth state listener - trust Supabase's events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true)
-      try {
-        if (session?.user) {
+      console.log('🔍 Auth state change:', { event, hasSession: !!session })
+
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      if (
+        session?.user &&
+        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
+      ) {
+        try {
           const enrichedUser = await enrichUserWithSubscription(session.user)
           setUser(enrichedUser)
-        } else {
-          setUser(null)
+        } catch (enrichError) {
+          // Fallback to basic user data
+          setUser({
+            ...session.user,
+            subscription: null,
+            hasActiveSubscription: false,
+            subscriptionTier: null,
+          } as AuthUser)
         }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error'
-        console.warn('Error in auth state change handler:', errorMessage)
-        setUser(null)
-      } finally {
         setLoading(false)
       }
     })

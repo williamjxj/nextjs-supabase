@@ -107,7 +107,7 @@ export const Navigation = ({
   // During loading or before mount, show a stable set of navigation items
   // This prevents the navigation from disappearing during auth state changes
   const shouldShowAuthItems = mounted && user && !loading
-  const shouldShowLoadingState = !mounted || (loading && !user)
+  const isInitializing = !mounted || (loading && user === null)
 
   // Ensure we always have a stable array of items to prevent flashing
   const filteredItems = React.useMemo(() => {
@@ -116,11 +116,11 @@ export const Navigation = ({
         return true // Always show non-auth items like Home
       }
 
-      // For auth-required items, show them if we have a user or if we're in an uncertain state
-      // This prevents them from disappearing during loading/transitions
-      return shouldShowAuthItems || !mounted || loading
+      // For auth-required items, only show them if we have a confirmed user
+      // Don't show during initialization to prevent flickering
+      return shouldShowAuthItems
     })
-  }, [shouldShowAuthItems, mounted, loading])
+  }, [shouldShowAuthItems])
 
   const containerClasses = cn(
     'flex',
@@ -129,7 +129,7 @@ export const Navigation = ({
   )
 
   // Show loading placeholder if auth state is uncertain and we're horizontal (desktop)
-  if (shouldShowLoadingState && orientation === 'horizontal') {
+  if (isInitializing && orientation === 'horizontal') {
     return (
       <nav className={containerClasses}>
         <div className='flex items-center space-x-1'>
@@ -193,7 +193,8 @@ export const MobileNavigation = () => {
     if (!item.requireAuth) {
       return true
     }
-    return shouldShowAuthItems || !mounted || loading
+    // Only show auth-required items if we have a confirmed user
+    return shouldShowAuthItems
   })
 
   return (

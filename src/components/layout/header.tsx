@@ -10,11 +10,20 @@ import { ImageIcon, User, LogOut } from 'lucide-react'
 export const Header = () => {
   const { user, loading, mounted } = useAuth()
 
-  // Simplified logic: show auth buttons when no user, show user info when user exists
-  // Show auth buttons immediately when mounted and no user (even during loading)
-  const showAuthButtons = !user && mounted
-  const showUserInfo = Boolean(user && mounted)
-  const showLoading = mounted && loading && !user
+  // Simple logic:
+  // - If not mounted yet, show nothing (prevent hydration mismatch)
+  // - If mounted and loading, show loading
+  // - If mounted and user exists, show user info
+  // - If mounted and no user and not loading, show auth buttons
+  const showAuthButtons = mounted && !loading && !user
+  const showUserInfo = mounted && !loading && user
+  const showLoading = mounted && loading
+
+  console.log('🔍 Header display:', {
+    showAuthButtons,
+    showUserInfo,
+    showLoading,
+  })
 
   return (
     <header className='sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100'>
