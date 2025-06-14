@@ -7,14 +7,14 @@ set -e
 
 # Load environment variables from .env.local
 load_env() {
-    if [ -f .env.local ]; then
+    if [ -f ../.env.local ]; then
         while IFS= read -r line; do
             # Skip comments and empty lines
             [[ $line =~ ^[[:space:]]*# ]] && continue
             [[ -z $line ]] && continue
             # Export the variable
             export "$line"
-        done < .env.local
+        done < ../.env.local
     else
         echo "Error: .env.local file not found!"
         exit 1

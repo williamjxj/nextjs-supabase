@@ -241,6 +241,11 @@ export default function MembershipPage() {
         case 'paypal':
           console.log('💰 Processing PayPal checkout with fallback approach...')
 
+          // Store PayPal checkout data for later activation
+          localStorage.setItem('paypal_plan_type', subscribeModal.planType)
+          localStorage.setItem('paypal_billing_interval', billingInterval)
+          localStorage.setItem('paypal_user_id', effectiveUser.id)
+
           // Use fallback approach directly for PayPal, similar to Stripe
           const paypalResponse = await fetch(
             '/api/paypal/subscription-fallback',

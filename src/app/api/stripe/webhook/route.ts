@@ -11,8 +11,14 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: Request) {
+  console.log('🎯 Stripe webhook received:', new Date().toISOString())
+
   const body = await req.text()
   const signature = (await headers()).get('stripe-signature')
+
+  // Enhanced logging for debugging
+  console.log('📦 Webhook payload length:', body.length)
+  console.log('🔐 Signature present:', !!signature)
 
   // Handle empty payload (for testing)
   if (!body || body.trim() === '') {
@@ -127,6 +133,14 @@ async function handleSubscriptionChange(subscription: any) {
   const features = getSubscriptionFeatures(planType)
 
   // Update subscription in our database
+  console.log('💾 Inserting subscription into database:', {
+    userId,
+    planType,
+    billingInterval,
+    subscriptionId,
+    status,
+  })
+
   const { error } = await supabaseAdmin.from('subscriptions').upsert(
     {
       user_id: userId,
@@ -151,9 +165,11 @@ async function handleSubscriptionChange(subscription: any) {
   )
 
   if (error) {
-    console.error('Error updating subscription:', error)
+    console.error('❌ Error updating subscription:', error)
     throw error
   }
+
+  console.log('✅ Subscription successfully inserted/updated in database')
 }
 
 // Helper function to get features for each plan type
