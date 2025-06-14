@@ -193,10 +193,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, fullName?: string) => {
     setLoading(true)
     try {
-      await authService.signUp(email, password)
+      await authService.signUp(email, password, fullName)
+    } catch (error) {
+      throw error // Re-throw error so signup form can handle it
     } finally {
       setLoading(false)
     }

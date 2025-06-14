@@ -27,6 +27,7 @@ export const SignupForm = ({
   redirectTo = '/gallery',
 }: SignupFormProps) => {
   const [formData, setFormData] = useState<SignupFormData>({
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -46,7 +47,12 @@ export const SignupForm = ({
   }
 
   const validateForm = () => {
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (
+      !formData.fullName ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
       return 'All fields are required'
     }
 
@@ -77,7 +83,12 @@ export const SignupForm = ({
     setIsLoading(true)
 
     try {
-      await signUp(formData.email, formData.password)
+      console.log('Starting signup with:', {
+        email: formData.email,
+        fullName: formData.fullName,
+      })
+      await signUp(formData.email, formData.password, formData.fullName)
+      console.log('Signup successful')
       addToast({
         type: 'success',
         title: 'Account created successfully',
@@ -90,6 +101,7 @@ export const SignupForm = ({
         router.push(redirectTo)
       }
     } catch (error) {
+      console.error('Signup error:', error)
       addToast({
         type: 'error',
         title: 'Signup failed',
@@ -99,12 +111,16 @@ export const SignupForm = ({
             : 'An error occurred during signup',
       })
     } finally {
+      console.log('Setting loading to false')
       setIsLoading(false)
     }
   }
 
   const isValid =
-    formData.email && formData.password && formData.confirmPassword
+    formData.fullName &&
+    formData.email &&
+    formData.password &&
+    formData.confirmPassword
 
   return (
     <Card className='w-full max-w-md mx-auto'>
@@ -116,6 +132,22 @@ export const SignupForm = ({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className='space-y-4'>
+          <div className='space-y-2'>
+            <label htmlFor='fullName' className='text-sm font-medium'>
+              Full Name
+            </label>
+            <Input
+              id='fullName'
+              name='fullName'
+              type='text'
+              placeholder='Enter your full name'
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
+
           <div className='space-y-2'>
             <label htmlFor='email' className='text-sm font-medium'>
               Email

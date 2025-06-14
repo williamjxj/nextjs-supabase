@@ -35,7 +35,7 @@ export interface AuthState {
   loading: boolean
   mounted: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, fullName?: string) => Promise<void>
   signOut: () => Promise<void>
   signInWithSocial: (
     provider: import('@supabase/supabase-js').Provider
@@ -51,6 +51,7 @@ export interface LoginFormData {
 }
 
 export interface SignupFormData {
+  fullName: string
   email: string
   password: string
   confirmPassword: string
