@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Only run after mount to avoid hydration issues
     if (!mounted) return
 
-    console.log('🔍 Starting simple auth initialization...')
+    console.log('🔍 Starting auth initialization...')
 
     // Get initial session - trust Supabase's session management
     const initializeAuth = async () => {
@@ -146,24 +146,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('🔍 Auth initialization error:', error)
         setUser(null)
       } finally {
+        // Always set loading to false after initialization
         setLoading(false)
       }
     }
 
     initializeAuth()
 
-    // Simple auth state listener - trust Supabase's events
+    // Enhanced auth state listener with better cross-tab support
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔍 Auth state change:', { event, hasSession: !!session })
+      console.log('🔍 Auth state change:', {
+        event,
+        hasSession: !!session,
+        tabId: window.name || 'unknown',
+      })
 
+      // Handle sign out
       if (event === 'SIGNED_OUT' || !session?.user) {
         setUser(null)
         setLoading(false)
         return
       }
 
+      // Handle sign in and token refresh
       if (
         session?.user &&
         (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
@@ -184,32 +191,111 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [mounted])
+    // Add additional cross-tab synchronization using storage events
+    const handleStorageChange = async (e: StorageEvent) => {
+      // Check if the auth state changed in another tab
+      if (
+        e.key === 'supabase.auth.token' ||
+        e.key?.startsWith('supabase.auth')
+      ) {
+        console.log('🔍 Storage auth change detected, refreshing session...')
+
+        // Small delay to ensure the storage is fully updated
+        setTimeout(async () => {
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession()
+
+            if (session?.user && !user) {
+              // User logged in from another tab
+              console.log('🔍 User login detected from another tab')
+              const enrichedUser = await enrichUserWithSubscription(
+                session.user
+              )
+              setUser(enrichedUser)
+              setLoading(false)
+            } else if (!session?.user && user) {
+              // User logged out from another tab
+              console.log('🔍 User logout detected from another tab')
+              setUser(null)
+              setLoading(false)
+            }
+          } catch (error) {
+            console.error('🔍 Error syncing auth from storage:', error)
+          }
+        }, 100)
+      }
+    }
+
+    // Listen for storage changes (cross-tab communication)
+    window.addEventListener('storage', handleStorageChange)
+
+    // Add focus event listener to refresh auth state when tab becomes active
+    const handleFocus = async () => {
+      console.log('🔍 Tab focused, checking auth state...')
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        // Check if auth state is out of sync
+        const hasSession = !!session?.user
+        const hasUser = !!user
+
+        if (hasSession !== hasUser) {
+          console.log('🔍 Auth state out of sync, updating...', {
+            hasSession,
+            hasUser,
+          })
+
+          if (hasSession && session?.user) {
+            const enrichedUser = await enrichUserWithSubscription(session.user)
+            setUser(enrichedUser)
+          } else {
+            setUser(null)
+          }
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('🔍 Error checking auth on focus:', error)
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [mounted, user]) // Added user to dependencies for storage sync
 
   const signIn = async (email: string, password: string) => {
     setLoading(true)
     try {
-      // First, ensure we have a clean state by clearing any stale cookies
-      await supabase.auth.signOut()
-
-      // Wait briefly for cleanup
-      await new Promise(resolve => setTimeout(resolve, 100))
-
       const result = await authService.signIn(email, password)
 
       // Ensure the session is properly synchronized
       if (result.user) {
         const enrichedUser = await enrichUserWithSubscription(result.user)
         setUser(enrichedUser)
+
+        // Force a session refresh to ensure cross-tab sync
+        await supabase.auth.refreshSession()
+
+        console.log('🔍 Sign in completed, session should sync across tabs')
       }
 
-      // Also do a delayed refresh to ensure consistency
+      // Additional delayed refresh for cross-tab consistency
       setTimeout(async () => {
-        await refreshAuthState()
-      }, 100)
+        try {
+          await refreshAuthState()
+        } catch (error) {
+          console.warn('🔍 Delayed auth refresh failed:', error)
+        }
+      }, 500)
     } catch (error) {
-      // Keep login errors as errors since they're important for users
       console.error('signIn error:', error)
       throw error
     } finally {

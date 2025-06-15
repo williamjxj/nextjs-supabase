@@ -104,23 +104,21 @@ export const Navigation = ({
   const pathname = usePathname()
   const { user, loading, mounted } = useAuth()
 
-  // During loading or before mount, show a stable set of navigation items
-  // This prevents the navigation from disappearing during auth state changes
-  const shouldShowAuthItems = mounted && user && !loading
-  const isInitializing = !mounted || (loading && user === null)
+  // Show all items when user is authenticated, or only public items when not
+  // Never hide the navigation completely - this prevents flickering
+  const isAuthenticated = mounted && !loading && user
+  const isInitializing = !mounted || loading
 
-  // Ensure we always have a stable array of items to prevent flashing
+  // Filter items based on authentication state
   const filteredItems = React.useMemo(() => {
     return navigationItems.filter(item => {
       if (!item.requireAuth) {
         return true // Always show non-auth items like Home
       }
-
-      // For auth-required items, only show them if we have a confirmed user
-      // Don't show during initialization to prevent flickering
-      return shouldShowAuthItems
+      // For auth-required items, show them if authenticated or show as disabled if not
+      return true // Always show all items, let the component handle disabled state
     })
-  }, [shouldShowAuthItems])
+  }, [])
 
   const containerClasses = cn(
     'flex',
@@ -128,43 +126,30 @@ export const Navigation = ({
     className
   )
 
-  // Show loading placeholder if auth state is uncertain and we're horizontal (desktop)
-  if (isInitializing && orientation === 'horizontal') {
-    return (
-      <nav className={containerClasses}>
-        <div className='flex items-center space-x-1'>
-          {/* Home link placeholder */}
-          <div className='w-16 h-10 bg-gray-100 rounded-full animate-pulse' />
-          {/* Auth items placeholders */}
-          <div className='w-20 h-10 bg-gray-100 rounded-full animate-pulse' />
-          <div className='w-18 h-10 bg-gray-100 rounded-full animate-pulse' />
-          <div className='w-24 h-10 bg-gray-100 rounded-full animate-pulse' />
-        </div>
-      </nav>
-    )
-  }
-
   return (
     <nav className={containerClasses}>
       {filteredItems.map(item => {
         const isActive = pathname === item.href
 
-        // For auth-required items, show them as disabled if user is not authenticated
-        const isDisabled = item.requireAuth && !shouldShowAuthItems
+        // For auth-required items, disable them if user is not authenticated
+        const isDisabled = item.requireAuth && !isAuthenticated
+        const showAsLoading = item.requireAuth && isInitializing
 
         return (
           <Link
-            key={`nav-${item.href}-${mounted}-${loading}-${!!user}`}
+            key={`nav-${item.href}`}
             href={isDisabled ? '#' : item.href}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
+              showAsLoading && 'animate-pulse bg-gray-100 text-gray-400',
               !isDisabled &&
+                !showAsLoading &&
                 'hover:bg-gray-50 hover:text-gray-900 hover:cursor-pointer hover:scale-105',
-              isActive && !isDisabled
+              isActive && !isDisabled && !showAsLoading
                 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                : isDisabled
+                : isDisabled && !showAsLoading
                   ? 'text-gray-400 cursor-not-allowed opacity-60'
-                  : 'text-gray-600',
+                  : !showAsLoading && 'text-gray-600',
               orientation === 'vertical' &&
                 'justify-start w-full rounded-xl px-4 py-3'
             )}
@@ -173,7 +158,7 @@ export const Navigation = ({
             {showIcons && item.icon && (
               <span className='flex-shrink-0'>{item.icon}</span>
             )}
-            <span>{item.label}</span>
+            <span>{showAsLoading ? '...' : item.label}</span>
           </Link>
         )
       })}
@@ -186,16 +171,8 @@ export const MobileNavigation = () => {
   const [isOpen, setIsOpen] = useState(false)
   const { user, loading, mounted } = useAuth()
 
-  // Use same logic as desktop navigation to prevent disappearing items
-  const shouldShowAuthItems = mounted && user && !loading
-
-  const filteredItems = navigationItems.filter(item => {
-    if (!item.requireAuth) {
-      return true
-    }
-    // Only show auth-required items if we have a confirmed user
-    return shouldShowAuthItems
-  })
+  // Show all items, let Navigation component handle auth states
+  const filteredItems = navigationItems
 
   return (
     <div className='md:hidden relative'>

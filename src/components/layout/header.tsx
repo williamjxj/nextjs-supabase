@@ -10,16 +10,15 @@ import { ImageIcon, User, LogOut } from 'lucide-react'
 export const Header = () => {
   const { user, loading, mounted } = useAuth()
 
-  // Simple logic:
-  // - If not mounted yet, show nothing (prevent hydration mismatch)
-  // - If mounted and loading, show loading
-  // - If mounted and user exists, show user info
-  // - If mounted and no user and not loading, show auth buttons
+  // Simplified display logic - always show navigation
   const showAuthButtons = mounted && !loading && !user
   const showUserInfo = mounted && !loading && user
-  const showLoading = mounted && loading
+  const showLoading = !mounted || loading
 
   console.log('🔍 Header display:', {
+    mounted,
+    loading,
+    user: !!user,
     showAuthButtons,
     showUserInfo,
     showLoading,
@@ -41,7 +40,7 @@ export const Header = () => {
           </span>
         </Link>
 
-        {/* Desktop Navigation - Always show, let Navigation component handle auth states */}
+        {/* Desktop Navigation - Always show */}
         <div className='hidden md:flex'>
           <Navigation orientation='horizontal' className='space-x-1' />
         </div>
