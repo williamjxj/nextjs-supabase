@@ -186,10 +186,12 @@ export default function MembershipPage() {
               credentials: 'include',
               body: JSON.stringify({
                 priceId,
-                successUrl: `${window.location.origin}/account?success=true`,
+                successUrl: `${window.location.origin}/account/subscriptions?success=true`,
                 cancelUrl: `${window.location.origin}/membership`,
                 userId: effectiveUser.id,
                 userEmail: effectiveUser.email,
+                planType: subscribeModal.planType,
+                billingInterval,
               }),
             }
           )

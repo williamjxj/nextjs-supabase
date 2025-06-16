@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         const licenseType = parts[3]
 
         if (imageId && licenseType) {
-          const supabase = await createServerSupabaseClient()
+          const supabase = await createClient()
 
           // Implement fallback authentication similar to Stripe checkout
           const {

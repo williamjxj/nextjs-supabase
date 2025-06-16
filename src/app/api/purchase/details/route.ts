@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get purchase details from database
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createClient()
     const { data: purchase, error: purchaseError } = await supabase
       .from('purchases')
       .select(

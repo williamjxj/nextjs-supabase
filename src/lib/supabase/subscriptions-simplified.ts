@@ -1,5 +1,5 @@
 // Simplified subscription utilities
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import {
   SUBSCRIPTION_PLANS,
   SubscriptionPlanType,
@@ -12,7 +12,7 @@ export type SubscriptionStatus = 'active' | 'cancelled' | 'expired'
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
   if (!userId) return false
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('subscriptions')
     .select('id, status, current_period_end')
@@ -38,7 +38,7 @@ export async function getUserSubscription(
 ): Promise<UserSubscription | null> {
   if (!userId) return null
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('subscriptions')
     .select('*')
@@ -75,7 +75,7 @@ export async function createUserSubscription(
   billingInterval: 'monthly' | 'yearly',
   stripeSubscriptionId?: string
 ): Promise<UserSubscription | null> {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
   const plan = SUBSCRIPTION_PLANS[planType]
 
   if (!plan) {
@@ -122,7 +122,7 @@ export async function updateSubscriptionStatus(
   subscriptionId: string,
   status: SubscriptionStatus
 ): Promise<boolean> {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('subscriptions')
@@ -139,7 +139,7 @@ export async function updateSubscriptionStatus(
 
 // Get template subscription plans from database (the ones with user_id = '00000000-0000-0000-0000-000000000000')
 export async function getTemplatePlans() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('subscriptions')
     .select('*')

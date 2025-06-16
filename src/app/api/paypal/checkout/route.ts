@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 // This is a placeholder for PayPal API logic.
 // You'll need to install and use the PayPal SDK or make direct API calls.
 // For example, using @paypal/checkout-server-sdk
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Check user authentication for PayPal checkout with fallback
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createClient()
     const {
       data: { user },
       error: authError,

@@ -37,7 +37,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     let { priceId } = body
-    const { successUrl, cancelUrl, trialPeriodDays, userId, userEmail } = body
+    const {
+      successUrl,
+      cancelUrl,
+      trialPeriodDays,
+      userId,
+      userEmail,
+      planType,
+      billingInterval,
+    } = body
 
     // This is a fallback route that bypasses server-side authentication
     // and uses client-provided user data directly
@@ -186,10 +194,13 @@ export async function POST(request: NextRequest) {
       ],
       mode: checkoutMode,
       success_url:
-        successUrl || `${request.nextUrl.origin}/account?success=true`,
+        successUrl ||
+        `${request.nextUrl.origin}/account/subscriptions?success=true`,
       cancel_url: cancelUrl || `${request.nextUrl.origin}/membership`,
       metadata: {
         userId: userId,
+        planType: planType || 'standard',
+        billingInterval: billingInterval || 'monthly',
         originalMode: 'subscription', // Mark that this was intended as a subscription
         developmentFallback: !isRecurring ? 'true' : 'false',
       },

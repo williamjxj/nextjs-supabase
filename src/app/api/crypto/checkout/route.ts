@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 // This is a placeholder for Cryptocurrency payment gateway logic.
 // For example, using Coinbase Commerce API.
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Check user authentication for crypto checkout
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createClient()
     const {
       data: { user },
       error: authError,

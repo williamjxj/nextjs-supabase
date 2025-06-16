@@ -59,11 +59,39 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const { showToast } = useToast()
   const { user } = useAuth()
 
-  // Check for PayPal-related URL parameters
+  // Check for purchase success/error parameters
   useEffect(() => {
+    const purchaseSuccess = searchParams.get('purchase_success')
+    const purchaseCanceled = searchParams.get('purchase_canceled')
+    const sessionId = searchParams.get('session_id')
     const paypalCancelled = searchParams.get('paypal_cancelled')
     const paypalError = searchParams.get('paypal_error')
     const paypalSuccess = searchParams.get('paypal_success')
+
+    if (purchaseSuccess === 'true') {
+      showToast(
+        'Image purchase successful! You can now download the image.',
+        'success',
+        'Purchase Complete'
+      )
+      // Clean up URL parameters
+      const url = new URL(window.location.href)
+      url.searchParams.delete('purchase_success')
+      url.searchParams.delete('session_id')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    if (purchaseCanceled === 'true') {
+      showToast(
+        'Image purchase was cancelled. You can try again anytime.',
+        'warning',
+        'Purchase Cancelled'
+      )
+      // Clean up URL parameters
+      const url = new URL(window.location.href)
+      url.searchParams.delete('purchase_canceled')
+      window.history.replaceState({}, '', url.toString())
+    }
 
     if (paypalCancelled === 'true') {
       showToast(

@@ -1,6 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSubscription } from '@/lib/actions/subscription-simplified'
 
+// User access types to distinguish different user categories
+export type UserAccessType =
+  | 'free' // No subscription, no purchases
+  | 'subscription' // Has active subscription
+  | 'purchaser' // Has made individual image purchases
+  | 'mixed' // Has both subscription and purchases
+
+export interface UserPurchaseSummary {
+  totalPurchases: number
+  totalSpent: number
+  uniqueImages: number
+  hasRecentPurchases: boolean
+}
+
 export interface SubscriptionAccess {
   hasActiveSubscription: boolean
   subscriptionType: string | null
@@ -13,6 +27,8 @@ export interface SubscriptionAccess {
   subscriptionExpiresAt?: string | null
   features?: string[]
   usage?: Record<string, any>
+  userType: UserAccessType
+  purchaseSummary?: UserPurchaseSummary
 }
 
 export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
@@ -33,13 +49,49 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
         isTrialing: false,
         features: [],
         usage: {},
+        userType: 'free',
       }
     }
 
+    // Get user's subscription
     const subscription = await getSubscription()
 
-    if (!subscription || !['active', 'trialing'].includes(subscription.status)) {
-      // Free tier access
+    // Get user's purchase history
+    const { data: purchases } = await supabase
+      .from('purchases')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('payment_status', 'completed')
+
+    const purchaseSummary: UserPurchaseSummary = {
+      totalPurchases: purchases?.length || 0,
+      totalSpent:
+        purchases?.reduce((sum, p) => sum + (p.amount_paid || 0), 0) || 0,
+      uniqueImages: new Set(purchases?.map(p => p.image_id) || []).size,
+      hasRecentPurchases:
+        purchases?.some(
+          p =>
+            new Date(p.purchased_at).getTime() >
+            Date.now() - 30 * 24 * 60 * 60 * 1000 // Last 30 days
+        ) || false,
+    }
+
+    // Determine user type
+    const hasActiveSubscription =
+      subscription && ['active', 'trialing'].includes(subscription.status)
+    const hasPurchases = purchaseSummary.totalPurchases > 0
+
+    let userType: UserAccessType = 'free'
+    if (hasActiveSubscription && hasPurchases) {
+      userType = 'mixed'
+    } else if (hasActiveSubscription) {
+      userType = 'subscription'
+    } else if (hasPurchases) {
+      userType = 'purchaser'
+    }
+
+    if (!hasActiveSubscription) {
+      // Free tier or purchaser access
       return {
         hasActiveSubscription: false,
         subscriptionType: null,
@@ -51,6 +103,8 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
         isTrialing: false,
         features: [],
         usage: {},
+        userType,
+        purchaseSummary,
       }
     }
 
@@ -84,6 +138,8 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
       subscriptionExpiresAt: subscription.current_period_end || null,
       features: subscription.features || [],
       usage: {}, // Usage tracking to be implemented
+      userType,
+      purchaseSummary,
     }
   } catch (error) {
     console.error('Error checking subscription access:', error)
@@ -96,8 +152,10 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
       isTrialing: false,
       features: [],
       usage: {},
+      userType: 'free',
     }
   }
+}
 
 export async function canAccessImage(imageId: string): Promise<boolean> {
   const access = await checkSubscriptionAccess()

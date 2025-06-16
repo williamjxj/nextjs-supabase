@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export interface GalleryQueryParams {
@@ -11,7 +11,7 @@ export interface GalleryQueryParams {
 
 // GET /api/gallery - Get all images with filtering and pagination (no authentication required)
 export async function GET(request: NextRequest) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // TODO: Add RLS policies
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
 // DELETE /api/gallery?id=<image-id> - Delete a specific image
 export async function DELETE(request: NextRequest) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // Get image ID from query parameters

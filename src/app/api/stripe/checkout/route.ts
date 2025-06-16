@@ -172,13 +172,14 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `http://localhost:3000/gallery?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:3000/gallery?canceled=true`,
+      success_url: `http://localhost:3000/gallery?purchase_success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `http://localhost:3000/gallery?purchase_canceled=true`,
       metadata: {
         userId: userId || '',
         imageId,
         licenseType,
         isSubscription: 'false',
+        purchaseType: 'image', // Mark as image purchase
       },
     })
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   // Fetching PayPal purchase details
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.log('PayPal Details - Looking for payment ID:', paymentId)
 
     // Get purchase details from database using PayPal order ID
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createClient()
     const { data: purchase, error: purchaseError } = await supabase
       .from('purchases')
       .select(

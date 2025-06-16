@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from './server'
+import { createClient } from './server'
 import { AuthUser } from '@/types/auth'
 import {
   hasActiveSubscription,
@@ -54,7 +54,7 @@ export const userHasSubscriptionType = async (
 export const getUserWithSubscription = async (userId: string) => {
   if (!userId) return null
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
   const {
     data: { user },
     error,

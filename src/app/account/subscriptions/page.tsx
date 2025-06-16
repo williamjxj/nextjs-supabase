@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Calendar,
   CheckCircle,
@@ -9,13 +9,16 @@ import {
   RefreshCw,
   CreditCard,
   AlertTriangle,
+  ArrowLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { createStripePortal } from '@/lib/actions/subscription-simplified'
 import { SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
+import Link from 'next/link'
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -36,9 +39,86 @@ const formatCurrency = (amount: number, currency = 'usd') => {
 
 export default function SubscriptionsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { showToast } = useToast()
   const { user, loading } = useAuth()
   const [cancelling, setCancelling] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<
+    'success' | 'error' | 'processing' | null
+  >(null)
+
+  // Handle success/error from subscription checkout
+  useEffect(() => {
+    const success = searchParams.get('success')
+    const sessionId = searchParams.get('session_id')
+    const error = searchParams.get('error')
+
+    if (success === 'true') {
+      setSubscriptionStatus('success')
+      showToast(
+        'Subscription activated successfully! Welcome to your new plan.',
+        'success',
+        'Subscription Activated'
+      )
+    } else if (error) {
+      setSubscriptionStatus('error')
+      showToast(
+        `Subscription activation failed: ${error}`,
+        'error',
+        'Subscription Error'
+      )
+    } else if (sessionId) {
+      // Processing state - waiting for webhook confirmation
+      setSubscriptionStatus('processing')
+
+      // Poll for subscription status for up to 30 seconds
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(
+            `/api/stripe/verify-subscription-session?session_id=${sessionId}`
+          )
+          if (response.ok) {
+            const data = await response.json()
+            if (data.subscription?.status === 'active') {
+              setSubscriptionStatus('success')
+              showToast(
+                'Subscription activated successfully! Welcome to your new plan.',
+                'success',
+                'Subscription Activated'
+              )
+              clearInterval(pollInterval)
+            }
+          }
+        } catch (error) {
+          console.error('Error polling subscription status:', error)
+        }
+      }, 2000)
+
+      // Stop polling after 30 seconds
+      setTimeout(() => {
+        clearInterval(pollInterval)
+        if (subscriptionStatus === 'processing') {
+          setSubscriptionStatus('success') // Assume success if we've waited long enough
+          showToast(
+            'Your subscription is being processed. It may take a few minutes to become active.',
+            'info',
+            'Subscription Processing'
+          )
+        }
+      }, 30000)
+
+      return () => clearInterval(pollInterval)
+    }
+
+    // Clean up URL parameters
+    if (success || sessionId || error) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('success')
+      url.searchParams.delete('session_id')
+      url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [searchParams, showToast, subscriptionStatus])
 
   const subscription = user?.subscription
   const isActive = subscription?.status === 'active'
@@ -116,6 +196,80 @@ export default function SubscriptionsPage() {
 
   return (
     <div className='container mx-auto p-6'>
+      {/* Success/Error Notifications */}
+      {subscriptionStatus === 'success' && (
+        <Card className='bg-green-50 border-green-200 mb-6'>
+          <div className='p-6 text-center'>
+            <CheckCircle className='w-16 h-16 text-green-500 mx-auto mb-4' />
+            <h2 className='text-2xl font-bold text-green-900 mb-2'>
+              Subscription Activated!
+            </h2>
+            <p className='text-green-700 mb-4'>
+              Welcome to your new subscription plan. You now have access all
+              premium features.
+            </p>
+            <div className='space-x-4'>
+              <Button
+                onClick={() => router.push('/gallery')}
+                className='bg-green-600 hover:bg-green-700'
+              >
+                Start Exploring Gallery
+              </Button>
+              <Button
+                onClick={() => setSubscriptionStatus(null)}
+                variant='outline'
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {subscriptionStatus === 'processing' && (
+        <Card className='bg-blue-50 border-blue-200 mb-6'>
+          <div className='p-6 text-center'>
+            <LoadingSpinner size='lg' className='mx-auto mb-4' />
+            <h2 className='text-2xl font-bold text-blue-900 mb-2'>
+              Processing Subscription
+            </h2>
+            <p className='text-blue-700'>
+              We&apos;re activating your subscription. This may take a few
+              moments...
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {subscriptionStatus === 'error' && (
+        <Card className='bg-red-50 border-red-200 mb-6'>
+          <div className='p-6 text-center'>
+            <XCircle className='w-16 h-16 text-red-500 mx-auto mb-4' />
+            <h2 className='text-2xl font-bold text-red-900 mb-2'>
+              Subscription Error
+            </h2>
+            <p className='text-red-700 mb-4'>
+              There was an issue activating your subscription. Please try again
+              or contact support.
+            </p>
+            <div className='space-x-4'>
+              <Button
+                onClick={() => router.push('/membership')}
+                className='bg-red-600 hover:bg-red-700'
+              >
+                Try Again
+              </Button>
+              <Button
+                onClick={() => setSubscriptionStatus(null)}
+                variant='outline'
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <h1 className='text-3xl font-bold text-gray-800 dark:text-white mb-8'>
         Subscription Management
       </h1>

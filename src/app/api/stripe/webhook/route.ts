@@ -95,8 +95,10 @@ async function handleSubscriptionChange(subscription: any) {
     `Processing subscription ${subscriptionId} for customer ${customerId}`
   )
 
-  // Try to find user_id from the subscription metadata or customer
+  // Try to find user_id from the subscription metadata first
   let userId = subscription.metadata?.userId
+  let planType = subscription.metadata?.planType
+  let billingInterval = subscription.metadata?.billingInterval
 
   // If no userId in metadata, try to get it from the customer
   if (!userId) {
@@ -115,17 +117,35 @@ async function handleSubscriptionChange(subscription: any) {
     return
   }
 
-  // Get subscription plan details from Stripe
-  const lineItems = subscription.items?.data?.[0]
-  const priceId = lineItems?.price?.id
+  // If we don't have plan details from metadata, try to get them from the price
+  if (!planType || !billingInterval) {
+    const lineItems = subscription.items?.data?.[0]
+    const priceId = lineItems?.price?.id
 
-  // Determine plan type from price ID using the new mapping function
-  const planDetails = getPlanByPriceId(priceId)
-  const planType = planDetails?.planType || 'standard'
-  const billingInterval = planDetails?.billingInterval || 'monthly'
+    if (priceId) {
+      // Determine plan type from price ID using the mapping function
+      const planDetails = getPlanByPriceId(priceId)
+      planType = planDetails?.planType || planType || 'standard'
+      billingInterval =
+        planDetails?.billingInterval || billingInterval || 'monthly'
+    }
+  }
+
+  // Ensure we have defaults
+  planType = planType || 'standard'
+  billingInterval = billingInterval || 'monthly'
+
+  console.log('💾 Processing subscription with details:', {
+    userId,
+    planType,
+    billingInterval,
+    subscriptionId,
+    status,
+  })
 
   // Get plan configuration
-  const planConfig = SUBSCRIPTION_PLANS[planType]
+  const planConfig =
+    SUBSCRIPTION_PLANS[planType as keyof typeof SUBSCRIPTION_PLANS]
   const priceMonthly = planConfig?.priceMonthly || 9.99
   const priceYearly = planConfig?.priceYearly || 99.99
 
@@ -268,6 +288,7 @@ async function handleCheckoutSessionCompleted(session: any) {
   if (session.mode === 'subscription') {
     console.log(`Processing subscription checkout session: ${session.id}`)
 
+    // Get metadata from session
     const userId = session.metadata?.userId
     const planType = session.metadata?.planType || 'standard'
     const billingInterval = session.metadata?.billingInterval || 'monthly'
@@ -290,6 +311,14 @@ async function handleCheckoutSessionCompleted(session: any) {
       const subscription = await stripe.subscriptions.retrieve(
         subscriptionId as string
       )
+
+      // Add the metadata to the subscription for processing
+      subscription.metadata = {
+        ...subscription.metadata,
+        userId,
+        planType,
+        billingInterval,
+      }
 
       // Process the subscription using the same logic as subscription updates
       await handleSubscriptionChange(subscription)

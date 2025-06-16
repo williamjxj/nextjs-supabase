@@ -62,24 +62,16 @@ export const SUBSCRIPTION_PLANS: Record<
 // For development, you can create these in your Stripe Dashboard
 export const STRIPE_PRICE_IDS = {
   standard: {
-    monthly:
-      process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID || 'price_standard_monthly',
-    yearly:
-      process.env.STRIPE_STANDARD_YEARLY_PRICE_ID || 'price_standard_yearly',
+    monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+    yearly: process.env.STRIPE_STANDARD_YEARLY_PRICE_ID,
   },
   premium: {
-    monthly:
-      process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || 'price_premium_monthly',
-    yearly:
-      process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID || 'price_premium_yearly',
+    monthly: process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID,
+    yearly: process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID,
   },
   commercial: {
-    monthly:
-      process.env.STRIPE_COMMERCIAL_MONTHLY_PRICE_ID ||
-      'price_commercial_monthly',
-    yearly:
-      process.env.STRIPE_COMMERCIAL_YEARLY_PRICE_ID ||
-      'price_commercial_yearly',
+    monthly: process.env.STRIPE_COMMERCIAL_MONTHLY_PRICE_ID,
+    yearly: process.env.STRIPE_COMMERCIAL_YEARLY_PRICE_ID,
   },
 }
 
