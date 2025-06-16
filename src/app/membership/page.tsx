@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils/cn'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
+import { SubscriptionStatus } from '@/components/subscription-status'
 
 // Payment method type
 type PaymentMethod = 'stripe' | 'paypal' | 'crypto'
@@ -397,6 +398,11 @@ export default function MembershipPage() {
             Get unlimited access to our premium gallery with subscription plans
             designed to fit your needs.
           </p>
+        </div>
+
+        {/* Current Subscription Status */}
+        <div className='mb-12 max-w-2xl mx-auto'>
+          <SubscriptionStatus />
         </div>
 
         {/* Billing Toggle */}
