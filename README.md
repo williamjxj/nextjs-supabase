@@ -5,6 +5,7 @@ A modern, subscription-based image gallery application built with Next.js, Supab
 ## ✨ Features
 
 ### Core Functionality
+
 - 🖼️ **Modern Image Gallery** - Responsive masonry layout with enhanced viewer
 - 🔐 **Multi-Auth Support** - Email, Google, GitHub authentication
 - 💳 **Multiple Payment Providers** - Stripe, PayPal, and Cryptocurrency payments
@@ -12,12 +13,14 @@ A modern, subscription-based image gallery application built with Next.js, Supab
 - ⚡ **Real-time Updates** - Live subscription and payment status sync
 
 ### Subscription System
+
 - 🎯 **Tiered Access** - Free, Standard, Premium, and Commercial plans
 - 📊 **Usage Tracking** - Download limits and access control
 - 🔄 **Auto-renewal** - Seamless subscription management
 - 💰 **Flexible Billing** - Monthly and yearly options
 
 ### Technical Features
+
 - 🚀 **Next.js 14** - App Router, Server Components
 - 🗄️ **Supabase** - PostgreSQL, Authentication, Storage, RLS
 - 🎨 **Tailwind CSS** - Modern, responsive styling
@@ -28,6 +31,7 @@ A modern, subscription-based image gallery application built with Next.js, Supab
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - NPM/Yarn
 - Supabase CLI
@@ -36,33 +40,39 @@ A modern, subscription-based image gallery application built with Next.js, Supab
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd nextjs-supabase-gallery
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env.local
    # Edit .env.local with your configuration
    ```
 
 4. **Start Supabase locally**
+
    ```bash
    npx supabase start
    ```
 
 5. **Run database migrations**
+
    ```bash
    npx supabase db reset
    ```
 
 6. **Start the development server**
+
    ```bash
    npm run dev
    ```
@@ -75,17 +85,20 @@ A modern, subscription-based image gallery application built with Next.js, Supab
 ## 📚 Documentation
 
 ### Setup & Configuration
+
 - [🔧 Environment Setup](docs/setup.md)
 - [🗄️ Supabase Configuration](docs/supabase.md)
 - [🧪 Testing Guide](docs/testing-guide.md)
 
 ### Project Documentation
+
 - [📋 Project Requirements](docs/PRD.md)
 - [💳 Payment System](docs/payment.md)
 - [📊 Project Analysis](docs/project-analysis.md)
 - [🏗️ Architecture](docs/project.md)
 
 ### Development
+
 - [🤝 Contributing](docs/contributions.md)
 - [📝 TODOs](docs/todos.md)
 
@@ -151,6 +164,7 @@ npm run env:report      # Generate environment report
 ### Environment Variables
 
 Required variables:
+
 ```bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -166,6 +180,7 @@ APP_URL=http://localhost:3000
 ```
 
 Optional payment providers:
+
 ```bash
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
@@ -183,6 +198,7 @@ COINBASE_COMMERCE_API_KEY=your_coinbase_api_key
 ### Database Schema
 
 The application uses a PostgreSQL database with the following main tables:
+
 - `profiles` - User profile information
 - `subscriptions` - User subscription data
 - `images` - Image metadata and storage info
@@ -193,16 +209,19 @@ Row Level Security (RLS) is enabled for data protection.
 ## 🔒 Security
 
 ### Authentication
+
 - Supabase Auth with multiple providers
 - Session-based authentication
 - Secure password policies
 
 ### Data Protection
+
 - Row Level Security (RLS) policies
 - API route protection
 - Input validation and sanitization
 
 ### Payment Security
+
 - PCI-compliant payment processing
 - Webhook signature validation
 - Secure API key management
@@ -226,6 +245,7 @@ npm run test:all
 ```
 
 ### Test Coverage
+
 - Authentication flows
 - Payment processing
 - Subscription management
@@ -237,12 +257,14 @@ See [Testing Guide](docs/testing-guide.md) for comprehensive testing instruction
 ## 📈 Performance
 
 ### Optimizations
+
 - Image optimization with Next.js
 - Lazy loading and virtualization
 - Database query optimization
 - CDN integration for static assets
 
 ### Monitoring
+
 - Error tracking and logging
 - Performance metrics
 - User analytics (optional)
@@ -250,16 +272,19 @@ See [Testing Guide](docs/testing-guide.md) for comprehensive testing instruction
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
+
 1. Connect GitHub repository
 2. Configure environment variables
 3. Deploy automatically on push
 
 ### Manual Deployment
+
 1. Build the application: `npm run build`
 2. Start production server: `npm run start`
 3. Configure reverse proxy (nginx/Apache)
 
 ### Database
+
 - Production Supabase instance
 - Environment-specific migrations
 - Backup and recovery procedures

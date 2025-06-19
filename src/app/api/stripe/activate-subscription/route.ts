@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import { getPlanByPriceId, SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
+import Stripe from 'stripe'
 
 // Create admin client
 const supabaseAdmin = createClient(
@@ -95,9 +96,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get subscription details from Stripe
-    const subscription = await stripe.subscriptions.retrieve(
-      session.subscription as string
-    )
+    const subscription: Stripe.Subscription =
+      await stripe.subscriptions.retrieve(session.subscription as string)
 
     console.log('📋 Subscription details:', {
       id: subscription.id,
@@ -164,10 +164,10 @@ export async function POST(request: NextRequest) {
       billing_interval: billingInterval,
       stripe_subscription_id: subscription.id,
       current_period_start: new Date(
-        subscription.current_period_start * 1000
+        (subscription as any).current_period_start * 1000
       ).toISOString(),
       current_period_end: new Date(
-        subscription.current_period_end * 1000
+        (subscription as any).current_period_end * 1000
       ).toISOString(),
       features: features,
       updated_at: new Date().toISOString(),

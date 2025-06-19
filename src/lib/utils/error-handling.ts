@@ -128,7 +128,7 @@ export function withErrorHandling<T extends any[], R>(
  */
 export function mapPaymentError(error: any, provider: string): PaymentError {
   let message = 'Payment processing failed'
-  let details = error
+  const details = error
 
   switch (provider) {
     case 'stripe':

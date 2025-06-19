@@ -1,6 +1,7 @@
 # PayPal Image Purchase Flow - Fixed
 
 ## Problem Summary
+
 The PayPal image purchase flow was failing when users were redirected back to `/gallery` after PayPal checkout. The issues included:
 
 1. **Authentication Blocking**: The `/gallery` route requires authentication, but PayPal redirects could happen when user sessions expired
@@ -11,6 +12,7 @@ The PayPal image purchase flow was failing when users were redirected back to `/
 ## Solutions Implemented
 
 ### 1. Middleware Enhancement (`middleware.ts`)
+
 - **Added PayPal callback detection**: Check for `paypal_cancelled`, `paypal_error`, or `paypal_success` URL parameters
 - **Authentication bypass**: Allow PayPal callback URLs to bypass authentication requirements
 - **Conditional access**: Users can see PayPal feedback messages even without active sessions
@@ -28,6 +30,7 @@ if (isPayPalCallback) {
 ```
 
 ### 2. Gallery Component Enhancement (`image-gallery.tsx`)
+
 - **Added URL parameter handling**: Using `useSearchParams` to detect PayPal callback parameters
 - **Toast notifications**: Show user-friendly messages for different PayPal states
 - **URL cleanup**: Remove URL parameters after showing messages to clean up the URL
@@ -39,7 +42,10 @@ useEffect(() => {
   const paypalSuccess = searchParams.get('paypal_success')
 
   if (paypalCancelled === 'true') {
-    showToast('PayPal payment was cancelled. You can try again anytime.', 'warning')
+    showToast(
+      'PayPal payment was cancelled. You can try again anytime.',
+      'warning'
+    )
     // Clean up URL parameters
   }
   // ... handle other cases
@@ -47,18 +53,23 @@ useEffect(() => {
 ```
 
 ### 3. PayPal Checkout Error Handling (`api/paypal/checkout/route.ts`)
+
 - **Enhanced error responses**: Include redirect URLs for client-side error handling
 - **Better error messages**: Extract meaningful error descriptions from PayPal API responses
 
 ```typescript
-return NextResponse.json({
-  error: errorMessage,
-  details: responseData,
-  redirectUrl: `${APP_URL}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
-}, { status: response.status })
+return NextResponse.json(
+  {
+    error: errorMessage,
+    details: responseData,
+    redirectUrl: `${APP_URL}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
+  },
+  { status: response.status }
+)
 ```
 
 ### 4. PayPal Checkout Page Enhancement (`paypal/checkout/page.tsx`)
+
 - **Improved error handling**: Automatically redirect users to gallery with error parameters
 - **Better user experience**: Show error messages and provide automatic redirects
 
@@ -73,12 +84,14 @@ return NextResponse.json({
 ```
 
 ### 5. Gallery Page Suspense Fix (`gallery/page.tsx`)
+
 - **Proper Suspense wrapping**: Ensure `useSearchParams` works correctly with server-side rendering
 - **Component isolation**: Wrap ImageGallery in its own Suspense boundary
 
 ## Testing the Fix
 
 ### Test Case 1: PayPal Cancellation
+
 1. Go to `/gallery` (logged in)
 2. Select an image for purchase
 3. Choose PayPal payment
@@ -88,12 +101,14 @@ return NextResponse.json({
 7. **Expected**: URL gets cleaned up automatically
 
 ### Test Case 2: PayPal Error
+
 1. Simulate a PayPal API error (invalid credentials, network issues, etc.)
 2. **Expected**: Redirect to `/gallery?paypal_error=error_message`
 3. **Expected**: See red error toast with the error message
 4. **Expected**: URL gets cleaned up automatically
 
 ### Test Case 3: Authentication Bypass
+
 1. Log out completely
 2. Manually navigate to `/gallery?paypal_cancelled=true`
 3. **Expected**: Can access the gallery page (no redirect to login)
@@ -101,6 +116,7 @@ return NextResponse.json({
 5. **Expected**: Subsequent visits to `/gallery` require authentication
 
 ### Test Case 4: Successful PayPal Payment
+
 1. Complete a successful PayPal payment
 2. **Expected**: Redirect to `/purchase/success?paymentId=xxx&method=paypal&imageId=xxx&licenseType=xxx`
 3. **Expected**: Purchase success page loads correctly
@@ -140,6 +156,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 6. `src/app/api/debug/paypal-flow/route.ts` - Added debug endpoint (new file)
 
 ## Result
+
 ✅ PayPal image purchase flow now works correctly
 ✅ Users get proper feedback for all PayPal states (success, cancellation, error)
 ✅ Authentication issues resolved with PayPal callbacks

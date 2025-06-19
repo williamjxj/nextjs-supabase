@@ -9,32 +9,38 @@ All previous migration files have been consolidated into a single init file: `in
 ## Consolidated Schema Includes
 
 ### 1. Storage Setup
+
 - Creates `images` bucket with public access
 - Sets up storage policies for public upload/view/update/delete
 
 ### 2. Tables Created
 
 #### `public.profiles`
+
 - User profile information
 - Supports both email/password and social auth
 - Auto-created via trigger when new user signs up
 
 #### `public.images`
+
 - Image metadata storage
 - Public access (no authentication required)
 - Includes file info, dimensions, storage paths
 
-#### `public.purchases`  
+#### `public.purchases`
+
 - Purchase transaction records
 - Supports both Stripe and PayPal payments
 - Links images to buyers with license types
 
 #### `public.subscriptions`
+
 - User subscription plans (standard/premium/commercial)
 - Includes pricing, features, and Stripe integration
 - User-specific with RLS policies
 
 ### 3. Features
+
 - Row Level Security (RLS) on all tables
 - Automatic `updated_at` timestamps
 - Proper foreign key relationships
@@ -44,6 +50,7 @@ All previous migration files have been consolidated into a single init file: `in
 ## Old Migrations Backup
 
 All previous migration files are preserved in `migrations_backup/` directory:
+
 - 20240528000001_create_images_table.sql
 - 20240528000002_create_storage_policies.sql
 - 20240528000003_create_purchases_table.sql
