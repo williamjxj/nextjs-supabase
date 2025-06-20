@@ -151,9 +151,42 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
     }
   }
 
-  const handleReactivateSubscription = () => {
-    // Simple redirect to membership page for reactivation
-    router.push('/membership')
+  const handleReactivateSubscription = async () => {
+    if (!subscription) return
+
+    setActionLoading('reactivate')
+    try {
+      const response = await fetch('/api/stripe/subscription/reactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId: subscription.id }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to reactivate subscription')
+      }
+
+      showToast(
+        'Subscription has been reactivated successfully',
+        'success',
+        'Subscription Reactivated'
+      )
+
+      // Refresh subscription data
+      await fetchSubscription()
+    } catch (error) {
+      console.error('Error reactivating subscription:', error)
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to reactivate subscription',
+        'error',
+        'Error'
+      )
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   if (loading) {
@@ -274,7 +307,7 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
             }
             disabled={!!actionLoading}
           >
-            {actionLoading === 'cancel' && (
+            {(actionLoading === 'cancel' || actionLoading === 'reactivate') && (
               <Loader2 className='h-4 w-4 animate-spin mr-2' />
             )}
             {subscription.cancel_at_period_end ? 'Reactivate' : 'Cancel'}{' '}
