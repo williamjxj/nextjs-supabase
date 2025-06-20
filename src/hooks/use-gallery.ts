@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { downloadImage } from '@/lib/supabase/storage'
+import { recordImageDownload } from '@/lib/subscription-access-client'
 import { useAuth } from './use-auth'
 import { Image } from '@/types/image'
 
@@ -35,7 +36,7 @@ export const useGallery = () => {
   const { user } = useAuth()
   const [galleryState, setGalleryState] = useState<GalleryState>({
     images: [],
-    loading: false,
+    loading: true, // Start with loading true since we fetch immediately on mount
     error: null,
     pagination: null,
     filters: {
@@ -199,6 +200,22 @@ export const useGallery = () => {
   const downloadImageFile = async (image: Image) => {
     try {
       const blob = await downloadImage(image.storage_path)
+
+      // Record the download for tracking
+      if (user) {
+        try {
+          // Determine download type based on image ownership
+          const downloadType = image.isPurchased
+            ? user
+              ? 'subscription'
+              : 'purchase'
+            : 'free'
+          await recordImageDownload(image.id, downloadType)
+        } catch (trackingError) {
+          console.warn('Failed to record download:', trackingError)
+          // Don't fail the download if tracking fails
+        }
+      }
 
       // Create download link
       const url = URL.createObjectURL(blob)

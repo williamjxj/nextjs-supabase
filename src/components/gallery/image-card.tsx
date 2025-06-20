@@ -23,6 +23,7 @@ interface ImageCardProps {
   onDownload: (image: ImageType) => void
   onCheckout: (image: ImageType) => void
   isPurchased: boolean
+  hasActiveSubscription?: boolean
   viewMode?: 'grid' | 'list' | 'masonry'
   className?: string
 }
@@ -35,11 +36,16 @@ export function ImageCard({
   onDownload,
   onCheckout,
   isPurchased,
+  hasActiveSubscription = false,
   viewMode = 'grid',
   className,
 }: ImageCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
+
+  // Determine access status based on subscription or individual purchase
+  const hasAccess = hasActiveSubscription || isPurchased
+  const showPurchaseOption = !hasActiveSubscription && !isPurchased
 
   const handleDownload = async () => {
     setIsLoading(true)
@@ -126,7 +132,7 @@ export function ImageCard({
               <Eye className='h-4 w-4' />
             </Button>
 
-            {isPurchased ? (
+            {hasAccess ? (
               <Button
                 size='sm'
                 variant='ghost'
@@ -137,7 +143,7 @@ export function ImageCard({
               >
                 <Download className='h-4 w-4' />
               </Button>
-            ) : (
+            ) : showPurchaseOption ? (
               <Button
                 size='sm'
                 onClick={handleCheckout}
@@ -147,7 +153,7 @@ export function ImageCard({
                 <ShoppingCart className='h-3 w-3 mr-1' />
                 Buy
               </Button>
-            )}
+            ) : null}
 
             <Button
               size='sm'
@@ -224,21 +230,25 @@ export function ImageCard({
           })}
         </div>
 
-        {/* Purchase status indicator - Enhanced for better distinction */}
-        {isPurchased ? (
-          <div className='absolute top-2 right-2'>
-            <div className='krea-badge bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md border border-green-400/30'>
-              <Crown className='h-3 w-3 mr-1' />
-              Owned
-            </div>
-          </div>
-        ) : (
-          <div className='absolute top-2 right-2'>
-            <div className='krea-badge bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-md border border-orange-300/30'>
-              <DollarSign className='h-3 w-3 mr-1' />
-              For Sale
-            </div>
-          </div>
+        {/* Status indicator - Only show for non-subscription users */}
+        {!hasActiveSubscription && (
+          <>
+            {isPurchased ? (
+              <div className='absolute top-2 right-2'>
+                <div className='krea-badge bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md border border-green-400/30'>
+                  <Crown className='h-3 w-3 mr-1' />
+                  Owned
+                </div>
+              </div>
+            ) : (
+              <div className='absolute top-2 right-2'>
+                <div className='krea-badge bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-md border border-orange-300/30'>
+                  <DollarSign className='h-3 w-3 mr-1' />
+                  For Sale
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Overlay with actions */}
@@ -252,7 +262,7 @@ export function ImageCard({
               <Eye className='h-4 w-4' />
             </button>
 
-            {isPurchased ? (
+            {hasAccess ? (
               <button
                 onClick={handleDownload}
                 disabled={isLoading}
@@ -261,7 +271,7 @@ export function ImageCard({
               >
                 <Download className='h-4 w-4' />
               </button>
-            ) : (
+            ) : showPurchaseOption ? (
               <button
                 onClick={handleCheckout}
                 className='krea-action-button-primary cursor-pointer'
@@ -269,7 +279,7 @@ export function ImageCard({
               >
                 <ShoppingCart className='h-4 w-4' />
               </button>
-            )}
+            ) : null}
 
             <button
               onClick={() => onDelete(image)}

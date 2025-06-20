@@ -11,6 +11,7 @@ import {
   SortDesc,
   ShoppingCart,
   Check,
+  Crown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +33,7 @@ interface GalleryFiltersProps {
   filters: GalleryFilters
   availableTags: string[]
   onFiltersChange: (filters: GalleryFilters) => void
+  hasActiveSubscription?: boolean
   className?: string
 }
 
@@ -39,6 +41,7 @@ export function GalleryFilters({
   filters,
   availableTags,
   onFiltersChange,
+  hasActiveSubscription = false,
   className,
 }: GalleryFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -69,8 +72,24 @@ export function GalleryFilters({
   }
 
   const handleSortChange = (sortBy: GalleryFilters['sortBy']) => {
-    const sortOrder =
-      filters.sortBy === sortBy && filters.sortOrder === 'desc' ? 'asc' : 'desc'
+    // For created_at, always default to desc (latest first) unless explicitly toggling
+    // For other fields, toggle between asc and desc
+    let sortOrder: 'asc' | 'desc' = 'desc'
+
+    if (sortBy === 'created_at') {
+      // For date, default to desc (latest first), only toggle if already selected
+      sortOrder =
+        filters.sortBy === sortBy && filters.sortOrder === 'desc'
+          ? 'asc'
+          : 'desc'
+    } else {
+      // For name and size, toggle between asc and desc
+      sortOrder =
+        filters.sortBy === sortBy && filters.sortOrder === 'desc'
+          ? 'asc'
+          : 'desc'
+    }
+
     updateFilters({ sortBy, sortOrder })
   }
 
@@ -172,35 +191,98 @@ export function GalleryFilters({
         </div>
       </div>
 
-      {/* Ownership Filter */}
-      <div className='flex gap-2'>
-        <Button
-          variant={!filters.ownership ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => updateFilters({ ownership: null })}
-          className='flex items-center gap-1'
-        >
-          All Images
-        </Button>
-        <Button
-          variant={filters.ownership === 'owned' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => updateFilters({ ownership: 'owned' })}
-          className='flex items-center gap-1'
-        >
-          <Check className='h-4 w-4' />
-          Owned
-        </Button>
-        <Button
-          variant={filters.ownership === 'for-sale' ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => updateFilters({ ownership: 'for-sale' })}
-          className='flex items-center gap-1'
-        >
-          <ShoppingCart className='h-4 w-4' />
-          For Sale
-        </Button>
-      </div>
+      {/* Ownership Filter - Conditional based on subscription status */}
+      {hasActiveSubscription ? (
+        /* Subscription User - Show unlimited access message */
+        <div className='flex items-center gap-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 border border-purple-200'>
+          <Crown className='h-5 w-5 text-purple-600' />
+          <div className='flex-1'>
+            <p className='text-sm font-medium text-purple-900'>
+              Premium Access Active
+            </p>
+            <p className='text-xs text-purple-700'>
+              All images are available for unlimited download
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* Non-subscription User - Show ownership filters */
+        <div className='flex items-center gap-1 bg-gray-100 rounded-lg p-1'>
+          <button
+            onClick={() => updateFilters({ ownership: null })}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+              !filters.ownership
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            )}
+          >
+            <div
+              className={cn(
+                'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                !filters.ownership
+                  ? 'border-blue-600 bg-blue-600'
+                  : 'border-gray-300'
+              )}
+            >
+              {!filters.ownership && (
+                <div className='w-2 h-2 rounded-full bg-white' />
+              )}
+            </div>
+            All Images
+          </button>
+
+          <button
+            onClick={() => updateFilters({ ownership: 'owned' })}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+              filters.ownership === 'owned'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            )}
+          >
+            <div
+              className={cn(
+                'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                filters.ownership === 'owned'
+                  ? 'border-green-600 bg-green-600'
+                  : 'border-gray-300'
+              )}
+            >
+              {filters.ownership === 'owned' && (
+                <div className='w-2 h-2 rounded-full bg-white' />
+              )}
+            </div>
+            <Check className='h-4 w-4' />
+            Owned
+          </button>
+
+          <button
+            onClick={() => updateFilters({ ownership: 'for-sale' })}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+              filters.ownership === 'for-sale'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            )}
+          >
+            <div
+              className={cn(
+                'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                filters.ownership === 'for-sale'
+                  ? 'border-purple-600 bg-purple-600'
+                  : 'border-gray-300'
+              )}
+            >
+              {filters.ownership === 'for-sale' && (
+                <div className='w-2 h-2 rounded-full bg-white' />
+              )}
+            </div>
+            <ShoppingCart className='h-4 w-4' />
+            For Sale
+          </button>
+        </div>
+      )}
 
       {/* Advanced Filters */}
       {showAdvanced && (

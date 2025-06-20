@@ -10,6 +10,7 @@ import {
   Search,
   Filter,
   LayoutGrid,
+  Crown,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -343,13 +344,25 @@ export function ImageGallery({ className }: ImageGalleryProps) {
         {/* Header - Krea.ai style */}
         <div className='flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8'>
           <div>
-            <h1 className='text-3xl font-bold text-gray-900 mb-2'>
-              My Gallery
-            </h1>
+            <div className='flex items-center gap-3 mb-2'>
+              <h1 className='text-3xl font-bold text-gray-900'>My Gallery</h1>
+              {user?.hasActiveSubscription && (
+                <div className='flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full text-sm font-medium shadow-md'>
+                  <Crown className='h-4 w-4' />
+                  Premium Access
+                </div>
+              )}
+            </div>
             <p className='text-gray-600'>
               {images.length} {images.length === 1 ? 'image' : 'images'}
               {filteredImages.length !== images.length && (
                 <span> · {filteredImages.length} shown</span>
+              )}
+              {user?.hasActiveSubscription && (
+                <span className='text-purple-600 font-medium'>
+                  {' '}
+                  · Unlimited downloads
+                </span>
               )}
             </p>
           </div>
@@ -433,6 +446,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
             <GalleryFilters
               filters={componentFilters}
               availableTags={availableTags}
+              hasActiveSubscription={user?.hasActiveSubscription || false}
               onFiltersChange={newFilters => {
                 updateFilters({
                   search: newFilters.search,
@@ -503,6 +517,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
                 onDownload={handleDownload}
                 onCheckout={handleCheckout}
                 isPurchased={image.isPurchased}
+                hasActiveSubscription={user?.hasActiveSubscription || false}
                 viewMode={viewMode}
               />
             ))}

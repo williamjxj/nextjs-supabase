@@ -51,14 +51,111 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build query
-    let query = supabase.from('images').select('*', { count: 'exact' })
+    // Get current user to check their subscription and purchases
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    let purchasedImageIds: string[] = []
+    let hasActiveSubscription = false
+
+    if (user) {
+      // Check for active subscription
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .gte('current_period_end', new Date().toISOString())
+        .single()
+
+      hasActiveSubscription = !!subscription
+
+      // Get purchases only if no active subscription
+      if (!hasActiveSubscription) {
+        const { data: purchases } = await supabase
+          .from('purchases')
+          .select('image_id')
+          .eq('user_id', user.id)
+          .eq('payment_status', 'completed')
+
+        purchasedImageIds = purchases?.map(purchase => purchase.image_id) || []
+      }
+    }
+
+    // Build base query for counting
+    let countQuery = supabase.from('images').select('id', { count: 'exact' })
+
+    // Apply search filter to count query
+    if (search) {
+      countQuery = countQuery.or(
+        `original_name.ilike.%${search}%,filename.ilike.%${search}%`
+      )
+    }
+
+    // Apply ownership filter to count query if specified
+    if (ownershipFilter === 'owned') {
+      if (hasActiveSubscription) {
+        // Subscription users "own" all images - no filter needed
+      } else if (purchasedImageIds.length > 0) {
+        countQuery = countQuery.in('id', purchasedImageIds)
+      } else {
+        // User has no purchases, so "owned" filter should return empty
+        countQuery = countQuery.eq('id', 'non-existent-id')
+      }
+    } else if (ownershipFilter === 'for-sale') {
+      if (hasActiveSubscription) {
+        // Subscription users don't see "for sale" - return empty
+        countQuery = countQuery.eq('id', 'non-existent-id')
+      } else if (purchasedImageIds.length > 0) {
+        countQuery = countQuery.not(
+          'id',
+          'in',
+          `(${purchasedImageIds.join(',')})`
+        )
+      }
+      // If no purchases, all images are "for sale" (no additional filter needed)
+    }
+
+    // Get total count with filters applied
+    const { count: totalCount, error: countError } = await countQuery
+
+    if (countError) {
+      console.error('Count query error:', countError)
+      return NextResponse.json(
+        { error: 'Failed to count images' },
+        { status: 500 }
+      )
+    }
+
+    // Build main query for actual data
+    let query = supabase.from('images').select('*')
 
     // Apply search filter
     if (search) {
       query = query.or(
         `original_name.ilike.%${search}%,filename.ilike.%${search}%`
       )
+    }
+
+    // Apply ownership filter to main query if specified
+    if (ownershipFilter === 'owned') {
+      if (hasActiveSubscription) {
+        // Subscription users "own" all images - no filter needed
+      } else if (purchasedImageIds.length > 0) {
+        query = query.in('id', purchasedImageIds)
+      } else {
+        // User has no purchases, so "owned" filter should return empty
+        query = query.eq('id', 'non-existent-id')
+      }
+    } else if (ownershipFilter === 'for-sale') {
+      if (hasActiveSubscription) {
+        // Subscription users don't see "for sale" - return empty
+        query = query.eq('id', 'non-existent-id')
+      } else if (purchasedImageIds.length > 0) {
+        query = query.not('id', 'in', `(${purchasedImageIds.join(',')})`)
+      }
+      // If no purchases, all images are "for sale" (no additional filter needed)
     }
 
     // Apply sorting
@@ -70,7 +167,7 @@ export async function GET(request: NextRequest) {
       query = query.range(offset, offset + limit - 1)
     }
 
-    const { data: images, error, count } = await query
+    const { data: images, error } = await query
 
     if (error) {
       console.error('Database error:', error)
@@ -81,42 +178,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get statistics
-    const totalImages = count || 0
+    const totalImages = totalCount || 0
     const hasMore = offset + limit < totalImages
 
-    // Check user-specific purchases to determine isPurchased status
-    let purchasedImageIds: string[] = []
-
-    // Get current user to check their specific purchases
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (user) {
-      const { data: purchases } = await supabase
-        .from('purchases')
-        .select('image_id')
-        .eq('user_id', user.id)
-        .eq('payment_status', 'completed')
-        .in(
-          'image_id',
-          images.map(image => image.id)
-        )
-
-      purchasedImageIds = purchases?.map(purchase => purchase.image_id) || []
-    }
-
-    let enrichedImages = images.map(image => ({
+    // Enrich images with purchase status
+    const enrichedImages = images.map(image => ({
       ...image,
-      isPurchased: purchasedImageIds.includes(image.id),
+      isPurchased:
+        hasActiveSubscription || purchasedImageIds.includes(image.id),
     }))
-
-    // Apply ownership filter if specified
-    if (ownershipFilter === 'owned') {
-      enrichedImages = enrichedImages.filter(image => image.isPurchased)
-    } else if (ownershipFilter === 'for-sale') {
-      enrichedImages = enrichedImages.filter(image => !image.isPurchased)
-    }
 
     const response = {
       images: enrichedImages || [],

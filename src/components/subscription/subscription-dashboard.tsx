@@ -24,7 +24,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
-import { getUserDownloadStats } from '@/lib/subscription-access'
+import { getUserDownloadStats } from '@/lib/subscription-access-client'
 import { SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
 
 interface SubscriptionData {
@@ -193,9 +193,9 @@ export function SubscriptionDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild>
-            <a href='/membership'>View Subscription Plans</a>
-          </Button>
+          <a href='/membership'>
+            <Button>View Subscription Plans</Button>
+          </a>
         </CardContent>
       </Card>
     )
@@ -333,12 +333,12 @@ export function SubscriptionDashboard() {
       <Card>
         <CardContent className='p-6'>
           <div className='flex gap-4'>
-            <Button variant='outline' asChild>
-              <a href='/membership'>Change Plan</a>
-            </Button>
-            <Button variant='outline' asChild>
-              <a href='/api/stripe/customer-portal'>Manage Billing</a>
-            </Button>
+            <a href='/membership'>
+              <Button variant='outline'>Change Plan</Button>
+            </a>
+            <a href='/api/stripe/customer-portal'>
+              <Button variant='outline'>Manage Billing</Button>
+            </a>
           </div>
         </CardContent>
       </Card>
