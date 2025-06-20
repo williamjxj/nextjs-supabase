@@ -11,6 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
+import { useRouter } from 'next/navigation'
 
 interface Subscription {
   id: string
@@ -32,6 +34,9 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const { showToast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     fetchSubscription()
@@ -101,6 +106,54 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
       default:
         return 'secondary'
     }
+  }
+
+  const handleChangePlan = () => {
+    // Simple redirect to membership page for plan selection
+    router.push('/membership')
+  }
+
+  const handleCancelSubscription = async () => {
+    if (!subscription) return
+
+    setActionLoading('cancel')
+    try {
+      const response = await fetch('/api/stripe/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId: subscription.id }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to cancel subscription')
+      }
+
+      showToast(
+        'Subscription will be canceled at the end of the current billing period',
+        'success',
+        'Subscription Canceled'
+      )
+
+      // Refresh subscription data
+      await fetchSubscription()
+    } catch (error) {
+      console.error('Error canceling subscription:', error)
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to cancel subscription',
+        'error',
+        'Error'
+      )
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleReactivateSubscription = () => {
+    // Simple redirect to membership page for reactivation
+    router.push('/membership')
   }
 
   if (loading) {
@@ -203,10 +256,27 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
         )}
 
         <div className='flex gap-2 pt-4'>
-          <Button variant='outline' size='sm'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={handleChangePlan}
+            disabled={!!actionLoading}
+          >
             Change Plan
           </Button>
-          <Button variant='outline' size='sm'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={
+              subscription.cancel_at_period_end
+                ? handleReactivateSubscription
+                : handleCancelSubscription
+            }
+            disabled={!!actionLoading}
+          >
+            {actionLoading === 'cancel' && (
+              <Loader2 className='h-4 w-4 animate-spin mr-2' />
+            )}
             {subscription.cancel_at_period_end ? 'Reactivate' : 'Cancel'}{' '}
             Subscription
           </Button>
