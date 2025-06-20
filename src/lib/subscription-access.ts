@@ -110,7 +110,6 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
 
     // Enhanced subscription access
     const planType = subscription.plan_type
-    const isTrialing = subscription.status === 'active' // For now, treat active as the valid status
     let accessLevel: SubscriptionAccess['accessLevel'] = 'basic'
     const imagesViewable = undefined // Unlimited
     let downloadsRemaining = undefined // Unlimited
@@ -158,76 +157,238 @@ export async function checkSubscriptionAccess(): Promise<SubscriptionAccess> {
 }
 
 export async function canAccessImage(imageId: string): Promise<boolean> {
-  const access = await checkSubscriptionAccess()
+  try {
+    const access = await checkSubscriptionAccess()
 
-  if (!access.canViewGallery) {
-    return false
-  }
+    if (!access.canViewGallery) {
+      return false
+    }
 
-  // For free users, check if they've exceeded their view limit
-  if (access.accessLevel === 'free' && access.imagesViewable !== undefined) {
-    // This would require tracking image views in the database
-    // For now, we'll allow all images to be viewed
+    // For free users, check if they've exceeded their view limit
+    if (access.accessLevel === 'free' && access.imagesViewable !== undefined) {
+      // This would require tracking image views in the database
+      // For now, we'll allow all images to be viewed but could implement view tracking
+      console.log(`Free user accessing image ${imageId}`)
+      return true
+    }
+
     return true
+  } catch (error) {
+    console.error('Error checking image access:', error)
+    return false // Fail closed for security
   }
-
-  return true
 }
 
-export async function canDownloadImage(imageId: string): Promise<boolean> {
-  const access = await checkSubscriptionAccess()
+// Enhanced image access result interface
+export interface ImageAccessResult {
+  canDownload: boolean
+  canView: boolean
+  reason?: string
+  requiresPayment?: boolean
+  accessType: 'free' | 'subscription' | 'purchased' | 'blocked'
+  downloadsRemaining?: number
+  subscriptionTier?: string
+}
 
-  if (!access.canDownload) {
-    return false
+export async function canDownloadImage(
+  imageId: string
+): Promise<ImageAccessResult> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return {
+        canDownload: false,
+        canView: true, // Allow viewing without auth
+        reason: 'Please log in to download images',
+        requiresPayment: false,
+        accessType: 'blocked',
+      }
+    }
+
+    // Check if user has purchased this specific image
+    const { data: purchase } = await supabase
+      .from('purchases')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('image_id', imageId)
+      .eq('payment_status', 'completed')
+      .single()
+
+    if (purchase) {
+      return {
+        canDownload: true,
+        canView: true,
+        accessType: 'purchased',
+        reason: 'Image purchased',
+      }
+    }
+
+    // Get subscription access
+    const access = await checkSubscriptionAccess()
+
+    if (!access.hasActiveSubscription) {
+      return {
+        canDownload: false,
+        canView: true,
+        reason: 'Purchase required or subscribe for unlimited access',
+        requiresPayment: true,
+        accessType: 'free',
+      }
+    }
+
+    // Check subscription download limits
+    if (
+      access.downloadsRemaining !== undefined &&
+      access.downloadsRemaining > 0
+    ) {
+      // Count downloads this month using year/month columns
+      const currentDate = new Date()
+      const currentYear = currentDate.getFullYear()
+      const currentMonth = currentDate.getMonth() + 1 // getMonth() returns 0-11
+
+      const { data: downloads, error } = await supabase
+        .from('image_downloads')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('download_year', currentYear)
+        .eq('download_month', currentMonth)
+
+      if (error) {
+        console.error('Error checking download count:', error)
+        return {
+          canDownload: false,
+          canView: true,
+          reason: 'Error checking download limits',
+          requiresPayment: false,
+          accessType: 'blocked',
+        }
+      }
+
+      const downloadCount = downloads?.length || 0
+      const remaining = access.downloadsRemaining - downloadCount
+
+      if (remaining <= 0) {
+        return {
+          canDownload: false,
+          canView: true,
+          reason: 'Monthly download limit reached',
+          requiresPayment: false,
+          accessType: 'subscription',
+          downloadsRemaining: 0,
+          subscriptionTier: access.subscriptionType || undefined,
+        }
+      }
+
+      return {
+        canDownload: true,
+        canView: true,
+        accessType: 'subscription',
+        downloadsRemaining: remaining,
+        subscriptionTier: access.subscriptionType || undefined,
+      }
+    }
+
+    // Unlimited subscription
+    return {
+      canDownload: true,
+      canView: true,
+      accessType: 'subscription',
+      subscriptionTier: access.subscriptionType || undefined,
+    }
+  } catch (error) {
+    console.error('Error checking image download access:', error)
+    return {
+      canDownload: false,
+      canView: true,
+      reason: 'Error checking access permissions',
+      requiresPayment: false,
+      accessType: 'blocked',
+    }
   }
+}
 
-  // For limited plans, check download count
-  if (access.downloadsRemaining !== undefined) {
+export async function recordImageDownload(
+  imageId: string,
+  downloadType: 'subscription' | 'purchase' | 'free' = 'subscription'
+): Promise<void> {
+  try {
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     if (user) {
-      // Count downloads this month
-      const startOfMonth = new Date()
-      startOfMonth.setDate(1)
-      startOfMonth.setHours(0, 0, 0, 0)
-
-      const { data: downloads, error } = await (await supabase)
-        .from('image_downloads')
-        .select('id')
-        .eq('user_id', user.id)
-        .gte('created_at', startOfMonth.toISOString())
+      const { error } = await supabase.from('image_downloads').insert({
+        user_id: user.id,
+        image_id: imageId,
+        download_type: downloadType,
+        downloaded_at: new Date().toISOString(),
+      })
 
       if (error) {
-        console.error('Error checking download count:', error)
-        return false
+        console.error('Error recording image download:', error)
+        throw error
       }
 
-      const downloadCount = downloads?.length || 0
-      return downloadCount < access.downloadsRemaining
+      console.log(`Image download recorded: ${imageId} for user ${user.id}`)
     }
+  } catch (error) {
+    console.error('Failed to record image download:', error)
+    // Don't throw here to avoid breaking the download flow
   }
-
-  return true
 }
 
-export async function recordImageDownload(imageId: string): Promise<void> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+// Helper function to get user's download statistics
+export async function getUserDownloadStats(userId: string): Promise<{
+  thisMonth: number
+  allTime: number
+  lastDownload?: string
+}> {
+  try {
+    const supabase = await createClient()
 
-  if (user) {
-    const { error } = await (await supabase).from('image_downloads').insert({
-      user_id: user.id,
-      image_id: imageId,
-      downloaded_at: new Date().toISOString(),
-    })
+    // Get this month's downloads using year/month columns
+    const currentDate = new Date()
+    const currentYear = currentDate.getFullYear()
+    const currentMonth = currentDate.getMonth() + 1 // getMonth() returns 0-11
 
-    if (error) {
-      console.error('Error recording image download:', error)
+    const { data: monthlyDownloads, error: monthlyError } = await supabase
+      .from('image_downloads')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('download_year', currentYear)
+      .eq('download_month', currentMonth)
+
+    if (monthlyError) {
+      console.error('Error fetching monthly downloads:', monthlyError)
+    }
+
+    // Get all-time downloads
+    const { data: allDownloads, error: allError } = await supabase
+      .from('image_downloads')
+      .select('downloaded_at')
+      .eq('user_id', userId)
+      .order('downloaded_at', { ascending: false })
+
+    if (allError) {
+      console.error('Error fetching all downloads:', allError)
+    }
+
+    return {
+      thisMonth: monthlyDownloads?.length || 0,
+      allTime: allDownloads?.length || 0,
+      lastDownload: allDownloads?.[0]?.downloaded_at,
+    }
+  } catch (error) {
+    console.error('Error getting download stats:', error)
+    return {
+      thisMonth: 0,
+      allTime: 0,
     }
   }
 }

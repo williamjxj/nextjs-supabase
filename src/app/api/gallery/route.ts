@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       'desc'
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const ownershipFilter = searchParams.get('ownership') // 'owned', 'for-sale', or null
 
     // Validate parameters
     if (!['created_at', 'original_name', 'file_size'].includes(sortBy)) {
@@ -83,22 +84,39 @@ export async function GET(request: NextRequest) {
     const totalImages = count || 0
     const hasMore = offset + limit < totalImages
 
-    // Check purchases to determine isPurchased status
-    const { data: purchases } = await supabase
-      .from('purchases')
-      .select('image_id')
-      .in(
-        'image_id',
-        images.map(image => image.id)
-      )
+    // Check user-specific purchases to determine isPurchased status
+    let purchasedImageIds: string[] = []
 
-    const purchasedImageIds =
-      purchases?.map(purchase => purchase.image_id) || []
+    // Get current user to check their specific purchases
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const enrichedImages = images.map(image => ({
+    if (user) {
+      const { data: purchases } = await supabase
+        .from('purchases')
+        .select('image_id')
+        .eq('user_id', user.id)
+        .eq('payment_status', 'completed')
+        .in(
+          'image_id',
+          images.map(image => image.id)
+        )
+
+      purchasedImageIds = purchases?.map(purchase => purchase.image_id) || []
+    }
+
+    let enrichedImages = images.map(image => ({
       ...image,
       isPurchased: purchasedImageIds.includes(image.id),
     }))
+
+    // Apply ownership filter if specified
+    if (ownershipFilter === 'owned') {
+      enrichedImages = enrichedImages.filter(image => image.isPurchased)
+    } else if (ownershipFilter === 'for-sale') {
+      enrichedImages = enrichedImages.filter(image => !image.isPurchased)
+    }
 
     const response = {
       images: enrichedImages || [],
@@ -112,6 +130,7 @@ export async function GET(request: NextRequest) {
         search,
         sortBy,
         sortOrder,
+        ownership: ownershipFilter,
       },
     }
 

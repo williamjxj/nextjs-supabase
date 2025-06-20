@@ -10,9 +10,6 @@ import {
   Search,
   Filter,
   LayoutGrid,
-  X,
-  AlertCircle,
-  CheckCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -25,7 +22,7 @@ import { EnhancedImageViewer } from './enhanced-image-viewer'
 import { DeleteConfirm } from './delete-confirm'
 import { PaymentOptionsModal } from './payment-options-modal'
 import { StripeSuccessHandler } from './stripe-success-handler'
-import { useSubscriptionAccess } from '@/hooks/use-subscription-access'
+
 import { useAuth } from '@/hooks/use-auth'
 import {
   GalleryFilters,
@@ -59,39 +56,11 @@ export function ImageGallery({ className }: ImageGalleryProps) {
   const { showToast } = useToast()
   const { user } = useAuth()
 
-  // Check for purchase success/error parameters
+  // Check for PayPal success/error parameters
   useEffect(() => {
-    const purchaseSuccess = searchParams.get('purchase_success')
-    const purchaseCanceled = searchParams.get('purchase_canceled')
-    const sessionId = searchParams.get('session_id')
     const paypalCancelled = searchParams.get('paypal_cancelled')
     const paypalError = searchParams.get('paypal_error')
     const paypalSuccess = searchParams.get('paypal_success')
-
-    if (purchaseSuccess === 'true') {
-      showToast(
-        'Image purchase successful! You can now download the image.',
-        'success',
-        'Purchase Complete'
-      )
-      // Clean up URL parameters
-      const url = new URL(window.location.href)
-      url.searchParams.delete('purchase_success')
-      url.searchParams.delete('session_id')
-      window.history.replaceState({}, '', url.toString())
-    }
-
-    if (purchaseCanceled === 'true') {
-      showToast(
-        'Image purchase was cancelled. You can try again anytime.',
-        'warning',
-        'Purchase Cancelled'
-      )
-      // Clean up URL parameters
-      const url = new URL(window.location.href)
-      url.searchParams.delete('purchase_canceled')
-      window.history.replaceState({}, '', url.toString())
-    }
 
     if (paypalCancelled === 'true') {
       showToast(
@@ -278,7 +247,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     try {
       setIsRefreshing(true)
       showToast('Refreshing gallery...', 'info')
-      await refetch()
+      refetch()
       showToast('Gallery refreshed', 'success')
     } catch (error) {
       console.error('Error refreshing gallery:', error)
@@ -326,6 +295,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
     sortBy: filters.sortBy || 'created_at',
     sortOrder: filters.sortOrder || 'desc',
     tags: [], // No tags in current implementation
+    ownership: filters.ownership || null,
     dateRange: filters.dateRange,
   }
 
@@ -468,6 +438,7 @@ export function ImageGallery({ className }: ImageGalleryProps) {
                   search: newFilters.search,
                   sortBy: newFilters.sortBy,
                   sortOrder: newFilters.sortOrder,
+                  ownership: newFilters.ownership,
                   dateRange: newFilters.dateRange,
                 })
               }}

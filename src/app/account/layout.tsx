@@ -67,15 +67,15 @@ export default function AccountLayout({
 
       setEmail(data.user.email || null)
 
-      // Get username from profile if available
+      // Get full_name from profile if available
       const { data: profile } = await supabase
         .from('profiles')
-        .select('username')
+        .select('full_name')
         .eq('id', data.user.id)
         .single()
 
-      if (profile) {
-        setUsername(profile.username)
+      if (profile?.full_name) {
+        setUsername(profile.full_name)
       } else {
         // Use email as fallback
         setUsername(data.user.email?.split('@')[0] || 'User')

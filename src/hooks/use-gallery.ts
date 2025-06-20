@@ -9,6 +9,7 @@ export interface GalleryFilters {
   search?: string
   sortBy?: 'created_at' | 'original_name' | 'file_size'
   sortOrder?: 'asc' | 'desc'
+  ownership?: 'owned' | 'for-sale' | null
   dateRange?: {
     start: string
     end: string
@@ -103,6 +104,9 @@ export const useGallery = () => {
         }
         if (finalFilters.sortOrder) {
           searchParams.set('sortOrder', finalFilters.sortOrder)
+        }
+        if (finalFilters.ownership) {
+          searchParams.set('ownership', finalFilters.ownership)
         }
 
         // Apply pagination

@@ -2,7 +2,8 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
-import { getPlanByPriceId, SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
+import { getPlanByPriceId } from '@/lib/subscription-config'
+import { paymentService } from '@/lib/payment-service'
 
 // Create admin client for webhook operations
 const supabaseAdmin = createClient(
@@ -143,81 +144,39 @@ async function handleSubscriptionChange(subscription: any) {
     status,
   })
 
-  // Get plan configuration
-  const planConfig =
-    SUBSCRIPTION_PLANS[planType as keyof typeof SUBSCRIPTION_PLANS]
-  const priceMonthly = planConfig?.priceMonthly || 9.99
-  const priceYearly = planConfig?.priceYearly || 99.99
+  // Use unified payment service for subscription creation/update
+  if (status === 'active') {
+    const result = await paymentService.createSubscription({
+      userId,
+      userEmail: '', // We don't have email in webhook, but it's not critical
+      planType: planType as any,
+      billingInterval: billingInterval as any,
+      paymentProvider: 'stripe',
+      externalSubscriptionId: subscriptionId,
+    })
 
-  // Get features for the plan
-  const features = getSubscriptionFeatures(planType)
-
-  // Update subscription in our database
-  console.log('💾 Inserting subscription into database:', {
-    userId,
-    planType,
-    billingInterval,
-    subscriptionId,
-    status,
-  })
-
-  const { error } = await supabaseAdmin.from('subscriptions').upsert(
-    {
-      user_id: userId,
-      plan_type: planType,
-      price_monthly: priceMonthly,
-      price_yearly: priceYearly,
-      status: status,
-      billing_interval: billingInterval,
-      stripe_subscription_id: subscriptionId,
-      current_period_start: new Date(
-        subscription.current_period_start * 1000
-      ).toISOString(),
-      current_period_end: new Date(
-        subscription.current_period_end * 1000
-      ).toISOString(),
-      features: features,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: 'stripe_subscription_id',
+    if (!result.success) {
+      console.error(
+        '❌ Error creating subscription via payment service:',
+        result.error
+      )
+      throw new Error(result.error)
     }
-  )
+  } else {
+    // Handle status updates (cancelled, expired, etc.)
+    const result = await paymentService.updateSubscriptionStatus(
+      userId,
+      status === 'canceled' ? 'cancelled' : (status as any),
+      subscriptionId
+    )
 
-  if (error) {
-    console.error('❌ Error updating subscription:', error)
-    throw error
+    if (!result.success) {
+      console.error('❌ Error updating subscription status:', result.error)
+      throw new Error(result.error)
+    }
   }
 
-  console.log('✅ Subscription successfully inserted/updated in database')
-}
-
-// Helper function to get features for each plan type
-function getSubscriptionFeatures(planType: string): string[] {
-  const featuresMap: Record<string, string[]> = {
-    standard: [
-      'Access to standard quality images',
-      'Basic usage rights',
-      'Download up to 50 images/month',
-      'Email support',
-    ],
-    premium: [
-      'Access to premium quality images',
-      'Extended usage rights',
-      'Download up to 200 images/month',
-      'Priority email support',
-      'Advanced filters and search',
-    ],
-    commercial: [
-      'Access to all images',
-      'Full commercial usage rights',
-      'Unlimited downloads',
-      'Priority phone support',
-      'Early access to new features',
-      'Custom licensing options',
-    ],
-  }
-  return featuresMap[planType] || []
+  console.log('✅ Subscription successfully processed via payment service')
 }
 
 async function handleSubscriptionCancellation(subscription: any) {
@@ -361,26 +320,20 @@ async function handleCheckoutSessionCompleted(session: any) {
     return
   }
 
-  // Create purchase record
-  const purchaseData = {
-    image_id: imageId,
-    user_id: userId && userId !== 'anonymous' ? userId : null,
-    license_type: licenseType || 'standard',
-    amount_paid: session.amount_total || 0,
+  // Use unified payment service for purchase creation
+  const result = await paymentService.createPurchase({
+    userId: userId && userId !== 'anonymous' ? userId : undefined,
+    imageId,
+    licenseType: licenseType || 'standard',
+    amount: session.amount_total || 0,
     currency: session.currency || 'usd',
-    stripe_session_id: session.id,
-    payment_method: 'stripe',
-    payment_status: 'completed',
-    purchased_at: new Date().toISOString(),
-  }
+    paymentProvider: 'stripe',
+    externalPaymentId: session.id,
+  })
 
-  const { error: insertError } = await supabaseAdmin
-    .from('purchases')
-    .insert([purchaseData])
-
-  if (insertError) {
-    console.error('Error creating purchase record:', insertError)
-    throw insertError
+  if (!result.success) {
+    console.error('Error creating purchase via payment service:', result.error)
+    throw new Error(result.error)
   }
 
   console.log(`Purchase record created successfully for session ${session.id}`)

@@ -44,10 +44,9 @@ export function StripeSuccessHandler({
               // Small delay to ensure purchase record is properly indexed
               setTimeout(() => {
                 onPurchaseSuccess()
-              }, 500)
+              }, 1000) // Increased delay to ensure database is updated
             }
           } else {
-            console.error('❌ Failed to process purchase:', data.error)
             addToast({
               type: 'error',
               title: 'Processing Error',
@@ -57,8 +56,7 @@ export function StripeSuccessHandler({
             })
           }
         })
-        .catch(error => {
-          console.error('❌ Error verifying session:', error)
+        .catch(() => {
           addToast({
             type: 'error',
             title: 'Verification Error',

@@ -207,20 +207,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               data: { session },
             } = await supabase.auth.getSession()
 
-            if (session?.user && !user) {
-              // User logged in from another tab
-              console.log('🔍 User login detected from another tab')
-              const enrichedUser = await enrichUserWithSubscription(
-                session.user
-              )
-              setUser(enrichedUser)
-              setLoading(false)
-            } else if (!session?.user && user) {
-              // User logged out from another tab
-              console.log('🔍 User logout detected from another tab')
-              setUser(null)
-              setLoading(false)
-            }
+            // Get current user state to avoid infinite loops
+            setUser(currentUser => {
+              const hasSession = !!session?.user
+              const hasCurrentUser = !!currentUser
+
+              if (hasSession && !hasCurrentUser) {
+                // User logged in from another tab
+                console.log('🔍 User login detected from another tab')
+                enrichUserWithSubscription(session.user).then(enrichedUser => {
+                  setUser(enrichedUser)
+                  setLoading(false)
+                })
+                return currentUser // Return current state while enrichment is happening
+              } else if (!hasSession && hasCurrentUser) {
+                // User logged out from another tab
+                console.log('🔍 User logout detected from another tab')
+                setLoading(false)
+                return null
+              }
+
+              return currentUser // No change needed
+            })
           } catch (error) {
             console.error('🔍 Error syncing auth from storage:', error)
           }
@@ -239,24 +247,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           data: { session },
         } = await supabase.auth.getSession()
 
-        // Check if auth state is out of sync
-        const hasSession = !!session?.user
-        const hasUser = !!user
+        // Use functional update to get current user state
+        setUser(currentUser => {
+          const hasSession = !!session?.user
+          const hasCurrentUser = !!currentUser
 
-        if (hasSession !== hasUser) {
-          console.log('🔍 Auth state out of sync, updating...', {
-            hasSession,
-            hasUser,
-          })
+          if (hasSession !== hasCurrentUser) {
+            console.log('🔍 Auth state out of sync, updating...', {
+              hasSession,
+              hasCurrentUser,
+            })
 
-          if (hasSession && session?.user) {
-            const enrichedUser = await enrichUserWithSubscription(session.user)
-            setUser(enrichedUser)
-          } else {
-            setUser(null)
+            if (hasSession && session?.user) {
+              enrichUserWithSubscription(session.user).then(enrichedUser => {
+                setUser(enrichedUser)
+                setLoading(false)
+              })
+              return currentUser // Return current state while enrichment is happening
+            } else {
+              setLoading(false)
+              return null
+            }
           }
-          setLoading(false)
-        }
+
+          return currentUser // No change needed
+        })
       } catch (error) {
         console.error('🔍 Error checking auth on focus:', error)
       }
@@ -269,7 +284,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [mounted, user]) // Added user to dependencies for storage sync
+  }, [mounted]) // Removed user dependency to prevent infinite loop
 
   const signIn = async (email: string, password: string) => {
     setLoading(true)

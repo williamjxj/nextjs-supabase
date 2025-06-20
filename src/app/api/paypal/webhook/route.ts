@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
+import { paymentService } from '@/lib/payment-service'
 
 // Create admin client for webhook operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabaseAdmin = createServiceRoleClient()
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,54 +89,47 @@ async function handleSubscriptionActivated(subscription: any) {
     billingInterval = 'yearly'
   }
 
-  const plan = SUBSCRIPTION_PLANS[planType as keyof typeof SUBSCRIPTION_PLANS]
+  // Use unified payment service for PayPal subscription creation
+  const result = await paymentService.createSubscription({
+    userId,
+    userEmail: '', // We don't have email in PayPal webhook
+    planType: planType as any,
+    billingInterval: billingInterval as any,
+    paymentProvider: 'paypal',
+    externalSubscriptionId: subscription.id,
+  })
 
-  // Create subscription record
-  const { error } = await supabaseAdmin.from('subscriptions').upsert(
-    {
-      user_id: userId,
-      plan_type: planType,
-      price_monthly: plan.priceMonthly,
-      price_yearly: plan.priceYearly,
-      status: 'active',
-      billing_interval: billingInterval,
-      stripe_subscription_id: null, // This is a PayPal subscription
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(
-        Date.now() +
-          (billingInterval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      features: plan.features,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: 'user_id', // Update if subscription already exists for user
-    }
-  )
-
-  if (error) {
-    console.error('Error creating PayPal subscription record:', error)
-    throw error
+  if (!result.success) {
+    console.error(
+      'Error creating PayPal subscription via payment service:',
+      result.error
+    )
+    throw new Error(result.error)
   }
+
+  console.log('✅ PayPal subscription successfully created via payment service')
 }
 
 async function handleSubscriptionCancelled(subscription: any) {
   const subscriptionId = subscription.id
+  const userId = subscription.custom_id
 
   console.log(`PayPal subscription cancelled: ${subscriptionId}`)
 
-  const { error } = await supabaseAdmin
-    .from('subscriptions')
-    .update({
-      status: 'cancelled',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', subscription.custom_id)
+  // Use unified payment service for status update
+  const result = await paymentService.updateSubscriptionStatus(
+    userId,
+    'cancelled'
+  )
 
-  if (error) {
-    console.error('Error cancelling PayPal subscription:', error)
-    throw error
+  if (!result.success) {
+    console.error('Error cancelling PayPal subscription:', result.error)
+    throw new Error(result.error)
   }
+
+  console.log(
+    '✅ PayPal subscription successfully cancelled via payment service'
+  )
 }
 
 async function handleSubscriptionSuspended(subscription: any) {

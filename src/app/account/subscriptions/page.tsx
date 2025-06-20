@@ -192,7 +192,10 @@ export default function SubscriptionsPage() {
     )
   }
 
-  const currentPlan = SUBSCRIPTION_PLANS[subscription.plan_type]
+  const currentPlan =
+    SUBSCRIPTION_PLANS[
+      subscription.plan_type as keyof typeof SUBSCRIPTION_PLANS
+    ]
 
   return (
     <div className='container mx-auto p-6'>
@@ -306,7 +309,8 @@ export default function SubscriptionsPage() {
             <div className='space-y-4'>
               <div>
                 <h3 className='text-lg font-medium text-gray-800 dark:text-white'>
-                  {currentPlan?.name || 'Unknown Plan'}
+                  {currentPlan?.name ||
+                    `${subscription.plan_type || 'Unknown'} Plan`}
                 </h3>
                 <p className='text-gray-600 dark:text-gray-300'>
                   {currentPlan?.description || ''}
@@ -316,11 +320,23 @@ export default function SubscriptionsPage() {
               <div className='flex items-center text-gray-600 dark:text-gray-300'>
                 <CreditCard className='w-5 h-5 mr-2' />
                 <span>
-                  {formatCurrency(
-                    subscription.billing_interval === 'yearly'
-                      ? subscription.price_yearly
-                      : subscription.price_monthly
-                  )}{' '}
+                  {(() => {
+                    const price =
+                      subscription.billing_interval === 'yearly'
+                        ? subscription.price_yearly
+                        : subscription.price_monthly
+
+                    // Fallback to plan config if subscription doesn't have price
+                    const fallbackPrice = currentPlan
+                      ? subscription.billing_interval === 'yearly'
+                        ? currentPlan.priceYearly
+                        : currentPlan.priceMonthly
+                      : 0
+
+                    const finalPrice = price || fallbackPrice
+
+                    return finalPrice ? formatCurrency(finalPrice) : '$0.00'
+                  })()}{' '}
                   /{' '}
                   {subscription.billing_interval === 'yearly'
                     ? 'year'

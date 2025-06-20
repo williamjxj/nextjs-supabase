@@ -58,20 +58,19 @@ export const SUBSCRIPTION_PLANS: Record<
   },
 }
 
-// Stripe price IDs - these can be environment variables or hardcoded
-// For development, you can create these in your Stripe Dashboard
+// Stripe price IDs - using NEXT_PUBLIC_ prefixed environment variables for client-side access
 export const STRIPE_PRICE_IDS = {
   standard: {
-    monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID,
-    yearly: process.env.STRIPE_STANDARD_YEARLY_PRICE_ID,
+    monthly: process.env.NEXT_PUBLIC_STRIPE_STANDARD_MONTHLY_PRICE_ID,
+    yearly: process.env.NEXT_PUBLIC_STRIPE_STANDARD_YEARLY_PRICE_ID,
   },
   premium: {
-    monthly: process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID,
-    yearly: process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID,
+    monthly: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID,
+    yearly: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_YEARLY_PRICE_ID,
   },
   commercial: {
-    monthly: process.env.STRIPE_COMMERCIAL_MONTHLY_PRICE_ID,
-    yearly: process.env.STRIPE_COMMERCIAL_YEARLY_PRICE_ID,
+    monthly: process.env.NEXT_PUBLIC_STRIPE_COMMERCIAL_MONTHLY_PRICE_ID,
+    yearly: process.env.NEXT_PUBLIC_STRIPE_COMMERCIAL_YEARLY_PRICE_ID,
   },
 }
 

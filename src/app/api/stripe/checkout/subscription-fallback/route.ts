@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
     console.log('🎯 Stripe subscription checkout started (fallback route)')
 
     const body = await request.json()
+    console.log('📋 Request body received:', JSON.stringify(body, null, 2))
+
     let { priceId } = body
     const {
       successUrl,
@@ -47,19 +49,40 @@ export async function POST(request: NextRequest) {
       billingInterval,
     } = body
 
+    console.log('🔍 Extracted parameters:', {
+      priceId,
+      userId,
+      userEmail,
+      planType,
+      billingInterval,
+      hasSuccessUrl: !!successUrl,
+      hasCancelUrl: !!cancelUrl,
+      trialPeriodDays,
+    })
+
     // This is a fallback route that bypasses server-side authentication
     // and uses client-provided user data directly
 
     if (!userId) {
+      console.error('❌ Missing userId in request body')
       return NextResponse.json(
-        { error: 'User ID is required for fallback authentication' },
+        {
+          error: 'User ID is required for fallback authentication',
+          details: 'The userId field is missing from the request body',
+          receivedBody: body,
+        },
         { status: 400 }
       )
     }
 
     if (!priceId) {
+      console.error('❌ Missing priceId in request body')
       return NextResponse.json(
-        { error: 'Price ID is required' },
+        {
+          error: 'Price ID is required',
+          details: 'The priceId field is missing from the request body',
+          receivedBody: body,
+        },
         { status: 400 }
       )
     }

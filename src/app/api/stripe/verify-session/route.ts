@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
 // Create admin client
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabaseAdmin = createServiceRoleClient()
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,55 +43,76 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if purchase already exists
+    // Check if purchase record already exists (webhook might have created it)
     const { data: existingPurchase } = await supabaseAdmin
       .from('purchases')
-      .select('id')
+      .select('*')
       .eq('stripe_session_id', session.id)
       .single()
 
-    if (existingPurchase) {
-      return NextResponse.json({
-        success: true,
-        message: 'Purchase already recorded',
-        purchaseId: existingPurchase.id,
-      })
-    }
+    let purchase = existingPurchase
 
-    // Create purchase record
-    const purchaseData = {
-      image_id: imageId,
-      user_id: userId,
-      license_type: licenseType || 'standard',
-      amount_paid: session.amount_total || 0,
-      currency: session.currency || 'usd',
-      stripe_session_id: session.id,
-      payment_method: 'stripe',
-      payment_status: 'completed',
-      purchased_at: new Date().toISOString(),
-    }
+    if (!existingPurchase) {
+      // Create purchase record only if it doesn't exist
+      const purchaseData = {
+        image_id: imageId,
+        user_id: userId,
+        license_type: licenseType || 'standard',
+        amount_paid: session.amount_total || 0,
+        currency: session.currency || 'usd',
+        stripe_session_id: session.id,
+        payment_method: 'stripe',
+        payment_status: 'completed',
+        purchased_at: new Date().toISOString(),
+      }
 
-    const { data: newPurchase, error: insertError } = await supabaseAdmin
-      .from('purchases')
-      .insert([purchaseData])
-      .select()
-      .single()
+      const { data: newPurchase, error: insertError } = await supabaseAdmin
+        .from('purchases')
+        .insert([purchaseData])
+        .select()
+        .single()
 
-    if (insertError) {
-      console.error('Error creating purchase record:', insertError)
-      return NextResponse.json(
-        {
-          error: 'Failed to create purchase record',
-          details: insertError.message,
-        },
-        { status: 500 }
-      )
+      if (insertError) {
+        // Check if it's a duplicate key error (race condition)
+        if (insertError.code === '23505') {
+          const { data: existingRecord } = await supabaseAdmin
+            .from('purchases')
+            .select('*')
+            .eq('stripe_session_id', session.id)
+            .single()
+
+          if (existingRecord) {
+            purchase = existingRecord
+          } else {
+            console.error('Error creating purchase record:', insertError)
+            return NextResponse.json(
+              {
+                error: 'Failed to create purchase record',
+                details: insertError.message,
+              },
+              { status: 500 }
+            )
+          }
+        } else {
+          console.error('Error creating purchase record:', insertError)
+          return NextResponse.json(
+            {
+              error: 'Failed to create purchase record',
+              details: insertError.message,
+            },
+            { status: 500 }
+          )
+        }
+      } else {
+        purchase = newPurchase
+      }
+    } else {
     }
 
     return NextResponse.json({
       success: true,
       message: 'Purchase recorded successfully',
-      purchase: newPurchase,
+      purchase: purchase,
     })
   } catch (error) {
     console.error('Stripe verification error:', error)
