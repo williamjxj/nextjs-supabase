@@ -46,4 +46,33 @@ export const IMAGE_PRICE_CONFIG = {
   },
 } as const
 
+// Subscription configuration
+export const SUBSCRIPTION_PRICE_CONFIG = {
+  standard: {
+    amount: 999, // $9.99 in cents
+    currency: 'usd',
+    name: 'Standard Plan',
+    description: 'Perfect for personal projects and small business use',
+    interval: 'month',
+    stripe_price_id: process.env.STRIPE_STANDARD_PRICE_ID, // Set this in your .env
+  },
+  premium: {
+    amount: 1999, // $19.99 in cents
+    currency: 'usd',
+    name: 'Premium Plan',
+    description: 'Ideal for larger commercial projects and marketing',
+    interval: 'month',
+    stripe_price_id: process.env.STRIPE_PREMIUM_PRICE_ID, // Set this in your .env
+  },
+  commercial: {
+    amount: 3999, // $39.99 in cents
+    currency: 'usd',
+    name: 'Commercial Plan',
+    description: 'Full commercial rights for any business use',
+    interval: 'month',
+    stripe_price_id: process.env.STRIPE_COMMERCIAL_PRICE_ID, // Set this in your .env
+  },
+} as const
+
 export type ImageLicenseType = keyof typeof IMAGE_PRICE_CONFIG
+export type SubscriptionType = keyof typeof SUBSCRIPTION_PRICE_CONFIG

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -14,6 +14,7 @@ import {
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { LoginFormData } from '@/types/auth'
+import { SocialAuthSection } from './social-auth'
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -31,8 +32,35 @@ export const LoginForm = ({
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
-  const { signIn } = useAuth()
+  const searchParams = useSearchParams()
+  const { signIn, signInWithSocial } = useAuth()
   const { addToast } = useToast()
+
+  // Handle authentication errors from URL params
+  React.useEffect(() => {
+    const error = searchParams.get('error')
+    const message = searchParams.get('message')
+
+    if (error && message) {
+      // Don't show error for 'no_code' errors that happen during OAuth flow
+      if (error !== 'no_code') {
+        addToast({
+          type: 'error',
+          title: 'Authentication failed',
+          description: decodeURIComponent(message),
+        })
+      }
+
+      // Clean up URL params
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      url.searchParams.delete('message')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [searchParams, addToast])
+
+  // Get redirect URL from search params or use default
+  const finalRedirectTo = searchParams.get('redirect') || redirectTo
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -57,7 +85,7 @@ export const LoginForm = ({
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push(redirectTo)
+        router.push(finalRedirectTo)
       }
     } catch (error) {
       addToast({
@@ -125,6 +153,8 @@ export const LoginForm = ({
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
+
+        <SocialAuthSection disabled={isLoading} showDivider={true} />
 
         <div className='mt-4 text-center text-sm'>
           <span className='text-muted-foreground'>

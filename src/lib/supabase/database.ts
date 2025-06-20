@@ -10,15 +10,15 @@ export const saveImageMetadata = async (
   const { data, error } = await supabase
     .from('images')
     .insert({
-      user_id: userId,
+      user_id: userId, // Required field
       filename: metadata.filename,
       original_name: metadata.original_name,
       storage_path: storagePath,
       storage_url: storageUrl,
       file_size: metadata.file_size,
       mime_type: metadata.mime_type,
-      width: metadata.width,
-      height: metadata.height,
+      width: metadata.width, // Required field
+      height: metadata.height, // Required field
     })
     .select()
     .single()

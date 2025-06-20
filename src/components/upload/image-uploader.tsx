@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { useUpload } from '@/hooks/use-upload'
 import { validateFile } from '@/lib/utils/file-validation'
@@ -79,10 +78,11 @@ const DragDropZone = ({
   return (
     <div
       className={cn(
-        'relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
+        'relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300',
+        'bg-gradient-to-br from-gray-50 to-gray-100/50',
         isDragOver
-          ? 'border-primary bg-primary/5'
-          : 'border-muted-foreground/25 hover:border-primary/50',
+          ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50/30 shadow-lg shadow-blue-500/20 scale-[1.02]'
+          : 'border-gray-300 hover:border-blue-400 hover:shadow-md hover:bg-gradient-to-br hover:from-blue-50/30 hover:to-purple-50/10',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
       onDragEnter={handleDragEnter}
@@ -102,25 +102,31 @@ const DragDropZone = ({
       />
 
       {children || (
-        <div className='space-y-4'>
-          <div className='mx-auto w-12 h-12 text-muted-foreground'>
-            <svg fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+        <div className='space-y-6'>
+          <div className='mx-auto w-16 h-16 text-gray-400'>
+            <svg
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              strokeWidth={1.5}
+            >
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
-                strokeWidth={1.5}
-                d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'
+                d='M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5'
               />
             </svg>
           </div>
           <div>
-            <p className='text-sm font-medium'>
-              {isDragOver
-                ? 'Drop files here'
-                : 'Drag & drop files here, or click to select'}
+            <p className='text-lg font-semibold text-gray-900 mb-2'>
+              {isDragOver ? 'Drop your images here' : 'Drag & drop images here'}
             </p>
-            <p className='text-xs text-muted-foreground mt-1'>
-              Supports JPG, PNG, GIF, WebP (max 5MB)
+            <p className='text-gray-600 mb-4'>
+              or{' '}
+              <span className='text-blue-600 font-medium'>click to browse</span>
+            </p>
+            <p className='text-sm text-gray-500'>
+              Support for JPG, PNG, WebP • Max 10MB per file
             </p>
           </div>
         </div>
@@ -153,7 +159,7 @@ const ThumbnailPreview = ({ file, onRemove }: ThumbnailPreviewProps) => {
 
   return (
     <div className='relative group'>
-      <div className='aspect-square w-24 h-24 rounded-lg overflow-hidden border border-border'>
+      <div className='aspect-square w-28 h-28 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200'>
         {preview && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -165,11 +171,12 @@ const ThumbnailPreview = ({ file, onRemove }: ThumbnailPreviewProps) => {
       </div>
       <button
         onClick={onRemove}
-        className='absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity'
+        className='absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg cursor-pointer'
+        title='Remove file'
       >
         ×
       </button>
-      <p className='text-xs text-muted-foreground mt-1 truncate max-w-24'>
+      <p className='text-xs text-gray-600 mt-2 truncate max-w-28 text-center font-medium'>
         {file.name}
       </p>
     </div>
@@ -238,18 +245,18 @@ const UploadProgress = ({
   }
 
   return (
-    <div className='flex items-center space-x-3 p-3 border rounded-lg'>
+    <div className='flex items-center space-x-4 p-4 bg-gray-50 border border-gray-200 rounded-xl'>
       <div className='flex-shrink-0'>{getStatusIcon()}</div>
       <div className='flex-1 min-w-0'>
-        <p className='text-sm font-medium truncate'>{fileName}</p>
-        <div className='w-full bg-muted rounded-full h-2 mt-1'>
+        <p className='text-sm font-medium text-gray-900 truncate'>{fileName}</p>
+        <div className='w-full bg-gray-200 rounded-full h-2.5 mt-2'>
           <div
-            className={`h-2 rounded-full transition-all duration-300 ${getStatusColor()}`}
+            className={`h-2.5 rounded-full transition-all duration-300 ${getStatusColor()}`}
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
-      <div className='text-xs text-muted-foreground'>
+      <div className='text-sm font-medium text-gray-600'>
         {status === 'uploading' ? `${progress}%` : status}
       </div>
     </div>
@@ -338,11 +345,8 @@ export const ImageUploader = () => {
   }, [selectedFiles, uploadFiles, error, addToast, resetUploadState])
 
   return (
-    <Card className='w-full max-w-2xl mx-auto'>
-      <CardHeader>
-        <CardTitle className='text-center'>Upload Images</CardTitle>
-      </CardHeader>
-      <CardContent className='space-y-6'>
+    <div className='w-full max-w-4xl mx-auto'>
+      <div className='krea-card p-8 space-y-8'>
         <DragDropZone
           onFileSelect={handleFileSelect}
           disabled={uploading}
@@ -351,10 +355,10 @@ export const ImageUploader = () => {
 
         {selectedFiles.length > 0 && (
           <div>
-            <h3 className='text-sm font-medium mb-3'>
+            <h3 className='text-lg font-semibold text-gray-900 mb-4'>
               Selected files ({selectedFiles.length})
             </h3>
-            <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4'>
+            <div className='grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4'>
               {selectedFiles.map((file, index) => (
                 <ThumbnailPreview
                   key={`${file.name}-${index}`}
@@ -367,16 +371,20 @@ export const ImageUploader = () => {
         )}
 
         {uploading && progress.length > 0 && (
-          <div className='space-y-2'>
-            <h3 className='text-sm font-medium'>Upload Progress</h3>
-            {progress.map((item, index) => (
-              <UploadProgress
-                key={index}
-                fileName={item.fileName}
-                progress={item.progress}
-                status={item.status}
-              />
-            ))}
+          <div className='space-y-3'>
+            <h3 className='text-lg font-semibold text-gray-900'>
+              Upload Progress
+            </h3>
+            <div className='space-y-3'>
+              {progress.map((item, index) => (
+                <UploadProgress
+                  key={index}
+                  fileName={item.fileName}
+                  progress={item.progress}
+                  status={item.status}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -457,12 +465,16 @@ export const ImageUploader = () => {
           </Button>
 
           {selectedFiles.length > 0 && !uploading && (
-            <Button variant='outline' onClick={() => setSelectedFiles([])}>
-              Clear
+            <Button
+              variant='outline'
+              onClick={() => setSelectedFiles([])}
+              className='krea-button'
+            >
+              Clear All
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

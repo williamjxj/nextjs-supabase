@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/images/[id] - Get a specific image
@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const resolvedParams = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // Check if user is authenticated
@@ -54,7 +54,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const resolvedParams = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // Check if user is authenticated
@@ -111,7 +111,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const resolvedParams = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // Check if user is authenticated

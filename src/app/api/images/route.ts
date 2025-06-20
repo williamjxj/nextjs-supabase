@@ -1,9 +1,9 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/images - Get all images for the authenticated user
 export async function GET() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // Check if user is authenticated
@@ -43,7 +43,7 @@ export async function GET() {
 
 // POST /api/images - Create a new image record
 export async function POST(request: NextRequest) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // Check if user is authenticated

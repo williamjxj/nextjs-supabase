@@ -3,6 +3,7 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 function CryptoCheckoutPage() {
   const searchParams = useSearchParams()
@@ -67,7 +68,17 @@ function CryptoCheckoutPage() {
 
 export default function CryptoCheckoutPageWrapper() {
   return (
-    <Suspense fallback={<div>Loading payment details...</div>}>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center p-4'>
+          <LoadingSpinner
+            size='lg'
+            variant='gradient'
+            text='Loading payment details...'
+          />
+        </div>
+      }
+    >
       <CryptoCheckoutPage />
     </Suspense>
   )

@@ -32,55 +32,9 @@ User authentication information is stored in Supabase's built-in authentication 
 
 ### 2️⃣ **`public.images`** (Custom Table)
 
-- **Purpose**: Store image metadata and references
-- **Schema**: Created via migration `20240528000001_create_images_table.sql`
-- **Key Fields**:
-  - `id` (UUID) - Primary key
-  - `user_id` (UUID) - Foreign key to `auth.users(id)` (CASCADE DELETE)
-  - `filename` (TEXT) - Generated filename
-  - `original_name` (TEXT) - Original uploaded filename
-  - `storage_path` (TEXT) - Path in Supabase storage
-  - `storage_url` (TEXT) - Public URL for image access
-  - `file_size` (INTEGER) - File size in bytes
-  - `mime_type` (TEXT) - File MIME type
-  - `width`, `height` (INTEGER) - Image dimensions
-  - `created_at`, `updated_at` (TIMESTAMPTZ) - Timestamps
-- **Indexes**:
-  - `idx_images_user_id` - Fast user-specific queries
-  - `idx_images_created_at` - Ordered by creation date
-- **RLS Policies**:
-  - Users can INSERT their own images
-  - Users can SELECT their own images
-  - Users can UPDATE their own images
-  - Users can DELETE their own images
-- **Triggers**: Auto-update `updated_at` on modifications
-
 ### 3️⃣ **`public.purchases`** (Custom Table)
 
-- **Purpose**: Track image license purchases and payments
-- **Schema**: Created via migration `20240528000003_create_purchases_table.sql`
-- **Key Fields**:
-  - `id` (UUID) - Primary key
-  - `image_id` (UUID) - Foreign key to `images(id)` (CASCADE DELETE)
-  - `user_id` (UUID) - Foreign key to `auth.users(id)` (SET NULL)
-  - `license_type` (TEXT) - License type (default: 'standard')
-  - `amount_paid` (INTEGER) - Amount in cents
-  - `currency` (TEXT) - Currency code (default: 'usd')
-  - `stripe_session_id` (TEXT) - Unique Stripe session identifier
-  - `payment_status` (TEXT) - Payment status (default: 'pending')
-  - `purchased_at` (TIMESTAMPTZ) - Purchase timestamp
-  - `created_at`, `updated_at` (TIMESTAMPTZ) - Record timestamps
-- **Indexes**:
-  - `idx_purchases_user_id` - Fast user-specific queries
-  - `idx_purchases_image_id` - Fast image-specific queries
-  - `idx_purchases_stripe_session_id` - Fast Stripe session lookup
-  - `idx_purchases_purchased_at` - Ordered by purchase date
-- **RLS Policies**:
-  - Users can SELECT their own purchases
-  - Users can INSERT their own purchases
-- **Triggers**: Auto-update `updated_at` on modifications
-
-## 📁 Storage Buckets
+### 📁 Storage Buckets
 
 ### 1️⃣ **`images`** Bucket
 

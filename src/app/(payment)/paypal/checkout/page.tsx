@@ -4,8 +4,11 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
+import { useAuth } from '@/hooks/use-auth'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 function PayPalCheckoutPage() {
+  const { user } = useAuth()
   const searchParams = useSearchParams()
   const amount = searchParams.get('amount')
   const licenseType = searchParams.get('licenseType')
@@ -29,6 +32,7 @@ function PayPalCheckoutPage() {
         licenseType,
         imageId,
         currencyCode: 'USD', // Or your desired currency
+        userId: user?.id, // Pass user ID for fallback authentication
       }),
     })
       .then(response => {
@@ -48,7 +52,17 @@ function PayPalCheckoutPage() {
       })
       .catch(err => {
         console.error('PayPal createOrder error:', err)
+        // If the server provided a redirect URL, use it
+        const redirectUrl =
+          err.redirectUrl ||
+          `/gallery?paypal_error=${encodeURIComponent(err.message)}`
+
+        // Show error message and redirect after a delay
         alert(`Error creating PayPal order: ${err.message}`)
+        setTimeout(() => {
+          window.location.href = redirectUrl
+        }, 2000)
+
         throw err // Re-throw to be caught by PayPalButtons
       })
   }
@@ -63,6 +77,7 @@ function PayPalCheckoutPage() {
       },
       body: JSON.stringify({
         orderID: data.orderID,
+        userId: user?.id, // Pass user ID for fallback authentication
       }),
     })
       .then(response => {
@@ -75,12 +90,14 @@ function PayPalCheckoutPage() {
       })
       .then(details => {
         console.log('Payment captured:', details)
-        alert(
-          `Transaction completed by ${details.payer?.name?.given_name || 'customer'}!`
-        )
-        // Redirect to a success page, e.g., /purchase/success
-        // router.push('/purchase/success?paymentId=${details.id}&method=paypal');
-        window.location.href = `/purchase/success?paymentId=${details.id}&method=paypal&imageId=${imageId}&licenseType=${licenseType}`
+
+        // Extract the capture ID for the purchase lookup
+        const captureId =
+          details.purchase_units?.[0]?.payments?.captures?.[0]?.id
+        const finalPaymentId = captureId || details.id || data.orderID
+
+        // Redirect to a success page with the PayPal payment details
+        window.location.href = `/purchase/success?paymentId=${finalPaymentId}&method=paypal&imageId=${imageId}&licenseType=${licenseType}`
       })
       .catch(err => {
         console.error('PayPal onApprove error:', err)
@@ -135,7 +152,17 @@ function PayPalCheckoutPage() {
 
 export default function PayPalCheckoutPageWrapper() {
   return (
-    <Suspense fallback={<div>Loading payment details...</div>}>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center p-4'>
+          <LoadingSpinner
+            size='lg'
+            variant='gradient'
+            text='Loading payment details...'
+          />
+        </div>
+      }
+    >
       <PayPalCheckoutPage />
     </Suspense>
   )

@@ -43,11 +43,13 @@ export const LogoutButton = ({
 
     try {
       await signOut()
+
       addToast({
         type: 'success',
         title: 'Signed out successfully',
         description: 'You have been logged out of your account',
       })
+
       router.push(redirectTo)
     } catch (error) {
       addToast({

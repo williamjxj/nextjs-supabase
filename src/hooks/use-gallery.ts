@@ -9,6 +9,7 @@ export interface GalleryFilters {
   search?: string
   sortBy?: 'created_at' | 'original_name' | 'file_size'
   sortOrder?: 'asc' | 'desc'
+  ownership?: 'owned' | 'for-sale' | null
   dateRange?: {
     start: string
     end: string
@@ -53,8 +54,6 @@ export const useGallery = () => {
       filters?: Partial<GalleryFilters>,
       pagination?: { limit?: number; offset?: number }
     ) => {
-      if (!user) return
-
       // Prevent duplicate calls
       if (fetchInProgressRef.current) {
         return
@@ -69,11 +68,21 @@ export const useGallery = () => {
       abortControllerRef.current = new AbortController()
       fetchInProgressRef.current = true
 
-      // Use functional state updates to get current filters
-      let finalFilters: GalleryFilters
+      // Get current state synchronously to avoid race conditions
+      let finalFilters: GalleryFilters = {
+        search: '',
+        sortBy: 'created_at',
+        sortOrder: 'desc',
+      }
 
       setGalleryState(prev => {
-        finalFilters = { ...prev.filters, ...filters }
+        finalFilters = {
+          search: '',
+          sortBy: 'created_at',
+          sortOrder: 'desc',
+          ...prev.filters,
+          ...filters,
+        }
 
         return {
           ...prev,
@@ -86,13 +95,19 @@ export const useGallery = () => {
       try {
         const searchParams = new URLSearchParams()
 
-        // Apply filters
-        if (finalFilters!.search)
-          searchParams.set('search', finalFilters!.search)
-        if (finalFilters!.sortBy)
-          searchParams.set('sortBy', finalFilters!.sortBy)
-        if (finalFilters!.sortOrder)
-          searchParams.set('sortOrder', finalFilters!.sortOrder)
+        // Apply filters with safe access
+        if (finalFilters.search) {
+          searchParams.set('search', finalFilters.search)
+        }
+        if (finalFilters.sortBy) {
+          searchParams.set('sortBy', finalFilters.sortBy)
+        }
+        if (finalFilters.sortOrder) {
+          searchParams.set('sortOrder', finalFilters.sortOrder)
+        }
+        if (finalFilters.ownership) {
+          searchParams.set('ownership', finalFilters.ownership)
+        }
 
         // Apply pagination
         if (pagination?.limit)
@@ -104,18 +119,25 @@ export const useGallery = () => {
           `/api/gallery?${searchParams.toString()}`,
           {
             signal: abortControllerRef.current.signal,
+            headers: {
+              'Content-Type': 'application/json',
+            },
           }
         )
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          const errorText = await response.text()
+          console.error('API error response:', errorText)
+          throw new Error(
+            `HTTP error! status: ${response.status} - ${errorText}`
+          )
         }
 
         const data = await response.json()
 
         setGalleryState(prev => ({
           ...prev,
-          images: data.images,
+          images: data.images || [],
           loading: false,
           error: null,
           pagination: data.pagination,
@@ -126,6 +148,7 @@ export const useGallery = () => {
           return
         }
 
+        console.error('Error fetching images:', error)
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to fetch images'
         setGalleryState(prev => ({
@@ -138,7 +161,7 @@ export const useGallery = () => {
         abortControllerRef.current = null
       }
     },
-    [user]
+    [] // fetchImages doesn't depend on user since API is public
   )
 
   const deleteImage = async (image: Image) => {
@@ -248,59 +271,16 @@ export const useGallery = () => {
     })
   }, [fetchImages])
 
-  // Initial fetch when user changes
+  const refetch = useCallback(() => {
+    fetchImages({}, { offset: 0 })
+  }, [fetchImages])
+
+  // Initial fetch on component mount (gallery is public, no user required)
   useEffect(() => {
-    if (user) {
-      // Initial fetch with default filters
-      setGalleryState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }))
-
-      const searchParams = new URLSearchParams()
-      searchParams.set('sortBy', 'created_at')
-      searchParams.set('sortOrder', 'desc')
-
-      fetch(`/api/gallery?${searchParams.toString()}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
-          }
-          return response.json()
-        })
-        .then(data => {
-          setGalleryState(prev => ({
-            ...prev,
-            images: data.images,
-            loading: false,
-            error: null,
-            pagination: data.pagination,
-          }))
-        })
-        .catch(error => {
-          const errorMessage =
-            error instanceof Error ? error.message : 'Failed to fetch images'
-          setGalleryState(prev => ({
-            ...prev,
-            loading: false,
-            error: errorMessage,
-          }))
-        })
-    } else {
-      setGalleryState({
-        images: [],
-        loading: false,
-        error: null,
-        pagination: null,
-        filters: {
-          search: '',
-          sortBy: 'created_at',
-          sortOrder: 'desc',
-        },
-      })
-    }
-  }, [user]) // Only depend on user
+    // Use the fetchImages function for consistency
+    fetchImages({}, { offset: 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once when component mounts, not dependent on fetchImages to avoid infinite loop
 
   return {
     ...galleryState,
@@ -312,6 +292,6 @@ export const useGallery = () => {
     goToPage,
     goToNextPage,
     goToPrevPage,
-    refetch: () => fetchImages({}, { offset: 0 }),
+    refetch,
   }
 }

@@ -1,195 +1,729 @@
 'use client'
 
-import { useState } from 'react'
-import { ShoppingCart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  SUBSCRIPTION_PLANS,
+  STRIPE_PRICE_IDS,
+  SubscriptionPlanType,
+} from '@/lib/subscription-config'
+import {
+  Check,
+  Star,
+  Zap,
+  Crown,
+  CreditCard,
+  DollarSign,
+  Bitcoin,
+  X,
+} from 'lucide-react'
+import { cn } from '@/lib/utils/cn'
 import { useToast } from '@/components/ui/toast'
+import { useAuth } from '@/hooks/use-auth'
+import { SubscriptionStatus } from '@/components/subscription-status'
 
-const SUBSCRIPTION_OPTIONS = [
-  {
-    type: 'standard' as const,
-    name: 'Standard Plan',
-    price: 9.99,
-    period: 'month',
-    description: 'Perfect for personal projects and small business use',
-    features: [
-      'Unlimited thumbnail downloads',
-      'Access to standard collection',
-      'Personal and commercial use',
-      'Digital usage unlimited',
-      'Monthly renewal',
-    ],
-  },
-  {
-    type: 'premium' as const,
-    name: 'Premium Plan',
-    price: 19.99,
-    period: 'month',
-    description: 'Ideal for larger commercial projects and marketing',
-    features: [
-      'Everything in Standard Plan',
-      'Unlimited high-resolution downloads',
-      'Access to premium collection',
-      'Extended commercial rights',
-      'Priority support',
-      'Monthly renewal',
-    ],
-  },
-  {
-    type: 'commercial' as const,
-    name: 'Commercial Plan',
-    price: 39.99,
-    period: 'month',
-    description: 'Full commercial rights for any business use',
-    features: [
-      'Everything in Premium Plan',
-      'Access to entire collection',
-      'Full commercial rights',
-      'Merchandise and product use',
-      'Advertising and marketing',
-      'No attribution required',
-      'Monthly renewal',
-    ],
-  },
-]
+// Payment method type
+type PaymentMethod = 'stripe' | 'paypal' | 'crypto'
+
+interface SubscribeModalState {
+  isOpen: boolean
+  planType: SubscriptionPlanType | null
+}
 
 export default function MembershipPage() {
-  const [selectedSubscription, setSelectedSubscription] = useState<
-    'standard' | 'premium' | 'commercial'
-  >('standard')
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>(
+    'monthly'
+  )
+  const [subscribeModal, setSubscribeModal] = useState<SubscribeModalState>({
+    isOpen: false,
+    planType: null,
+  })
+  const [loading, setLoading] = useState<PaymentMethod | null>(null)
+  const router = useRouter()
   const { showToast } = useToast()
+  const { user, syncAuthSession } = useAuth()
 
-  const handleSubscriptionCheckout = async (
-    subscriptionType: 'standard' | 'premium' | 'commercial'
-  ) => {
-    try {
-      showToast('Processing subscription... (redirecting to checkout)', 'info')
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriptionType,
-          isSubscription: true,
-        }),
+  // Debug: Log user state in development mode only
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User state:', {
+        hasUser: !!user,
+        subscriptionTier: user?.subscriptionTier,
       })
+    }
+  }, [user])
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create checkout session')
+  // Development mode: Create mock user for testing when no auth
+  const getEffectiveUser = () => {
+    if (user) return user
+
+    // In development, create a mock user for testing
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        id: 'dev-test-user-123',
+        email: 'test@example.com',
+        subscriptionTier: null,
+        hasActiveSubscription: false,
+      }
+    }
+
+    return null
+  }
+
+  const handleSubscribeClick = (planType: SubscriptionPlanType) => {
+    setSubscribeModal({ isOpen: true, planType })
+  }
+
+  const closeSubscribeModal = () => {
+    setSubscribeModal({ isOpen: false, planType: null })
+    setLoading(null)
+  }
+
+  const handlePaymentMethodSelect = async (method: PaymentMethod) => {
+    if (!subscribeModal.planType) return
+
+    setLoading(method)
+    try {
+      // Get effective user (real user or mock for development)
+      const effectiveUser = getEffectiveUser()
+
+      // Check authentication first - enhanced check for session sync
+      if (!effectiveUser) {
+        showToast(
+          'Please log in to continue with your subscription',
+          'error',
+          'Authentication Required'
+        )
+        router.push('/login')
+        setLoading(null)
+        return
       }
 
-      const { url } = await response.json()
+      // For Stripe and PayPal, skip server session validation since we use fallback approach
+      if (method !== 'stripe' && method !== 'paypal') {
+        // For other payment methods (crypto), try server session validation first
+        try {
+          // Check server session validation for other payment methods
+          const sessionCheck = await fetch('/api/auth/session-check', {
+            method: 'GET',
+            credentials: 'include',
+          })
 
-      if (url) {
-        window.location.href = url
-      } else {
-        throw new Error('No checkout URL received')
+          if (!sessionCheck.ok) {
+            const syncSuccess = await syncAuthSession()
+
+            if (!syncSuccess) {
+              showToast(
+                'Unable to sync authentication session. Please try logging out and back in.',
+                'error',
+                'Session Sync Failed'
+              )
+              setLoading(null)
+              return
+            }
+
+            // Wait for session to propagate
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            // Retry session check
+            const retryCheck = await fetch('/api/auth/session-check', {
+              method: 'GET',
+              credentials: 'include',
+            })
+
+            if (!retryCheck.ok) {
+              showToast(
+                'Session validation failed after sync. Please log in again.',
+                'error',
+                'Session Expired'
+              )
+              router.push('/login')
+              setLoading(null)
+              return
+            }
+          }
+        } catch (sessionError) {
+          console.warn('Session check failed:', sessionError)
+          showToast(
+            'Unable to validate session. Please try refreshing the page.',
+            'warning',
+            'Session Validation Error'
+          )
+          setLoading(null)
+          return
+        }
+      }
+
+      // Debug: Send client session info to server for comparison (only for non-fallback methods)
+      if (method !== 'stripe' && method !== 'paypal') {
+        try {
+          await fetch('/api/debug/client-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              hasUser: !!effectiveUser,
+              userId: effectiveUser?.id,
+              userEmail: effectiveUser?.email,
+            }),
+          })
+        } catch (debugError) {
+          console.warn('Debug call failed:', debugError)
+        }
+      }
+
+      switch (method) {
+        case 'stripe':
+          // Get the correct price ID based on plan type and billing interval
+          const priceId =
+            STRIPE_PRICE_IDS[subscribeModal.planType][billingInterval]
+
+          if (!priceId) {
+            throw new Error(
+              `No price ID found for ${subscribeModal.planType} ${billingInterval} plan. Check your environment variables.`
+            )
+          }
+
+          // Use fallback approach when user is authenticated on client-side
+          const stripeResponse = await fetch(
+            '/api/stripe/checkout/subscription-fallback',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                priceId,
+                successUrl: `${window.location.origin}/account/subscriptions?success=true`,
+                cancelUrl: `${window.location.origin}/membership`,
+                userId: effectiveUser.id,
+                userEmail: effectiveUser.email,
+                planType: subscribeModal.planType,
+                billingInterval,
+              }),
+            }
+          )
+
+          if (!stripeResponse.ok) {
+            const errorData = await stripeResponse.json()
+            console.error('Stripe fallback failed:', errorData)
+
+            if (stripeResponse.status === 401) {
+              showToast(
+                'Authentication session expired. Please log in again.',
+                'error',
+                'Session Expired'
+              )
+              router.push('/login')
+              setLoading(null)
+              return
+            }
+
+            throw new Error(
+              `Stripe checkout failed: ${errorData.error || 'Unknown error'}`
+            )
+          }
+
+          const stripeData = await stripeResponse.json()
+          if (stripeData.sessionId) {
+            // Redirect to Stripe checkout
+            const stripe = (await import('@stripe/stripe-js')).loadStripe(
+              process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+            )
+            const stripeInstance = await stripe
+            if (stripeInstance) {
+              await stripeInstance.redirectToCheckout({
+                sessionId: stripeData.sessionId,
+              })
+            }
+          } else {
+            throw new Error(
+              stripeData.error || 'Failed to create checkout session'
+            )
+          }
+          break
+
+        case 'paypal':
+          // Store PayPal checkout data for later activation
+          localStorage.setItem('paypal_plan_type', subscribeModal.planType)
+          localStorage.setItem('paypal_billing_interval', billingInterval)
+          localStorage.setItem('paypal_user_id', effectiveUser.id)
+
+          // Use fallback approach directly for PayPal, similar to Stripe
+          const paypalResponse = await fetch(
+            '/api/paypal/subscription-fallback',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                planType: subscribeModal.planType,
+                billingInterval,
+                userId: effectiveUser.id,
+                userEmail: effectiveUser.email,
+              }),
+            }
+          )
+
+          if (!paypalResponse.ok) {
+            const errorData = await paypalResponse.json()
+            console.error('PayPal fallback failed:', errorData)
+
+            if (paypalResponse.status === 401) {
+              showToast(
+                'Authentication session expired. Please log in again.',
+                'error',
+                'Session Expired'
+              )
+              router.push('/login')
+              setLoading(null)
+              return
+            }
+
+            throw new Error(
+              `PayPal checkout failed: ${errorData.error || 'Unknown error'}`
+            )
+          }
+
+          const paypalData = await paypalResponse.json()
+          if (paypalData.approvalUrl) {
+            window.location.href = paypalData.approvalUrl
+          } else {
+            throw new Error(
+              paypalData.error || 'Failed to create PayPal checkout'
+            )
+          }
+          break
+
+        case 'crypto':
+          const cryptoResponse = await fetch('/api/crypto/subscription', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              planType: subscribeModal.planType,
+              billingInterval,
+            }),
+          })
+
+          if (!cryptoResponse.ok) {
+            if (cryptoResponse.status === 401) {
+              // Enhanced error handling for Crypto
+              try {
+                const errorData = await cryptoResponse.json()
+                console.warn('Crypto API authentication failed:', errorData)
+
+                if (user?.id) {
+                  showToast(
+                    'Session synchronization issue detected. Please refresh and try again.',
+                    'error',
+                    'Session Sync Error'
+                  )
+                  setTimeout(() => window.location.reload(), 2000)
+                } else {
+                  showToast(
+                    'Please log in to continue with your subscription',
+                    'error',
+                    'Authentication Required'
+                  )
+                  router.push('/login')
+                }
+              } catch (jsonError) {
+                if (user) {
+                  showToast(
+                    'Your session has expired. Please log in again.',
+                    'error',
+                    'Session Expired'
+                  )
+                } else {
+                  showToast(
+                    'Please log in to continue with your subscription',
+                    'error',
+                    'Authentication Required'
+                  )
+                }
+                router.push('/login')
+              }
+              setLoading(null)
+              return
+            }
+            const errorMessage = `HTTP ${cryptoResponse.status}: ${cryptoResponse.statusText}`
+            throw new Error(errorMessage)
+          }
+
+          const cryptoData = await cryptoResponse.json()
+          if (cryptoData.hostedUrl) {
+            window.location.href = cryptoData.hostedUrl
+          } else {
+            throw new Error(
+              cryptoData.error || 'Failed to create cryptocurrency checkout'
+            )
+          }
+          break
       }
     } catch (error) {
-      console.error('Error initiating subscription checkout:', error)
+      // Don't log authentication errors since they're handled gracefully
+      if (
+        error instanceof Error &&
+        error.message.includes('Authentication required')
+      ) {
+        return // Authentication errors are already handled above
+      }
+
+      console.error('Error creating checkout session:', error)
       showToast(
-        `Failed to start subscription: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        'error'
+        error instanceof Error ? error.message : 'Checkout failed',
+        'error',
+        'Payment Error'
       )
+    } finally {
+      setLoading(null)
     }
   }
 
-  const handleCheckout = () => {
-    handleSubscriptionCheckout(selectedSubscription)
+  // Calculate yearly discount
+  const getYearlyDiscount = () => {
+    const monthlyTotal = Object.values(SUBSCRIPTION_PLANS)[0].priceMonthly * 12
+    const yearlyPrice = Object.values(SUBSCRIPTION_PLANS)[0].priceYearly
+    return Math.round(((monthlyTotal - yearlyPrice) / monthlyTotal) * 100)
+  }
+
+  const getYearlyPrice = (monthlyPrice: number) => {
+    const discount = getYearlyDiscount() / 100
+    return monthlyPrice * 12 * (1 - discount)
   }
 
   return (
-    <div className='container mx-auto px-4 py-8'>
-      <div className='text-center mb-8'>
-        <h1 className='text-3xl font-bold mb-2'>Membership Plans</h1>
-        <p className='text-muted-foreground'>
-          Subscribe once and get unlimited access to download all thumbnails
-          within your subscription tier. No need to pay per image!
-        </p>
+    <div className='min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'>
+      <div className='container mx-auto px-4 py-12'>
+        {/* Header */}
+        <div className='text-center mb-16'>
+          <h1 className='text-5xl font-bold text-gray-900 mb-6'>
+            Choose Your <span className='text-blue-600'>Membership</span>
+          </h1>
+          <p className='text-xl text-gray-600 max-w-3xl mx-auto'>
+            Get unlimited access to our premium gallery with subscription plans
+            designed to fit your needs.
+          </p>
+        </div>
+
+        {/* Current Subscription Status */}
+        <div className='mb-12 max-w-2xl mx-auto'>
+          <SubscriptionStatus />
+        </div>
+
+        {/* Billing Toggle */}
+        <div className='flex items-center justify-center mb-12'>
+          <div className='flex items-center gap-4 bg-white rounded-full p-2 shadow-sm border'>
+            <button
+              onClick={() => setBillingInterval('monthly')}
+              className={cn(
+                'px-6 py-3 rounded-full font-medium transition-all duration-200',
+                billingInterval === 'monthly'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              )}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval('yearly')}
+              className={cn(
+                'px-6 py-3 rounded-full font-medium transition-all duration-200 flex items-center gap-2',
+                billingInterval === 'yearly'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              )}
+            >
+              Yearly
+              <span className='text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full'>
+                Save {getYearlyDiscount()}%
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className='max-w-6xl mx-auto'>
+          <div className='grid gap-8 lg:grid-cols-3'>
+            {Object.entries(SUBSCRIPTION_PLANS).map(([planType, plan]) => {
+              const isPopular = planType === 'premium'
+              const isPremium = planType === 'commercial'
+
+              const monthlyPrice = plan.priceMonthly
+              const yearlyPrice = getYearlyPrice(monthlyPrice)
+              const displayPrice =
+                billingInterval === 'monthly' ? monthlyPrice : yearlyPrice
+              const pricePerMonth =
+                billingInterval === 'monthly' ? monthlyPrice : yearlyPrice / 12
+
+              return (
+                <div
+                  key={planType}
+                  className={cn(
+                    'relative rounded-2xl border-2 bg-white p-8 shadow-lg transition-all duration-200 hover:shadow-xl',
+                    isPopular
+                      ? 'border-blue-500 ring-2 ring-blue-200'
+                      : isPremium
+                        ? 'border-purple-500 bg-gradient-to-br from-purple-600 to-purple-700 text-white'
+                        : 'border-gray-200 hover:border-gray-300'
+                  )}
+                >
+                  {/* Popular Badge */}
+                  {isPopular && (
+                    <div className='absolute -top-3 left-1/2 transform -translate-x-1/2'>
+                      <div className='bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1'>
+                        <Star className='w-4 h-4' />
+                        Most Popular
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Premium Badge */}
+                  {isPremium && (
+                    <div className='absolute -top-3 left-1/2 transform -translate-x-1/2'>
+                      <div className='bg-white text-purple-700 px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1'>
+                        <Crown className='w-4 h-4' />
+                        Premium
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plan Header */}
+                  <div className='text-center mb-8'>
+                    <div className='flex items-center justify-center mb-4'>
+                      {planType === 'standard' && (
+                        <Zap
+                          className={cn(
+                            'w-8 h-8',
+                            isPremium ? 'text-purple-200' : 'text-blue-500'
+                          )}
+                        />
+                      )}
+                      {planType === 'premium' && (
+                        <Star
+                          className={cn(
+                            'w-8 h-8',
+                            isPremium ? 'text-purple-200' : 'text-blue-500'
+                          )}
+                        />
+                      )}
+                      {planType === 'commercial' && (
+                        <Crown
+                          className={cn(
+                            'w-8 h-8',
+                            isPremium ? 'text-purple-200' : 'text-purple-500'
+                          )}
+                        />
+                      )}
+                    </div>
+                    <h3
+                      className={cn(
+                        'text-2xl font-bold mb-2',
+                        isPremium ? 'text-white' : 'text-gray-900'
+                      )}
+                    >
+                      {plan.name}
+                    </h3>
+                    <p
+                      className={cn(
+                        'text-sm',
+                        isPremium ? 'text-purple-100' : 'text-gray-600'
+                      )}
+                    >
+                      {plan.description}
+                    </p>
+                  </div>
+
+                  {/* Pricing */}
+                  <div className='text-center mb-8'>
+                    <div className='flex items-end justify-center gap-1 mb-2'>
+                      <span
+                        className={cn(
+                          'text-4xl font-bold',
+                          isPremium ? 'text-white' : 'text-gray-900'
+                        )}
+                      >
+                        ${displayPrice.toFixed(2)}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-base',
+                          isPremium ? 'text-purple-100' : 'text-gray-600'
+                        )}
+                      >
+                        /{billingInterval === 'monthly' ? 'month' : 'year'}
+                      </span>
+                    </div>
+                    {billingInterval === 'yearly' && (
+                      <p
+                        className={cn(
+                          'text-sm',
+                          isPremium ? 'text-purple-200' : 'text-gray-500'
+                        )}
+                      >
+                        ${pricePerMonth.toFixed(2)}/month billed annually
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <ul className='space-y-4 mb-8'>
+                    {plan.features.map(feature => (
+                      <li key={feature} className='flex items-start gap-3'>
+                        <Check
+                          className={cn(
+                            'w-5 h-5 flex-shrink-0 mt-0.5',
+                            isPremium ? 'text-purple-200' : 'text-green-500'
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'text-base',
+                            isPremium ? 'text-purple-100' : 'text-gray-700'
+                          )}
+                        >
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Subscribe Button */}
+                  <button
+                    onClick={() =>
+                      handleSubscribeClick(planType as SubscriptionPlanType)
+                    }
+                    className={cn(
+                      'w-full py-4 px-6 rounded-xl font-medium text-base transition-all duration-200 shadow-sm hover:shadow-md',
+                      isPremium
+                        ? 'bg-white text-purple-700 hover:bg-gray-50 border border-purple-200'
+                        : isPopular
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-900 text-white hover:bg-gray-800'
+                    )}
+                  >
+                    Subscribe Now
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Bottom Note */}
+        <div className='text-center mt-12'>
+          <p className='text-sm text-gray-500'>
+            All plans include 7-day free trial • Cancel anytime • No setup fees
+          </p>
+        </div>
       </div>
 
-      {/* Subscription Options */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
-        {SUBSCRIPTION_OPTIONS.map(option => (
-          <div
-            key={option.type}
-            className={`border rounded-lg p-6 cursor-pointer transition-all ${
-              selectedSubscription === option.type
-                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onClick={() => setSelectedSubscription(option.type)}
-          >
-            <div className='text-center mb-4'>
-              <h3 className='text-lg font-semibold text-gray-900 mb-1'>
-                {option.name}
+      {/* Payment Method Selector Modal */}
+      {subscribeModal.isOpen && subscribeModal.planType && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
+          <div className='bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative'>
+            {/* Close Button */}
+            <button
+              onClick={closeSubscribeModal}
+              className='absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors'
+            >
+              <X className='w-5 h-5 text-gray-500' />
+            </button>
+
+            {/* Header */}
+            <div className='text-center mb-6'>
+              <h3 className='text-2xl font-bold text-gray-900 mb-2'>
+                Choose Payment Method
               </h3>
-              <div className='text-3xl font-bold text-blue-600 mb-2'>
-                ${option.price.toFixed(2)}/{option.period}
-              </div>
-              <p className='text-sm text-gray-600'>{option.description}</p>
+              <p className='text-sm text-gray-600'>
+                Select how you&apos;d like to pay for your subscription
+              </p>
             </div>
 
-            <ul className='space-y-2'>
-              {option.features.map((feature, index) => (
-                <li
-                  key={index}
-                  className='flex items-center text-sm text-gray-700'
-                >
-                  <svg
-                    className='w-4 h-4 text-green-500 mr-2 flex-shrink-0'
-                    fill='currentColor'
-                    viewBox='0 0 20 20'
-                  >
-                    <path
-                      fillRule='evenodd'
-                      d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
-                      clipRule='evenodd'
-                    />
-                  </svg>
-                  {feature}
-                </li>
-              ))}
-            </ul>
+            {/* Payment Options */}
+            <div className='space-y-3'>
+              {/* Stripe Payment */}
+              <button
+                onClick={() => handlePaymentMethodSelect('stripe')}
+                disabled={!!loading}
+                className={cn(
+                  'w-full py-4 px-6 rounded-xl font-medium text-base transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-3 border-2',
+                  'bg-blue-600 text-white hover:bg-blue-700 border-blue-600',
+                  loading && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                {loading === 'stripe' ? (
+                  <div className='flex items-center justify-center'>
+                    <div className='w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin' />
+                    <span className='ml-2'>Processing...</span>
+                  </div>
+                ) : (
+                  <>
+                    <CreditCard className='w-5 h-5' />
+                    <span>Credit/Debit Card</span>
+                    <span className='text-xs bg-blue-500 px-2 py-1 rounded-full'>
+                      Recommended
+                    </span>
+                  </>
+                )}
+              </button>
 
-            {selectedSubscription === option.type && (
-              <div className='mt-4 pt-4 border-t border-blue-200'>
-                <div className='text-center'>
-                  <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800'>
-                    Selected
-                  </span>
-                </div>
-              </div>
-            )}
+              {/* PayPal Payment */}
+              <button
+                onClick={() => handlePaymentMethodSelect('paypal')}
+                disabled={!!loading}
+                className={cn(
+                  'w-full py-4 px-6 rounded-xl font-medium text-base transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-3 border-2',
+                  'bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500',
+                  loading && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                {loading === 'paypal' ? (
+                  <div className='flex items-center justify-center'>
+                    <div className='w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin' />
+                    <span className='ml-2'>Processing...</span>
+                  </div>
+                ) : (
+                  <>
+                    <DollarSign className='w-5 h-5' />
+                    <span>PayPal</span>
+                  </>
+                )}
+              </button>
+
+              {/* Crypto Payment */}
+              <button
+                onClick={() => handlePaymentMethodSelect('crypto')}
+                disabled={!!loading}
+                className={cn(
+                  'w-full py-4 px-6 rounded-xl font-medium text-base transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-3 border-2',
+                  'bg-orange-500 text-white hover:bg-orange-600 border-orange-500',
+                  loading && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                {loading === 'crypto' ? (
+                  <div className='flex items-center justify-center'>
+                    <div className='w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin' />
+                    <span className='ml-2'>Processing...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Bitcoin className='w-5 h-5' />
+                    <span>Cryptocurrency</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Security Note */}
+            <div className='mt-6 p-4 bg-gray-50 rounded-lg'>
+              <p className='text-xs text-gray-600 text-center'>
+                🔒 All payments are secured with 256-bit SSL encryption
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      {/* Checkout Button */}
-      <div className='text-center'>
-        <Button
-          onClick={handleCheckout}
-          className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg'
-        >
-          <ShoppingCart className='w-5 h-5 mr-2' />
-          Subscribe to{' '}
-          {
-            SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
-              ?.name
-          }{' '}
-          - $
-          {SUBSCRIPTION_OPTIONS.find(
-            o => o.type === selectedSubscription
-          )?.price.toFixed(2)}
-          /
-          {
-            SUBSCRIPTION_OPTIONS.find(o => o.type === selectedSubscription)
-              ?.period
-          }
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

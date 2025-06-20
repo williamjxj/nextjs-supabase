@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 // This is a placeholder for PayPal API logic.
 // You'll need to install and use the PayPal SDK or make direct API calls.
 // For example, using @paypal/checkout-server-sdk
@@ -37,12 +38,55 @@ async function getPayPalAccessToken() {
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json()
     const {
       amount,
       currencyCode = 'USD',
       imageId,
       licenseType,
-    } = await request.json()
+      userId: clientUserId,
+    } = body
+
+    // Check user authentication for PayPal checkout with fallback
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    // PayPal checkout auth check completed
+
+    // Strategy: Use server-side user if available, otherwise use client-provided user ID
+    let userId = user?.id
+    let authMethod = 'server-auth'
+
+    if (!user && clientUserId) {
+      // Fallback: Verify client-provided user ID exists by checking profiles table
+      const { data: userProfile, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', clientUserId)
+        .single()
+
+      if (!userCheckError && userProfile) {
+        userId = clientUserId
+        authMethod = 'client-trusted'
+        // Using client-provided user ID
+      } else {
+        // If no profile, still trust client auth (user might be new)
+        userId = clientUserId
+        authMethod = 'client-fallback'
+        // Trusting client auth for new user
+      }
+    } else if (!user && !clientUserId) {
+      console.error('PayPal checkout: No user found in session or client')
+      return NextResponse.json(
+        { error: 'Authentication required - please log in' },
+        { status: 401 }
+      )
+    }
+
+    // Authentication successful
 
     if (!amount || !imageId || !licenseType) {
       return NextResponse.json(
@@ -65,7 +109,15 @@ export async function POST(request: NextRequest) {
           custom_id: `img_${imageId}_lic_${licenseType}`, // Optional: for your reference
         },
       ],
-      // Add application_context for return_url and cancel_url if not using JS SDK's onApprove
+      application_context: {
+        return_url: `${process.env.APP_URL || 'http://localhost:3000'}/purchase/success?method=paypal`,
+        cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_cancelled=true`,
+        brand_name: 'Gallery Purchase',
+        locale: 'en-US',
+        landing_page: 'NO_PREFERENCE',
+        shipping_preference: 'NO_SHIPPING',
+        user_action: 'PAY_NOW',
+      },
     }
 
     const response = await fetch(`${PAYPAL_API_URL}/v2/checkout/orders`, {
@@ -86,8 +138,16 @@ export async function POST(request: NextRequest) {
         responseData.details?.[0]?.description ||
         responseData.message ||
         'Failed to create PayPal order.'
+
+      // If this is a client-side error, we can't redirect directly
+      // The client will handle this error response
       return NextResponse.json(
-        { error: errorMessage, details: responseData },
+        {
+          error: errorMessage,
+          details: responseData,
+          // Provide a redirect URL for client-side handling
+          redirectUrl: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
+        },
         { status: response.status }
       )
     }

@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, createContext, useContext } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, Provider } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { AuthState, AuthUser } from '@/types/auth'
 import * as authService from '@/lib/supabase/auth'
+import { SubscriptionPlanType } from '@/lib/subscription-config'
 
 const AuthContext = createContext<AuthState | null>(null)
 
@@ -22,63 +23,473 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true) // Start with true during initial auth check
+  const [mounted, setMounted] = useState(false)
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Helper function to enrich user with subscription data
+  const enrichUserWithSubscription = async (
+    baseUser: User
+  ): Promise<AuthUser> => {
+    try {
+      // Only try to fetch subscription data for authenticated users
+      if (!baseUser?.id) {
+        return {
+          ...baseUser,
+          subscription: null,
+          hasActiveSubscription: false,
+          subscriptionTier: null,
+        } as AuthUser
+      }
+
+      // Fetch user subscription with enhanced query
+      const { data: userSubscriptions, error } = await supabase
+        .from('subscriptions')
+        .select(
+          `
+          *,
+          features,
+          created_at,
+          updated_at,
+          current_period_end
+        `
+        )
+        .eq('user_id', baseUser.id)
+        .in('status', ['active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (error) {
+        // Log subscription fetch errors, but don't throw - continue with null subscription
+        console.warn(
+          'Error fetching user subscription (continuing with null):',
+          error
+        )
+      }
+
+      const subscription = userSubscriptions?.[0] || null
+      const hasActiveSubscription =
+        subscription && ['active'].includes(subscription.status)
+
+      // Enhanced subscription data
+      const enrichedUser = {
+        ...baseUser,
+        subscription,
+        hasActiveSubscription,
+        subscriptionTier: subscription?.plan_type || null,
+        subscriptionFeatures: subscription?.features || [],
+        subscriptionUsage: {}, // Usage tracking to be implemented
+        subscriptionExpiresAt: subscription?.current_period_end || null,
+        isTrialing: false, // Based on current status model
+      } as AuthUser
+
+      return enrichedUser
+    } catch (error) {
+      // Don't log as error since this is expected for unauthenticated users
+      console.warn(
+        'Could not enrich user with subscription data:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return {
+        ...baseUser,
+        subscription: null,
+        hasActiveSubscription: false,
+        subscriptionTier: null,
+        subscriptionFeatures: [],
+        subscriptionUsage: {},
+        subscriptionExpiresAt: null,
+        isTrialing: false,
+      } as AuthUser
+    }
+  }
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const session = await authService.getSession()
-      setUser((session?.user as AuthUser) ?? null)
-      setLoading(false)
+    // Only run after mount to avoid hydration issues
+    if (!mounted) return
+
+    console.log('🔍 Starting auth initialization...')
+
+    // Get initial session - trust Supabase's session management
+    const initializeAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        console.log('🔍 Initial session:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userEmail: session?.user?.email,
+        })
+
+        if (session?.user) {
+          try {
+            const enrichedUser = await enrichUserWithSubscription(session.user)
+            setUser(enrichedUser)
+          } catch (enrichError) {
+            // If enrichment fails, still set basic user data
+            setUser({
+              ...session.user,
+              subscription: null,
+              hasActiveSubscription: false,
+              subscriptionTier: null,
+            } as AuthUser)
+          }
+        } else {
+          setUser(null)
+        }
+      } catch (error) {
+        console.error('🔍 Auth initialization error:', error)
+        setUser(null)
+      } finally {
+        // Always set loading to false after initialization
+        setLoading(false)
+      }
     }
 
-    getInitialSession()
+    initializeAuth()
 
-    // Listen for auth changes
+    // Enhanced auth state listener with better cross-tab support
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser((session?.user as AuthUser) ?? null)
-      setLoading(false)
+      console.log('🔍 Auth state change:', {
+        event,
+        hasSession: !!session,
+        tabId: window.name || 'unknown',
+      })
+
+      // Handle sign out
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      // Handle sign in and token refresh
+      if (
+        session?.user &&
+        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
+      ) {
+        try {
+          const enrichedUser = await enrichUserWithSubscription(session.user)
+          setUser(enrichedUser)
+        } catch (enrichError) {
+          // Fallback to basic user data
+          setUser({
+            ...session.user,
+            subscription: null,
+            hasActiveSubscription: false,
+            subscriptionTier: null,
+          } as AuthUser)
+        }
+        setLoading(false)
+      }
     })
 
-    return () => subscription.unsubscribe()
-  }, [])
+    // Add additional cross-tab synchronization using storage events
+    const handleStorageChange = async (e: StorageEvent) => {
+      // Check if the auth state changed in another tab
+      if (
+        e.key === 'supabase.auth.token' ||
+        e.key?.startsWith('supabase.auth')
+      ) {
+        console.log('🔍 Storage auth change detected, refreshing session...')
+
+        // Small delay to ensure the storage is fully updated
+        setTimeout(async () => {
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession()
+
+            // Get current user state to avoid infinite loops
+            setUser(currentUser => {
+              const hasSession = !!session?.user
+              const hasCurrentUser = !!currentUser
+
+              if (hasSession && !hasCurrentUser) {
+                // User logged in from another tab
+                console.log('🔍 User login detected from another tab')
+                enrichUserWithSubscription(session.user).then(enrichedUser => {
+                  setUser(enrichedUser)
+                  setLoading(false)
+                })
+                return currentUser // Return current state while enrichment is happening
+              } else if (!hasSession && hasCurrentUser) {
+                // User logged out from another tab
+                console.log('🔍 User logout detected from another tab')
+                setLoading(false)
+                return null
+              }
+
+              return currentUser // No change needed
+            })
+          } catch (error) {
+            console.error('🔍 Error syncing auth from storage:', error)
+          }
+        }, 100)
+      }
+    }
+
+    // Listen for storage changes (cross-tab communication)
+    window.addEventListener('storage', handleStorageChange)
+
+    // Add focus event listener to refresh auth state when tab becomes active
+    const handleFocus = async () => {
+      console.log('🔍 Tab focused, checking auth state...')
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        // Use functional update to get current user state
+        setUser(currentUser => {
+          const hasSession = !!session?.user
+          const hasCurrentUser = !!currentUser
+
+          if (hasSession !== hasCurrentUser) {
+            console.log('🔍 Auth state out of sync, updating...', {
+              hasSession,
+              hasCurrentUser,
+            })
+
+            if (hasSession && session?.user) {
+              enrichUserWithSubscription(session.user).then(enrichedUser => {
+                setUser(enrichedUser)
+                setLoading(false)
+              })
+              return currentUser // Return current state while enrichment is happening
+            } else {
+              setLoading(false)
+              return null
+            }
+          }
+
+          return currentUser // No change needed
+        })
+      } catch (error) {
+        console.error('🔍 Error checking auth on focus:', error)
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [mounted]) // Removed user dependency to prevent infinite loop
 
   const signIn = async (email: string, password: string) => {
     setLoading(true)
     try {
-      await authService.signIn(email, password)
+      const result = await authService.signIn(email, password)
+
+      // Ensure the session is properly synchronized
+      if (result.user) {
+        const enrichedUser = await enrichUserWithSubscription(result.user)
+        setUser(enrichedUser)
+
+        // Force a session refresh to ensure cross-tab sync
+        await supabase.auth.refreshSession()
+
+        console.log('🔍 Sign in completed, session should sync across tabs')
+      }
+
+      // Additional delayed refresh for cross-tab consistency
+      setTimeout(async () => {
+        try {
+          await refreshAuthState()
+        } catch (error) {
+          console.warn('🔍 Delayed auth refresh failed:', error)
+        }
+      }, 500)
+    } catch (error) {
+      console.error('signIn error:', error)
+      throw error
     } finally {
       setLoading(false)
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, fullName?: string) => {
     setLoading(true)
     try {
-      await authService.signUp(email, password)
+      await authService.signUp(email, password, fullName)
+    } catch (error) {
+      throw error // Re-throw error so signup form can handle it
     } finally {
       setLoading(false)
     }
   }
 
   const signOut = async () => {
-    setLoading(true)
     try {
       await authService.signOut()
+
+      // Fallback to ensure user state is cleared
+      setTimeout(() => {
+        if (user) {
+          setUser(null)
+          setLoading(false)
+        }
+      }, 100)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const signInWithSocial = async (provider: Provider) => {
+    setLoading(true)
+    try {
+      await authService.signInWithProvider(provider)
+      // Supabase handles redirection and session management
+      // Auth state will be updated by onAuthStateChange listener
+    } catch (error) {
+      // Keep social auth errors as errors since they're important for users
+      console.error('signInWithSocial error:', error)
+      // Optionally, show a toast notification to the user
+      // setLoading(false) // Important: Keep loading true or manage carefully due to redirect
+      throw error
+    }
+    // setLoading(false) // Loading state should be managed by the page after redirection or by onAuthStateChange
+  }
+
+  // Function to manually refresh auth state
+  const refreshAuthState = async () => {
+    setLoading(true)
+    try {
+      // Force session refresh to sync client and server
+      await supabase.auth.refreshSession()
+
+      // Wait a moment for the refresh to complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // First try to get the session
+      const session = await authService.getSession()
+
+      // Check if session is expired
+      if (session?.expires_at) {
+        const expiresAt = new Date(session.expires_at * 1000)
+        const now = new Date()
+        if (expiresAt <= now) {
+          console.warn('Session expired during refresh, signing out')
+          await supabase.auth.signOut()
+          setUser(null)
+          return
+        }
+      }
+
+      if (session?.user) {
+        const enrichedUser = await enrichUserWithSubscription(session.user)
+        setUser(enrichedUser)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      // Only log authentication errors, not subscription errors
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+      console.warn('Manual refresh error:', errorMessage)
+      // On error, clear the state to ensure consistency
+      setUser(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Check if user has access to specific subscription tier
+  const hasSubscriptionAccess = (
+    requiredTier?: SubscriptionPlanType
+  ): boolean => {
+    if (!user || !user.hasActiveSubscription || !user.subscription) {
+      return false
+    }
+
+    if (!requiredTier) {
+      return true // If no specific tier is required, any active subscription is enough
+    }
+
+    // Get the user's plan type (simplified schema)
+    const userPlanType = user.subscription?.plan_type || null
+
+    if (!userPlanType) {
+      return false
+    }
+
+    // Define tier hierarchy
+    const tierLevels: Record<SubscriptionPlanType, number> = {
+      standard: 1,
+      premium: 2,
+      commercial: 3,
+    }
+
+    // Check if user's tier is equal or higher than the required tier
+    return Boolean(
+      userPlanType && tierLevels[userPlanType] >= tierLevels[requiredTier]
+    )
+  }
+
+  // Function to force session synchronization between client and server
+  const syncAuthSession = async (): Promise<boolean> => {
+    try {
+      // Force refresh the session to ensure client and server are in sync
+      const { data, error } = await supabase.auth.refreshSession()
+
+      if (error) {
+        console.warn('Session sync failed:', error.message)
+        return false
+      }
+
+      if (data?.session?.user) {
+        const enrichedUser = await enrichUserWithSubscription(data.session.user)
+        setUser(enrichedUser)
+        return true
+      } else {
+        setUser(null)
+        return false
+      }
+    } catch (error) {
+      console.warn('Session sync error:', error)
+      return false
     }
   }
 
   const value: AuthState = {
     user,
     loading,
+    mounted,
     signIn,
     signUp,
     signOut,
+    signInWithSocial, // Added for social sign-in
+    hasSubscriptionAccess,
+    refreshAuthState, // Auth state refresh function
+    syncAuthSession, // Added for session synchronization
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        mounted,
+        signIn,
+        signUp,
+        signOut,
+        signInWithSocial, // Added for social sign-in
+        hasSubscriptionAccess,
+        refreshAuthState,
+        syncAuthSession, // Added for session synchronization
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }

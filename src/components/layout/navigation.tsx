@@ -70,7 +70,7 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
-    label: 'Membership',
+    label: 'Pricing',
     href: '/membership',
     requireAuth: true,
     icon: (
@@ -102,11 +102,23 @@ export const Navigation = ({
   showIcons = true,
 }: NavigationProps) => {
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, loading, mounted } = useAuth()
 
-  const filteredItems = navigationItems.filter(
-    item => !item.requireAuth || (item.requireAuth && user)
-  )
+  // Show all items when user is authenticated, or only public items when not
+  // Never hide the navigation completely - this prevents flickering
+  const isAuthenticated = mounted && !loading && user
+  const isInitializing = !mounted || loading
+
+  // Filter items based on authentication state
+  const filteredItems = React.useMemo(() => {
+    return navigationItems.filter(item => {
+      if (!item.requireAuth) {
+        return true // Always show non-auth items like Home
+      }
+      // For auth-required items, show them if authenticated or show as disabled if not
+      return true // Always show all items, let the component handle disabled state
+    })
+  }, [])
 
   const containerClasses = cn(
     'flex',
@@ -119,23 +131,34 @@ export const Navigation = ({
       {filteredItems.map(item => {
         const isActive = pathname === item.href
 
+        // For auth-required items, disable them if user is not authenticated
+        const isDisabled = item.requireAuth && !isAuthenticated
+        const showAsLoading = item.requireAuth && isInitializing
+
         return (
           <Link
-            key={item.href}
-            href={item.href}
+            key={`nav-${item.href}`}
+            href={isDisabled ? '#' : item.href}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              'hover:bg-accent hover:text-accent-foreground',
-              isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground',
-              orientation === 'vertical' && 'justify-start w-full'
+              'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
+              showAsLoading && 'animate-pulse bg-gray-100 text-gray-400',
+              !isDisabled &&
+                !showAsLoading &&
+                'hover:bg-gray-50 hover:text-gray-900 hover:cursor-pointer hover:scale-105',
+              isActive && !isDisabled && !showAsLoading
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                : isDisabled && !showAsLoading
+                  ? 'text-gray-400 cursor-not-allowed opacity-60'
+                  : !showAsLoading && 'text-gray-600',
+              orientation === 'vertical' &&
+                'justify-start w-full rounded-xl px-4 py-3'
             )}
+            onClick={isDisabled ? e => e.preventDefault() : undefined}
           >
             {showIcons && item.icon && (
               <span className='flex-shrink-0'>{item.icon}</span>
             )}
-            <span>{item.label}</span>
+            <span>{showAsLoading ? '...' : item.label}</span>
           </Link>
         )
       })}
@@ -146,17 +169,20 @@ export const Navigation = ({
 // Mobile Navigation with hamburger menu
 export const MobileNavigation = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, loading, mounted } = useAuth()
 
-  const filteredItems = navigationItems.filter(
-    item => !item.requireAuth || (item.requireAuth && user)
-  )
+  // Show all items, let Navigation component handle auth states
+  const filteredItems = navigationItems
 
   return (
     <div className='md:hidden relative'>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='p-2 rounded-md hover:bg-accent'
+        className={cn(
+          'p-2 rounded-full transition-all duration-200',
+          'hover:bg-gray-100 hover:cursor-pointer hover:scale-110',
+          isOpen && 'bg-gray-100'
+        )}
         aria-label='Toggle navigation menu'
       >
         <svg
@@ -185,8 +211,8 @@ export const MobileNavigation = () => {
       </button>
 
       {isOpen && (
-        <div className='absolute top-12 right-0 bg-background border rounded-lg shadow-lg p-4 min-w-48 z-50'>
-          <Navigation orientation='vertical' className='space-y-2' />
+        <div className='absolute top-12 right-0 bg-white border border-gray-200 rounded-xl shadow-xl p-4 min-w-48 z-50 animate-in slide-in-from-top-2 duration-200'>
+          <Navigation orientation='vertical' className='space-y-1' />
         </div>
       )}
     </div>

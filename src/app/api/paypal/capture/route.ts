@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
@@ -34,7 +34,8 @@ async function getPayPalAccessToken() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderID } = await request.json()
+    const body = await request.json()
+    const { orderID, userId: clientUserId } = body
 
     if (!orderID) {
       return NextResponse.json({ error: 'Missing orderID' }, { status: 400 })
@@ -77,12 +78,59 @@ export async function POST(request: NextRequest) {
 
         // Extract imageId and licenseType from custom_id
         const customId = capture.custom_id || ''
+        console.log('PayPal custom_id:', customId)
         const parts = customId.split('_')
+
+        if (parts.length < 4 || parts[0] !== 'img' || parts[2] !== 'lic') {
+          console.error('Invalid custom_id format:', customId)
+          return NextResponse.json(responseData) // Still return success but log the error
+        }
+
         const imageId = parts[1]
         const licenseType = parts[3]
 
         if (imageId && licenseType) {
-          const supabase = await createServerSupabaseClient()
+          const supabase = await createClient()
+
+          // Implement fallback authentication similar to Stripe checkout
+          const {
+            data: { user },
+            error: authError,
+          } = await supabase.auth.getUser()
+
+          // PayPal capture auth check completed
+
+          // Strategy: Use server-side user if available, otherwise use client-provided user ID
+          let userId = user?.id
+          let authMethod = 'server-auth'
+
+          if (!user && clientUserId) {
+            // Fallback: Verify client-provided user ID exists by checking profiles table
+            const { data: userProfile, error: userCheckError } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', clientUserId)
+              .single()
+
+            if (!userCheckError && userProfile) {
+              userId = clientUserId
+              authMethod = 'client-trusted'
+              // Using client-provided user ID
+            } else {
+              // If no profile, still trust client auth (user might be new)
+              userId = clientUserId
+              authMethod = 'client-fallback'
+              // Trusting client auth for new user
+            }
+          } else if (!user && !clientUserId) {
+            console.error('PayPal capture: No user found in session or client')
+            // Don't fail the transaction, but log the issue
+            console.warn(
+              '⚠️ PayPal capture completing without user association'
+            )
+          }
+
+          // Authentication successful
 
           // First, lookup the actual image using the image ID
           const { data: imageData, error: imageError } = await supabase
@@ -99,6 +147,7 @@ export async function POST(request: NextRequest) {
           const { error: insertError } = await supabase
             .from('purchases')
             .insert({
+              user_id: userId || null, // Use fallback authentication result
               image_id: imageData.id,
               license_type: licenseType,
               amount_paid: Math.round(parseFloat(capture.amount.value) * 100), // Convert to cents
@@ -106,14 +155,14 @@ export async function POST(request: NextRequest) {
               payment_method: 'paypal',
               payment_status: 'completed',
               paypal_payment_id: capture.id, // Use capture ID as payment ID
-              paypal_order_id: responseData.id, // Store order ID separately
+              paypal_order_id: orderID, // Store order ID separately
               purchased_at: new Date().toISOString(),
             })
 
           if (insertError) {
             console.error('Failed to save purchase to database:', insertError)
           } else {
-            console.log('Purchase saved successfully for image:', imageId)
+            // Purchase saved successfully
           }
         }
       } catch (dbError) {

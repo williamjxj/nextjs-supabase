@@ -9,6 +9,8 @@ import {
   Tag,
   SortAsc,
   SortDesc,
+  ShoppingCart,
+  Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +21,7 @@ export interface GalleryFilters {
   sortBy: 'created_at' | 'original_name' | 'file_size'
   sortOrder: 'asc' | 'desc'
   tags: string[]
+  ownership?: 'owned' | 'for-sale' | null
   dateRange?: {
     start: string
     end: string
@@ -84,11 +87,15 @@ export function GalleryFilters({
       sortBy: 'created_at',
       sortOrder: 'desc',
       tags: [],
+      ownership: null,
     })
   }
 
   const hasActiveFilters =
-    filters.search || filters.tags.length > 0 || filters.dateRange
+    filters.search ||
+    filters.tags.length > 0 ||
+    filters.dateRange ||
+    filters.ownership
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -163,6 +170,36 @@ export function GalleryFilters({
             Filters
           </Button>
         </div>
+      </div>
+
+      {/* Ownership Filter */}
+      <div className='flex gap-2'>
+        <Button
+          variant={!filters.ownership ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => updateFilters({ ownership: null })}
+          className='flex items-center gap-1'
+        >
+          All Images
+        </Button>
+        <Button
+          variant={filters.ownership === 'owned' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => updateFilters({ ownership: 'owned' })}
+          className='flex items-center gap-1'
+        >
+          <Check className='h-4 w-4' />
+          Owned
+        </Button>
+        <Button
+          variant={filters.ownership === 'for-sale' ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => updateFilters({ ownership: 'for-sale' })}
+          className='flex items-center gap-1'
+        >
+          <ShoppingCart className='h-4 w-4' />
+          For Sale
+        </Button>
       </div>
 
       {/* Advanced Filters */}
@@ -260,6 +297,17 @@ export function GalleryFilters({
               </button>
             </span>
           ))}
+          {filters.ownership && (
+            <span className='inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full'>
+              {filters.ownership === 'owned' ? 'Owned' : 'For Sale'}
+              <button
+                onClick={() => updateFilters({ ownership: null })}
+                className='hover:bg-purple-200 rounded-full p-0.5'
+              >
+                <X className='h-3 w-3' />
+              </button>
+            </span>
+          )}
           <Button
             variant='ghost'
             size='sm'

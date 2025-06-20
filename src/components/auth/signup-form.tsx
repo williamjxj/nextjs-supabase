@@ -14,6 +14,8 @@ import {
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { SignupFormData } from '@/types/auth'
+import { Chrome, Facebook } from 'lucide-react' // Assuming lucide-react for icons
+import { SocialAuthSection } from './social-auth'
 
 interface SignupFormProps {
   onSuccess?: () => void
@@ -25,6 +27,7 @@ export const SignupForm = ({
   redirectTo = '/gallery',
 }: SignupFormProps) => {
   const [formData, setFormData] = useState<SignupFormData>({
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -32,7 +35,7 @@ export const SignupForm = ({
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
-  const { signUp } = useAuth()
+  const { signUp, signInWithSocial } = useAuth() // Updated to include signInWithSocial
   const { addToast } = useToast()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,7 +47,12 @@ export const SignupForm = ({
   }
 
   const validateForm = () => {
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (
+      !formData.fullName ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
       return 'All fields are required'
     }
 
@@ -75,7 +83,7 @@ export const SignupForm = ({
     setIsLoading(true)
 
     try {
-      await signUp(formData.email, formData.password)
+      await signUp(formData.email, formData.password, formData.fullName)
       addToast({
         type: 'success',
         title: 'Account created successfully',
@@ -102,7 +110,10 @@ export const SignupForm = ({
   }
 
   const isValid =
-    formData.email && formData.password && formData.confirmPassword
+    formData.fullName &&
+    formData.email &&
+    formData.password &&
+    formData.confirmPassword
 
   return (
     <Card className='w-full max-w-md mx-auto'>
@@ -114,6 +125,22 @@ export const SignupForm = ({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className='space-y-4'>
+          <div className='space-y-2'>
+            <label htmlFor='fullName' className='text-sm font-medium'>
+              Full Name
+            </label>
+            <Input
+              id='fullName'
+              name='fullName'
+              type='text'
+              placeholder='Enter your full name'
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
+
           <div className='space-y-2'>
             <label htmlFor='email' className='text-sm font-medium'>
               Email
@@ -171,6 +198,8 @@ export const SignupForm = ({
             {isLoading ? 'Creating account...' : 'Create account'}
           </Button>
         </form>
+
+        <SocialAuthSection disabled={isLoading} showDivider={true} />
 
         <div className='mt-4 text-center text-sm'>
           <span className='text-muted-foreground'>

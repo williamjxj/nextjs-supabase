@@ -3,25 +3,25 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --ring: 221 83% 53%;
+    --radius: 12px;
   }
 
   .dark {
@@ -32,7 +32,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -43,50 +43,397 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --ring: 224.3 76.3% 48%;
   }
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    sans-serif;
 }
 
-/* Custom animations for upload button */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
+/* Krea.ai inspired styles */
+.krea-card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200;
+}
+
+.krea-button {
+  @apply bg-white text-gray-700 border border-gray-200 rounded-full px-6 py-2.5 text-sm font-medium hover:bg-gray-50 transition-all duration-200;
+}
+
+.krea-button-primary {
+  @apply bg-blue-600 text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-blue-700 transition-all duration-200 shadow-sm;
+}
+
+.krea-gradient-purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.krea-gradient-blue {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+}
+
+.krea-hero-card {
+  @apply rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+.krea-hero-card video {
+  transition:
+    transform 0.5s ease,
+    filter 0.3s ease;
+}
+
+.krea-hero-card:hover video {
+  transform: scale(1.05);
+  filter: brightness(0.8) contrast(1.1);
+}
+
+.krea-tool-card {
+  @apply bg-white rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-200;
+}
+
+.krea-gallery-item {
+  @apply rounded-xl overflow-hidden relative;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.krea-gallery-item:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.krea-gallery-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.krea-gallery-item:hover::after {
+  opacity: 1;
+}
+
+.krea-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.krea-gallery-grid .krea-gallery-item {
+  width: 100%;
+}
+
+/* Grid mode: square thumbnails for uniform appearance */
+.krea-gallery-grid .krea-gallery-item > div:first-child {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Alternative grid mode with original aspect ratios */
+.krea-gallery-grid-original {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: start; /* Allow items to have different heights */
+}
+
+.krea-gallery-grid-original .krea-gallery-item {
+  width: 100%;
+}
+
+.krea-gallery-grid-original .krea-gallery-item > div:first-child {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Use original aspect ratios - no fixed height constraints */
+}
+
+.krea-gallery-masonry {
+  column-count: 1;
+  column-gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .krea-gallery-masonry {
+    column-count: 2;
   }
 }
 
-@keyframes gradient-x {
+@media (min-width: 768px) {
+  .krea-gallery-masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .krea-gallery-masonry {
+    column-count: 4;
+  }
+}
+
+@media (min-width: 1280px) {
+  .krea-gallery-masonry {
+    column-count: 5;
+  }
+}
+
+.krea-gallery-masonry .krea-gallery-item {
+  break-inside: avoid;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* Improved badge styles for better distinction */
+.krea-badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.krea-badge-primary {
+  @apply bg-blue-50 text-blue-700;
+}
+
+.krea-badge-success {
+  @apply bg-green-50 text-green-700;
+}
+
+.krea-badge-warning {
+  @apply bg-amber-50 text-amber-700;
+}
+
+.krea-badge-info {
+  @apply bg-indigo-50 text-indigo-700;
+}
+
+.krea-time-badge {
+  @apply absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm;
+}
+
+.krea-action-button {
+  @apply rounded-full p-2 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-all duration-200 cursor-pointer;
+}
+
+.krea-action-button-primary {
+  @apply rounded-full p-2 bg-blue-600/90 text-white backdrop-blur-sm shadow-sm hover:bg-blue-700 transition-all duration-200 cursor-pointer;
+}
+
+.krea-action-button-danger {
+  @apply rounded-full p-2 bg-red-500/90 text-white backdrop-blur-sm shadow-sm hover:bg-red-600 transition-all duration-200 cursor-pointer;
+}
+
+.krea-image-overlay {
+  @apply absolute inset-0 bg-black/0 transition-all duration-300;
+}
+
+.krea-gallery-item:hover .krea-image-overlay {
+  @apply bg-black/10;
+}
+
+.krea-action-buttons {
+  @apply absolute top-3 right-3 flex flex-col gap-2 opacity-0 transition-opacity duration-300;
+}
+
+.krea-gallery-item:hover .krea-action-buttons {
+  @apply opacity-100;
+}
+
+.krea-image-info {
+  @apply absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 transition-opacity duration-300 z-10;
+}
+
+.krea-gallery-item:hover .krea-image-info {
+  @apply opacity-100;
+}
+
+/* Custom animations */
+@keyframes float {
   0%,
   100% {
-    background-position: 0% 50%;
+    transform: translateY(0px);
   }
   50% {
-    background-position: 100% 50%;
+    transform: translateY(-10px);
   }
 }
 
-.bg-size-200 {
-  background-size: 200% 100%;
+.float-animation {
+  animation: float 6s ease-in-out infinite;
 }
 
-.bg-pos-0 {
-  background-position: 0% 50%;
+/* Glassmorphism effect */
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.bg-pos-100 {
-  background-position: 100% 50%;
+/* Custom Tooltip Styles */
+[title] {
+  position: relative;
+}
+
+[title]:hover:after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+[title]:hover:before {
+  content: '';
+  position: absolute;
+  bottom: 92%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Krea.ai inspired notification styles */
+.krea-notification-enter {
+  animation: krea-slide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.krea-notification-exit {
+  animation: krea-slide-out 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes krea-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes krea-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}
+
+.krea-tooltip {
+  @apply backdrop-blur-xl bg-white/98 text-gray-700 rounded-2xl px-4 py-3 text-sm font-normal shadow-xl border border-gray-200/60;
+}
+
+.krea-tooltip-light {
+  @apply backdrop-blur-xl bg-white/98 text-gray-700 rounded-2xl px-4 py-3 text-sm font-normal shadow-xl border border-gray-200/60;
+}
+
+.krea-notification-success {
+  @apply backdrop-blur-lg bg-emerald-50/90 border-emerald-200/50 text-emerald-900;
+}
+
+.krea-notification-error {
+  @apply backdrop-blur-lg bg-red-50/90 border-red-200/50 text-red-900;
+}
+
+.krea-notification-warning {
+  @apply backdrop-blur-lg bg-amber-50/90 border-amber-200/50 text-amber-900;
+}
+
+.krea-notification-info {
+  @apply backdrop-blur-lg bg-blue-50/90 border-blue-200/50 text-blue-900;
+}
+
+/* Dark mode variants */
+.dark .krea-notification-success {
+  @apply bg-emerald-950/90 border-emerald-800/50 text-emerald-100;
+}
+
+.dark .krea-notification-error {
+  @apply bg-red-950/90 border-red-800/50 text-red-100;
+}
+
+.dark .krea-notification-warning {
+  @apply bg-amber-950/90 border-amber-800/50 text-amber-100;
+}
+
+.dark .krea-notification-info {
+  @apply bg-blue-950/90 border-blue-800/50 text-blue-100;
+}
+
+/* Enhanced focus states for accessibility */
+.krea-button:focus-visible,
+.krea-button-primary:focus-visible {
+  @apply outline-none ring-2 ring-offset-2 ring-blue-500 ring-offset-white;
+}
+
+.dark .krea-button:focus-visible,
+.dark .krea-button-primary:focus-visible {
+  @apply ring-offset-gray-900;
+}
+
+/* Smooth hover transitions */
+.krea-interactive {
+  @apply transition-all duration-200 ease-out;
+}
+
+.krea-interactive:hover {
+  @apply transform -translate-y-0.5 shadow-lg;
 }
 
 .container {
   width: 100%;
-  max-width: 80rem;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 1rem;
