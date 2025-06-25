@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
 
-// Create admin client for manual subscription creation
-const supabaseAdmin = createServiceRoleClient()
-
 const PAYPAL_BASE_URL =
   process.env.PAYPAL_BASE_URL || 'https://api.sandbox.paypal.com'
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
@@ -36,6 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Manual PayPal subscription activation started')
 
+    const supabaseAdmin = createServiceRoleClient()
     const body = await request.json()
     const { subscriptionId, userId, planType, billingInterval } = body
 

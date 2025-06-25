@@ -66,7 +66,7 @@ echo "----------------------------------------"
 
 if command -v psql &> /dev/null; then
     # Query storage.objects table
-    psql "$DB_URL" -c "
+    psql "$DATABASE_URL" -c "
         SELECT 
             name,
             bucket_id,
@@ -81,7 +81,7 @@ if command -v psql &> /dev/null; then
     echo ""
     
     # Query storage.buckets table
-    psql "$DB_URL" -c "
+    psql "$DATABASE_URL" -c "
         SELECT 
             id,
             name,

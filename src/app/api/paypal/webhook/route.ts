@@ -3,9 +3,6 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
 import { paymentService } from '@/lib/payment-service'
 
-// Create admin client for webhook operations
-const supabaseAdmin = createServiceRoleClient()
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
@@ -137,6 +134,7 @@ async function handleSubscriptionSuspended(subscription: any) {
 
   console.log(`PayPal subscription suspended: ${subscriptionId}`)
 
+  const supabaseAdmin = createServiceRoleClient()
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({

@@ -24,7 +24,7 @@ load_env() {
 load_env
 
 echo "🔍 Querying Supabase Tables..."
-echo "Database URL: $DB_URL"
+echo "Database URL: $DATABASE_URL"
 echo ""
 
 # Check if psql is available
@@ -40,7 +40,7 @@ run_query() {
     
     echo "📊 $description"
     echo "----------------------------------------"
-    psql "$DB_URL" -c "$query" || echo "❌ Failed to execute query"
+    psql "$DATABASE_URL" -c "$query" || echo "❌ Failed to execute query"
     echo ""
 }
 

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import type { Image as ImageType } from '@/types/image'
 import { cn } from '@/lib/utils/cn'
 import { formatDistanceToNow } from 'date-fns'
-import type { SubscriptionAccess } from '@/lib/subscription-access'
+import type { SubscriptionAccess } from '@/lib/subscription-access-client'
 import Link from 'next/link'
 
 interface ImageCardWithSubscriptionProps {

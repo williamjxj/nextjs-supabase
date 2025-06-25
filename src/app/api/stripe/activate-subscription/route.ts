@@ -4,12 +4,6 @@ import { createClient } from '@supabase/supabase-js'
 import { getPlanByPriceId, SUBSCRIPTION_PLANS } from '@/lib/subscription-config'
 import Stripe from 'stripe'
 
-// Create admin client
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 // Helper function to get features for each plan type (copied from webhook)
 function getSubscriptionFeatures(planType: string): string[] {
   const featuresMap: Record<string, string[]> = {
@@ -40,6 +34,10 @@ function getSubscriptionFeatures(planType: string): string[] {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     const { sessionId } = await request.json()
 
     if (!sessionId) {

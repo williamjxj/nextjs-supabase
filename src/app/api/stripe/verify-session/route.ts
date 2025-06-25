@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 
-// Create admin client
-const supabaseAdmin = createServiceRoleClient()
-
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = createServiceRoleClient()
     const { sessionId } = await request.json()
 
     if (!sessionId) {

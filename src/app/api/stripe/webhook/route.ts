@@ -5,12 +5,6 @@ import { createClient } from '@supabase/supabase-js'
 import { getPlanByPriceId } from '@/lib/subscription-config'
 import { paymentService } from '@/lib/payment-service'
 
-// Create admin client for webhook operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 export async function POST(req: Request) {
   console.log('🎯 Stripe webhook received:', new Date().toISOString())
 
@@ -184,6 +178,10 @@ async function handleSubscriptionCancellation(subscription: any) {
 
   console.log(`Processing cancellation for subscription ${subscriptionId}`)
 
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({
@@ -204,6 +202,10 @@ async function handlePaymentSucceeded(invoice: any) {
   if (subscriptionId) {
     console.log(`Payment succeeded for subscription ${subscriptionId}`)
 
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -225,6 +227,10 @@ async function handlePaymentFailed(invoice: any) {
   if (subscriptionId) {
     console.log(`Payment failed for subscription ${subscriptionId}`)
 
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -309,6 +315,10 @@ async function handleCheckoutSessionCompleted(session: any) {
   }
 
   // Check if purchase already exists
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const { data: existingPurchase } = await supabaseAdmin
     .from('purchases')
     .select('id')

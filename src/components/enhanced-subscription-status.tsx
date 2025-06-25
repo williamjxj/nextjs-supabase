@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react'
 import {
   checkSubscriptionAccess,
   type SubscriptionAccess,
-} from '@/lib/subscription-access'
+} from '@/lib/subscription-access-client'
 
 export function EnhancedSubscriptionStatus() {
   const { user, loading: authLoading } = useAuth()

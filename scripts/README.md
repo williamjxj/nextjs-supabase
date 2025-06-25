@@ -83,7 +83,7 @@ Seed subscription plans in the database.
 
 All scripts automatically load environment variables from `.env.local`:
 
-- `DB_URL` - PostgreSQL connection string
+- `DATABASE_URL` - PostgreSQL connection string
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase API URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for API access
 - `SUPABASE_S3_STORAGE_URL` - S3 storage URL

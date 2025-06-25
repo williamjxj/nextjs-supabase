@@ -39,8 +39,6 @@ export interface PurchaseCreationData {
  * Handles subscription and purchase creation across different payment providers
  */
 export class PaymentService {
-  private supabase = createClient()
-
   /**
    * Create a subscription record in the database
    */
@@ -48,6 +46,7 @@ export class PaymentService {
     data: SubscriptionCreationData
   ): Promise<PaymentResult> {
     try {
+      const supabase = await createClient()
       const plan = SUBSCRIPTION_PLANS[data.planType]
       if (!plan) {
         return { success: false, error: `Invalid plan type: ${data.planType}` }
@@ -78,9 +77,7 @@ export class PaymentService {
         features: plan.features,
       }
 
-      const { data: subscription, error } = await (
-        await this.supabase
-      )
+      const { data: subscription, error } = await supabase
         .from('subscriptions')
         .upsert(subscriptionData, {
           onConflict: 'user_id',
@@ -111,6 +108,7 @@ export class PaymentService {
    */
   async createPurchase(data: PurchaseCreationData): Promise<PaymentResult> {
     try {
+      const supabase = await createClient()
       const purchaseData = {
         image_id: data.imageId,
         user_id: data.userId || null,
@@ -128,7 +126,7 @@ export class PaymentService {
         purchased_at: new Date().toISOString(),
       }
 
-      const { data: purchase, error } = await (await this.supabase)
+      const { data: purchase, error } = await supabase
         .from('purchases')
         .insert([purchaseData])
         .select()
@@ -161,6 +159,7 @@ export class PaymentService {
     externalSubscriptionId?: string
   ): Promise<PaymentResult> {
     try {
+      const supabase = await createClient()
       const updateData: any = {
         status,
         updated_at: new Date().toISOString(),
@@ -171,7 +170,7 @@ export class PaymentService {
         updateData.current_period_end = new Date().toISOString()
       }
 
-      let query = (await this.supabase)
+      let query = supabase
         .from('subscriptions')
         .update(updateData)
         .eq('user_id', userId)
@@ -203,7 +202,8 @@ export class PaymentService {
    */
   async getUserSubscription(userId: string) {
     try {
-      const { data, error } = await (await this.supabase)
+      const supabase = await createClient()
+      const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
@@ -233,7 +233,8 @@ export class PaymentService {
     imageId: string
   ): Promise<boolean> {
     try {
-      const { data, error } = await (await this.supabase)
+      const supabase = await createClient()
+      const { data, error } = await supabase
         .from('purchases')
         .select('id')
         .eq('user_id', userId)
@@ -263,14 +264,13 @@ export class PaymentService {
     downloadType: 'subscription' | 'purchase' | 'free' = 'subscription'
   ): Promise<void> {
     try {
-      const { error } = await (await this.supabase)
-        .from('image_downloads')
-        .insert({
-          user_id: userId,
-          image_id: imageId,
-          download_type: downloadType,
-          downloaded_at: new Date().toISOString(),
-        })
+      const supabase = await createClient()
+      const { error } = await supabase.from('image_downloads').insert({
+        user_id: userId,
+        image_id: imageId,
+        download_type: downloadType,
+        downloaded_at: new Date().toISOString(),
+      })
 
       if (error) {
         console.error('Error recording image download:', error)
