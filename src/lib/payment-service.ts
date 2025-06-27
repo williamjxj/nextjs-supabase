@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import {
   SubscriptionPlanType,
   SUBSCRIPTION_PLANS,
@@ -46,7 +46,8 @@ export class PaymentService {
     data: SubscriptionCreationData
   ): Promise<PaymentResult> {
     try {
-      const supabase = await createClient()
+      // Use service role client for webhook operations to bypass RLS
+      const supabase = createServiceRoleClient()
       const plan = SUBSCRIPTION_PLANS[data.planType]
       if (!plan) {
         return { success: false, error: `Invalid plan type: ${data.planType}` }
@@ -108,7 +109,8 @@ export class PaymentService {
    */
   async createPurchase(data: PurchaseCreationData): Promise<PaymentResult> {
     try {
-      const supabase = await createClient()
+      // Use service role client for webhook operations to bypass RLS
+      const supabase = createServiceRoleClient()
       const purchaseData = {
         image_id: data.imageId,
         user_id: data.userId || null,
@@ -159,7 +161,8 @@ export class PaymentService {
     externalSubscriptionId?: string
   ): Promise<PaymentResult> {
     try {
-      const supabase = await createClient()
+      // Use service role client for webhook operations to bypass RLS
+      const supabase = createServiceRoleClient()
       const updateData: any = {
         status,
         updated_at: new Date().toISOString(),

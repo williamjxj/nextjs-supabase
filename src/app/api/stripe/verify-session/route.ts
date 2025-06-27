@@ -4,7 +4,22 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabaseAdmin = createServiceRoleClient()
+    // Try service role client first, fallback to regular client if key is invalid
+    let supabaseAdmin
+    try {
+      supabaseAdmin = createServiceRoleClient()
+      // Test the client with a simple query
+      await supabaseAdmin.from('profiles').select('count').limit(1)
+    } catch (serviceRoleError) {
+      console.warn(
+        'Service role client failed, using regular client:',
+        serviceRoleError
+      )
+      // Fallback to regular client (this will have RLS restrictions)
+      const { createClient } = await import('@/lib/supabase/server')
+      supabaseAdmin = await createClient()
+    }
+
     const { sessionId } = await request.json()
 
     if (!sessionId) {

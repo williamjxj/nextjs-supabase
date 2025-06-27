@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       application_context: {
-        return_url: `${process.env.APP_URL || 'http://localhost:3000'}/purchase/success?method=paypal`,
-        cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_cancelled=true`,
+        return_url: `${process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/purchase/success?method=paypal`,
+        cancel_url: `${process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/gallery?paypal_cancelled=true`,
         brand_name: 'Gallery Purchase',
         locale: 'en-US',
         landing_page: 'NO_PREFERENCE',
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
         {
           error: errorMessage,
           details: responseData,
-          redirectUrl: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
+          redirectUrl: `${process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
         },
         { status: response.status }
       )

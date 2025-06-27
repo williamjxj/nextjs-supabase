@@ -3,6 +3,62 @@ import { AuthUser } from '@/types/auth'
 import { SubscriptionType } from '@/lib/stripe'
 import { Provider } from '@supabase/supabase-js'
 
+// Helper function to ensure user profile exists
+export const ensureUserProfile = async (user: AuthUser): Promise<void> => {
+  try {
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (existingProfile) {
+      console.log('✅ Profile already exists for user:', user.id)
+      return
+    }
+
+    // Extract user data from auth metadata
+    const fullName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.user_metadata?.user_name ||
+      user.user_metadata?.preferred_username ||
+      ''
+
+    const avatarUrl =
+      user.user_metadata?.avatar_url || user.user_metadata?.picture || ''
+    const provider = user.app_metadata?.provider || 'email'
+
+    console.log('🔧 Creating profile for user:', {
+      id: user.id,
+      email: user.email,
+      fullName,
+      provider,
+      hasAvatar: !!avatarUrl,
+    })
+
+    // Create profile manually
+    const { error } = await supabase.from('profiles').insert({
+      id: user.id,
+      email: user.email,
+      full_name: fullName,
+      avatar_url: avatarUrl,
+      provider: provider,
+    })
+
+    if (error) {
+      console.error('❌ Failed to create profile:', error)
+      // Don't throw error - let the user continue with auth
+    } else {
+      console.log('✅ Profile created successfully for user:', user.id)
+    }
+  } catch (error) {
+    console.error('❌ Error in ensureUserProfile:', error)
+    // Don't throw error - let the user continue with auth
+  }
+}
+
 // Test Supabase connection
 export const testConnection = async () => {
   try {
@@ -36,6 +92,12 @@ export const signIn = async (email: string, password: string) => {
     }
 
     console.log('✅ Sign in successful:', { userId: data.user?.id })
+
+    // Ensure profile exists after sign in
+    if (data.user) {
+      await ensureUserProfile(data.user as AuthUser)
+    }
+
     return data
   } catch (error) {
     console.error('💥 Sign in failed:', error)
@@ -67,6 +129,12 @@ export const signUp = async (
     }
 
     console.log('✅ Sign up successful:', { userId: data.user?.id })
+
+    // Ensure profile exists after sign up
+    if (data.user) {
+      await ensureUserProfile(data.user as AuthUser)
+    }
+
     return data
   } catch (error) {
     console.error('💥 Sign up failed:', error)

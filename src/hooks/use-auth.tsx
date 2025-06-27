@@ -46,6 +46,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as AuthUser
       }
 
+      // Ensure user profile exists (critical for OAuth users)
+      try {
+        await authService.ensureUserProfile(baseUser as AuthUser)
+      } catch (profileError) {
+        console.warn('Failed to ensure user profile:', profileError)
+        // Continue with subscription enrichment even if profile creation fails
+      }
+
       // Fetch user subscription with enhanced query
       const { data: userSubscriptions, error } = await supabase
         .from('subscriptions')
