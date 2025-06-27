@@ -119,33 +119,35 @@ export function validateEnvironment(
 export function getEnvironmentReport(): void {
   const config = validateEnvironment(true)
 
-  console.log('🔧 Environment Configuration Report')
-  console.log('===================================')
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Environment Configuration Report')
+    console.log('===================================')
 
-  // Services status
-  console.log('\n📊 Services Status:')
-  Object.entries(config.services).forEach(([service, isEnabled]) => {
-    const status = isEnabled ? '✅ Enabled' : '❌ Disabled'
-    console.log(`  ${service}: ${status}`)
-  })
+    // Services status
+    console.log('\n📊 Services Status:')
+    Object.entries(config.services).forEach(([service, isEnabled]) => {
+      const status = isEnabled ? '✅ Enabled' : '❌ Disabled'
+      console.log(`  ${service}: ${status}`)
+    })
 
-  // Errors
-  if (config.errors.length > 0) {
-    console.log('\n❌ Errors:')
-    config.errors.forEach(error => console.log(`  - ${error}`))
+    // Errors
+    if (config.errors.length > 0) {
+      console.log('\n❌ Errors:')
+      config.errors.forEach(error => console.log(`  - ${error}`))
+    }
+
+    // Warnings
+    if (config.warnings.length > 0) {
+      console.log('\n⚠️  Warnings:')
+      config.warnings.forEach(warning => console.log(`  - ${warning}`))
+    }
+
+    // Overall status
+    console.log(
+      `\n🏁 Overall Status: ${config.isValid ? '✅ Valid' : '❌ Invalid'}`
+    )
+    console.log('===================================\n')
   }
-
-  // Warnings
-  if (config.warnings.length > 0) {
-    console.log('\n⚠️  Warnings:')
-    config.warnings.forEach(warning => console.log(`  - ${warning}`))
-  }
-
-  // Overall status
-  console.log(
-    `\n🏁 Overall Status: ${config.isValid ? '✅ Valid' : '❌ Invalid'}`
-  )
-  console.log('===================================\n')
 }
 
 // Environment-specific configurations

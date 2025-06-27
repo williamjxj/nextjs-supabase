@@ -48,7 +48,7 @@ export const UserInfoTooltip = ({
             const payload = JSON.parse(atob(session.access_token.split('.')[1]))
             jwtClaims = payload
           } catch (e) {
-            console.warn('Could not decode JWT:', e)
+            // JWT decode failed - continue without claims
           }
         }
 

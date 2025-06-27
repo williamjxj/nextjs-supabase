@@ -27,9 +27,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
-.env
+# Environment variables
+# Commit: .env, .env.production, .env.example
+# Never commit: .env.local (local Docker Supabase overrides)
 .env.local
+.env.local.*
 
 # vercel
 .vercel
@@ -48,8 +50,6 @@ logs
 dev-debug.log
 # Dependency directories
 node_modules/
-# Environment variables
-.env
 # Editor directories and files
 .idea
 .vscode
@@ -65,6 +65,3 @@ tasks/
 /.taskmaster/
 /.cursor/
 /.roo/
-/docs/env
-
-.vscode/

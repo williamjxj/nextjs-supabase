@@ -3,35 +3,17 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Session check started')
     const supabase = await createClient()
 
-    // Debug: Check what cookies are available
-    const cookies = request.cookies.getAll()
-    console.log(
-      '🍪 Available cookies:',
-      cookies.map(c => ({ name: c.name, hasValue: !!c.value }))
-    )
-
-    // Get current session and user with detailed logging
-    console.log('📡 Getting session...')
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession()
 
-    console.log('👤 Getting user...')
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
-
-    // Debug logging
-    console.log('🔒 Session result:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      sessionError: sessionError?.message,
-    })
     console.log('🔑 User result:', {
       hasUser: !!user,
       userId: user?.id,
@@ -59,8 +41,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('✅ Session check successful for user:', finalUser.id)
-    // Return user info to confirm session is valid
     return NextResponse.json({
       success: true,
       user: {
@@ -71,7 +51,6 @@ export async function GET(request: NextRequest) {
       message: 'Session is valid',
     })
   } catch (error) {
-    console.error('💥 Session check error:', error)
     return NextResponse.json(
       { error: 'Internal server error during session validation' },
       { status: 500 }

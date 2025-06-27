@@ -29,7 +29,7 @@ export function EnhancedSubscriptionStatus() {
         const access = await checkSubscriptionAccess()
         setAccessInfo(access)
       } catch (error) {
-        console.error('Error fetching subscription access:', error)
+        // Error fetching subscription access - continue with no access
       } finally {
         setLoading(false)
       }

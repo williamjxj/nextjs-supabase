@@ -104,8 +104,6 @@ function DefaultErrorFallback({
 // Hook for using error boundary in functional components
 export function useErrorHandler() {
   return (error: Error) => {
-    // In a real app, you might want to log this to a service
-    console.error('Error handled:', error)
     throw error // Re-throw to be caught by error boundary
   }
 }

@@ -133,19 +133,15 @@ export async function POST(request: NextRequest) {
     const responseData = await response.json()
 
     if (!response.ok) {
-      console.error('PayPal API Error:', responseData)
       const errorMessage =
         responseData.details?.[0]?.description ||
         responseData.message ||
         'Failed to create PayPal order.'
 
-      // If this is a client-side error, we can't redirect directly
-      // The client will handle this error response
       return NextResponse.json(
         {
           error: errorMessage,
           details: responseData,
-          // Provide a redirect URL for client-side handling
           redirectUrl: `${process.env.APP_URL || 'http://localhost:3000'}/gallery?paypal_error=${encodeURIComponent(errorMessage)}`,
         },
         { status: response.status }

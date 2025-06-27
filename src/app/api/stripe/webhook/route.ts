@@ -6,27 +6,17 @@ import { getPlanByPriceId } from '@/lib/subscription-config'
 import { paymentService } from '@/lib/payment-service'
 
 export async function POST(req: Request) {
-  console.log('🎯 Stripe webhook received:', new Date().toISOString())
-
   const body = await req.text()
   const signature = (await headers()).get('stripe-signature')
 
-  // Enhanced logging for debugging
-  console.log('📦 Webhook payload length:', body.length)
-  console.log('🔐 Signature present:', !!signature)
-
-  // Handle empty payload (for testing)
   if (!body || body.trim() === '') {
-    console.log('Empty webhook payload received - likely a test request')
     return NextResponse.json(
       { error: 'No webhook payload provided' },
       { status: 400 }
     )
   }
 
-  // Handle missing signature
   if (!signature) {
-    console.log('Missing Stripe signature header')
     return NextResponse.json(
       { error: 'Missing Stripe signature' },
       { status: 400 }

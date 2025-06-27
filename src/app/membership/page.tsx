@@ -43,16 +43,6 @@ export default function MembershipPage() {
   const { showToast } = useToast()
   const { user, syncAuthSession } = useAuth()
 
-  // Debug: Log user state in development mode only
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('User state:', {
-        hasUser: !!user,
-        subscriptionTier: user?.subscriptionTier,
-      })
-    }
-  }, [user])
-
   // Development mode: Create mock user for testing when no auth
   const getEffectiveUser = () => {
     if (user) return user
@@ -143,7 +133,6 @@ export default function MembershipPage() {
             }
           }
         } catch (sessionError) {
-          console.warn('Session check failed:', sessionError)
           showToast(
             'Unable to validate session. Please try refreshing the page.',
             'warning',
@@ -151,24 +140,6 @@ export default function MembershipPage() {
           )
           setLoading(null)
           return
-        }
-      }
-
-      // Debug: Send client session info to server for comparison (only for non-fallback methods)
-      if (method !== 'stripe' && method !== 'paypal') {
-        try {
-          await fetch('/api/debug/client-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              hasUser: !!effectiveUser,
-              userId: effectiveUser?.id,
-              userEmail: effectiveUser?.email,
-            }),
-          })
-        } catch (debugError) {
-          console.warn('Debug call failed:', debugError)
         }
       }
 
@@ -307,10 +278,8 @@ export default function MembershipPage() {
 
           if (!cryptoResponse.ok) {
             if (cryptoResponse.status === 401) {
-              // Enhanced error handling for Crypto
               try {
                 const errorData = await cryptoResponse.json()
-                console.warn('Crypto API authentication failed:', errorData)
 
                 if (user?.id) {
                   showToast(

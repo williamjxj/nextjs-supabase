@@ -70,6 +70,30 @@ export default function AuthDebugPage() {
     }
   }
 
+  const testGitHubOAuth = async () => {
+    try {
+      console.log('Testing GitHub OAuth...')
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) {
+        console.error('GitHub OAuth test failed:', error)
+        alert(`GitHub OAuth test failed: ${error.message}`)
+      } else {
+        console.log('GitHub OAuth test initiated:', data)
+      }
+    } catch (error) {
+      console.error('GitHub OAuth test error:', error)
+      alert(
+        `GitHub OAuth test error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
   if (loading) {
     return <div className='p-8'>Loading auth configuration...</div>
   }
@@ -105,6 +129,13 @@ export default function AuthDebugPage() {
             className='bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded'
           >
             Test Google OAuth
+          </button>
+
+          <button
+            onClick={testGitHubOAuth}
+            className='bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded'
+          >
+            Test GitHub OAuth
           </button>
 
           <p className='text-sm text-gray-600'>

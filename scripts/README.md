@@ -81,12 +81,17 @@ Seed subscription plans in the database.
 
 ## Environment Variables
 
-All scripts automatically load environment variables from `.env.local`:
+All scripts automatically load environment variables from the project's environment management system. See `docs/environment-management.md` for details on the new environment system.
 
+Key variables used by scripts:
 - `DATABASE_URL` - PostgreSQL connection string
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase API URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for API access
 - `SUPABASE_S3_STORAGE_URL` - S3 storage URL
+
+## Environment Management
+
+The project now uses `dotenv-cli` for environment management instead of custom scripts. The old `env-local.js` and `env-cloud.js` scripts have been removed in favor of the new system.
 
 ## Safety Notes
 

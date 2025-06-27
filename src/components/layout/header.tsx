@@ -15,15 +15,6 @@ export const Header = () => {
   const showUserInfo = mounted && !loading && user
   const showLoading = !mounted || loading
 
-  console.log('🔍 Header display:', {
-    mounted,
-    loading,
-    user: !!user,
-    showAuthButtons,
-    showUserInfo,
-    showLoading,
-  })
-
   return (
     <header className='sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100'>
       <div className='container mx-auto px-6 h-16 flex items-center justify-between'>

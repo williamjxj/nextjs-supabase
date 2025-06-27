@@ -51,19 +51,16 @@ function PayPalCheckoutPage() {
         }
       })
       .catch(err => {
-        console.error('PayPal createOrder error:', err)
-        // If the server provided a redirect URL, use it
         const redirectUrl =
           err.redirectUrl ||
           `/gallery?paypal_error=${encodeURIComponent(err.message)}`
 
-        // Show error message and redirect after a delay
         alert(`Error creating PayPal order: ${err.message}`)
         setTimeout(() => {
           window.location.href = redirectUrl
         }, 2000)
 
-        throw err // Re-throw to be caught by PayPalButtons
+        throw err
       })
   }
 

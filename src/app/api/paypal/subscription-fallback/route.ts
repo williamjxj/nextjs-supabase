@@ -346,12 +346,7 @@ export async function POST(request: NextRequest) {
       billingInterval,
     })
   } catch (error) {
-    console.error('💥 Error creating PayPal subscription (fallback):', error)
-
     if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '🔧 Development mode: Critical error, returning mock response'
-      )
       return NextResponse.json({
         approvalUrl: `${request.nextUrl.origin}/account?success=true&payment=paypal&mock=true`,
         message: 'PayPal error - using development mock',

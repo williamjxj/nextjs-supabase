@@ -62,14 +62,16 @@ export function createErrorResponse(
   error: ApplicationError | Error,
   request?: Request
 ): NextResponse {
-  // Log error for debugging
-  console.error('API Error:', {
-    message: error.message,
-    stack: error.stack,
-    url: request?.url,
-    method: request?.method,
-    timestamp: new Date().toISOString(),
-  })
+  // Log error for debugging in development only
+  if (process.env.NODE_ENV === 'development') {
+    console.error('API Error:', {
+      message: error.message,
+      stack: error.stack,
+      url: request?.url,
+      method: request?.method,
+      timestamp: new Date().toISOString(),
+    })
+  }
 
   if (error instanceof ApplicationError) {
     return NextResponse.json(
@@ -114,7 +116,9 @@ export function withErrorHandling<T extends any[], R>(
         return createErrorResponse(error, args[0] as Request)
       }
 
-      console.error('Unhandled API error:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Unhandled API error:', error)
+      }
       return createErrorResponse(
         new ApplicationError('Internal server error'),
         args[0] as Request
