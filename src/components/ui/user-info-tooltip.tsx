@@ -13,6 +13,11 @@ interface UserInfoData {
   subscriptionInfo: string
   cookieInfo: string
   jwtClaims: any
+  supabaseInfo: {
+    url: string
+    environment: string
+    isLocal: boolean
+  }
 }
 
 interface UserInfoTooltipProps {
@@ -67,6 +72,22 @@ export const UserInfoTooltip = ({
           ? `${document.cookie.split(';').length} cookies set`
           : 'No accessible cookies'
 
+        // Get Supabase environment info
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'Unknown'
+        const isLocal =
+          supabaseUrl.includes('127.0.0.1') || supabaseUrl.includes('localhost')
+        const environment = isLocal
+          ? 'Local Docker'
+          : supabaseUrl.includes('supabase.co')
+            ? 'Cloud Supabase'
+            : 'Custom'
+
+        const supabaseInfo = {
+          url: supabaseUrl,
+          environment,
+          isLocal,
+        }
+
         setUserInfo({
           user,
           session,
@@ -74,9 +95,10 @@ export const UserInfoTooltip = ({
           subscriptionInfo,
           cookieInfo,
           jwtClaims,
+          supabaseInfo,
         })
       } catch (error) {
-        console.error('Error fetching user info:', error)
+        // Error fetching user info - continue silently
       }
     }
 
@@ -98,6 +120,31 @@ export const UserInfoTooltip = ({
         <h3 className='font-semibold text-base text-white dark:text-gray-50'>
           Account Information
         </h3>
+      </div>
+
+      {/* Supabase Environment Info - Prominent Display */}
+      <div
+        className={`p-3 rounded-lg border-2 ${
+          userInfo.supabaseInfo.isLocal
+            ? 'bg-blue-900/30 border-blue-400/50'
+            : 'bg-green-900/30 border-green-400/50'
+        }`}
+      >
+        <div className='flex items-center justify-between'>
+          <span className='font-semibold text-white'>🗄️ Database:</span>
+          <span
+            className={`font-bold px-2 py-1 rounded text-xs ${
+              userInfo.supabaseInfo.isLocal
+                ? 'bg-blue-500 text-white'
+                : 'bg-green-500 text-white'
+            }`}
+          >
+            {userInfo.supabaseInfo.environment}
+          </span>
+        </div>
+        <div className='text-xs text-gray-300 mt-1 font-mono break-all'>
+          {userInfo.supabaseInfo.url}
+        </div>
       </div>
 
       <div className='space-y-3 text-sm'>

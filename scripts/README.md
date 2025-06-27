@@ -84,6 +84,7 @@ Seed subscription plans in the database.
 All scripts automatically load environment variables from the project's environment management system. See `docs/environment-management.md` for details on the new environment system.
 
 Key variables used by scripts:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase API URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for API access

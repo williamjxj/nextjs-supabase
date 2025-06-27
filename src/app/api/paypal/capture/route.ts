@@ -160,13 +160,13 @@ export async function POST(request: NextRequest) {
             })
 
           if (insertError) {
-            console.error('Failed to save purchase to database:', insertError)
+            // Failed to save purchase to database - continue
           } else {
             // Purchase saved successfully
           }
         }
       } catch (dbError) {
-        console.error('Error saving purchase to database:', dbError)
+        // Error saving purchase to database - continue
       }
     }
 

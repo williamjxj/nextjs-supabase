@@ -107,7 +107,6 @@ export async function createUserSubscription(
     .single()
 
   if (error) {
-    console.error('Error creating subscription:', error)
     return null
   }
 

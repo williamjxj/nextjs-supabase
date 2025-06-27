@@ -28,8 +28,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Environment variables
-# Commit: .env, .env.production, .env.example
-# Never commit: .env.local (local Docker Supabase overrides)
+# Commit: .env (cloud default), .env.production, .env.example
+# Never commit: .env.docker (local Docker Supabase overrides)
+.env.docker
+.env.docker.*
 .env.local
 .env.local.*
 

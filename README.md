@@ -73,9 +73,13 @@ A modern, subscription-based image gallery application built with Next.js, Supab
 
 6. **Start the development server**
 
-   ```bash
-   npm run dev
-   ```
+```bash
+# Just use the default .env file
+$ npm run dev
+
+# Use .env.local for local Docker Supabase
+$ npm run dev:local
+```
 
 7. **Open the application**
    ```bash

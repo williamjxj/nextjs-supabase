@@ -198,8 +198,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         e.key === 'supabase.auth.token' ||
         e.key?.startsWith('supabase.auth')
       ) {
-        console.log('🔍 Storage auth change detected, refreshing session...')
-
         // Small delay to ensure the storage is fully updated
         setTimeout(async () => {
           try {
@@ -214,7 +212,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
               if (hasSession && !hasCurrentUser) {
                 // User logged in from another tab
-                console.log('🔍 User login detected from another tab')
                 enrichUserWithSubscription(session.user).then(enrichedUser => {
                   setUser(enrichedUser)
                   setLoading(false)
@@ -222,7 +219,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 return currentUser // Return current state while enrichment is happening
               } else if (!hasSession && hasCurrentUser) {
                 // User logged out from another tab
-                console.log('🔍 User logout detected from another tab')
                 setLoading(false)
                 return null
               }
@@ -298,8 +294,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Force a session refresh to ensure cross-tab sync
         await supabase.auth.refreshSession()
-
-        console.log('🔍 Sign in completed, session should sync across tabs')
       }
 
       // Additional delayed refresh for cross-tab consistency
@@ -307,7 +301,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           await refreshAuthState()
         } catch (error) {
-          console.warn('🔍 Delayed auth refresh failed:', error)
+          // Delayed auth refresh failed - continue silently
         }
       }, 500)
     } catch (error) {
