@@ -30,14 +30,6 @@ export const ensureUserProfile = async (user: AuthUser): Promise<void> => {
       user.user_metadata?.avatar_url || user.user_metadata?.picture || ''
     const provider = user.app_metadata?.provider || 'email'
 
-    console.log('🔧 Creating profile for user:', {
-      id: user.id,
-      email: user.email,
-      fullName,
-      provider,
-      hasAvatar: !!avatarUrl,
-    })
-
     // Create profile manually
     const { error } = await supabase.from('profiles').insert({
       id: user.id,
@@ -48,10 +40,7 @@ export const ensureUserProfile = async (user: AuthUser): Promise<void> => {
     })
 
     if (error) {
-      console.error('❌ Failed to create profile:', error)
       // Don't throw error - let the user continue with auth
-    } else {
-      console.log('✅ Profile created successfully for user:', user.id)
     }
   } catch (error) {
     console.error('❌ Error in ensureUserProfile:', error)
@@ -59,50 +48,20 @@ export const ensureUserProfile = async (user: AuthUser): Promise<void> => {
   }
 }
 
-// Test Supabase connection
-export const testConnection = async () => {
-  try {
-    console.log('🔗 Testing Supabase connection...')
-    const { data } = await supabase.auth.getSession()
-    console.log('✅ Connection test successful:', {
-      hasSession: !!data.session,
-    })
-    return true
-  } catch (error) {
-    console.error('❌ Connection test failed:', error)
-    return false
-  }
-}
-
 export const signIn = async (email: string, password: string) => {
-  try {
-    console.log('🔐 Attempting sign in with:', {
-      email,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    })
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+  if (error) throw error
 
-    if (error) {
-      console.error('❌ Supabase auth error:', error)
-      throw error
-    }
-
-    console.log('✅ Sign in successful:', { userId: data.user?.id })
-
-    // Ensure profile exists after sign in
-    if (data.user) {
-      await ensureUserProfile(data.user as AuthUser)
-    }
-
-    return data
-  } catch (error) {
-    console.error('💥 Sign in failed:', error)
-    throw error
+  // Ensure profile exists after sign in
+  if (data.user) {
+    await ensureUserProfile(data.user as AuthUser)
   }
+
+  return data
 }
 
 export const signUp = async (
@@ -110,36 +69,24 @@ export const signUp = async (
   password: string,
   fullName?: string
 ) => {
-  try {
-    console.log('📝 Attempting sign up with:', { email, fullName })
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: fullName,
       },
-    })
+    },
+  })
 
-    if (error) {
-      console.error('❌ Supabase signup error:', error)
-      throw error
-    }
+  if (error) throw error
 
-    console.log('✅ Sign up successful:', { userId: data.user?.id })
-
-    // Ensure profile exists after sign up
-    if (data.user) {
-      await ensureUserProfile(data.user as AuthUser)
-    }
-
-    return data
-  } catch (error) {
-    console.error('💥 Sign up failed:', error)
-    throw error
+  // Ensure profile exists after sign up
+  if (data.user) {
+    await ensureUserProfile(data.user as AuthUser)
   }
+
+  return data
 }
 
 export const signOut = async () => {
