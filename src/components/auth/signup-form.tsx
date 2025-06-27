@@ -14,8 +14,7 @@ import {
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { SignupFormData } from '@/types/auth'
-import { Chrome, Facebook } from 'lucide-react' // Assuming lucide-react for icons
-import { SocialAuthSection } from './social-auth'
+// Removed social auth imports - social login only available on signin page
 
 interface SignupFormProps {
   onSuccess?: () => void
@@ -35,7 +34,7 @@ export const SignupForm = ({
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
-  const { signUp, signInWithSocial } = useAuth() // Updated to include signInWithSocial
+  const { signUp } = useAuth() // Only email signup on signup page
   const { addToast } = useToast()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +198,7 @@ export const SignupForm = ({
           </Button>
         </form>
 
-        <SocialAuthSection disabled={isLoading} showDivider={true} />
+        {/* Social auth removed from signup - available only on signin page */}
 
         <div className='mt-4 text-center text-sm'>
           <span className='text-muted-foreground'>

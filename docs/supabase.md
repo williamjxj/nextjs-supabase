@@ -11,9 +11,18 @@
 
 Supabase is a cloud service that provides a full stack of tools for building web applications, including authentication, storage, and databases.
 
-## 🔐 Auth: Where Login/Signup Info is Stored in Supabase
+## 🔐 Auth: Authentication Flow and Data Storage
+
+### Authentication Methods:
+
+1. **Email/Password Signup**: Available on `/signup` page (email only)
+2. **Social Login**: Available on `/login` page (Google, GitHub, Facebook)
+3. **Email/Password Login**: Available on `/login` page
+
+### Data Storage:
 
 User authentication information is stored in Supabase's built-in authentication system: `auth.users`
+Profile information is automatically created in `public.profiles` via database trigger.
 
 ## 🗄️ Database Tables
 
@@ -24,11 +33,27 @@ User authentication information is stored in Supabase's built-in authentication 
 - **Key Fields**:
   - `id` (UUID) - Primary key, referenced by other tables
   - `email` - User's email address
-  - `encrypted_password` - Securely hashed password
+  - `encrypted_password` - Securely hashed password (email auth only)
   - `email_confirmed_at` - Email verification timestamp
   - `created_at`, `updated_at` - Account timestamps
-  - `raw_user_meta_data` - Additional user metadata
+  - `raw_user_meta_data` - User profile data (name, avatar_url)
+  - `raw_app_meta_data` - Auth provider info (email, google, github)
 - **RLS**: Managed by Supabase auth system
+- **Trigger**: Automatically creates profile in `public.profiles` on user creation
+
+### 2️⃣ **`public.profiles`** (Custom Table)
+
+- **Purpose**: Extended user profile information
+- **Schema**: Custom table with RLS enabled
+- **Key Fields**:
+  - `id` (UUID) - Foreign key to `auth.users.id`
+  - `email` - User's email (synced from auth.users)
+  - `full_name` - User's display name
+  - `avatar_url` - Profile picture URL
+  - `provider` - Authentication provider (email, google, github)
+  - `created_at`, `updated_at` - Profile timestamps
+- **Creation**: Automatically created by `handle_new_user()` trigger
+- **RLS**: Users can only access their own profile
 
 ### 2️⃣ **`public.images`** (Custom Table)
 

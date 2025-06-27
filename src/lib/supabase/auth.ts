@@ -3,14 +3,44 @@ import { AuthUser } from '@/types/auth'
 import { SubscriptionType } from '@/lib/stripe'
 import { Provider } from '@supabase/supabase-js'
 
-export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+// Test Supabase connection
+export const testConnection = async () => {
+  try {
+    console.log('🔗 Testing Supabase connection...')
+    const { data } = await supabase.auth.getSession()
+    console.log('✅ Connection test successful:', {
+      hasSession: !!data.session,
+    })
+    return true
+  } catch (error) {
+    console.error('❌ Connection test failed:', error)
+    return false
+  }
+}
 
-  if (error) throw error
-  return data
+export const signIn = async (email: string, password: string) => {
+  try {
+    console.log('🔐 Attempting sign in with:', {
+      email,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    })
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      console.error('❌ Supabase auth error:', error)
+      throw error
+    }
+
+    console.log('✅ Sign in successful:', { userId: data.user?.id })
+    return data
+  } catch (error) {
+    console.error('💥 Sign in failed:', error)
+    throw error
+  }
 }
 
 export const signUp = async (
@@ -18,18 +48,30 @@ export const signUp = async (
   password: string,
   fullName?: string
 ) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-      },
-    },
-  })
+  try {
+    console.log('📝 Attempting sign up with:', { email, fullName })
 
-  if (error) throw error
-  return data
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    })
+
+    if (error) {
+      console.error('❌ Supabase signup error:', error)
+      throw error
+    }
+
+    console.log('✅ Sign up successful:', { userId: data.user?.id })
+    return data
+  } catch (error) {
+    console.error('💥 Sign up failed:', error)
+    throw error
+  }
 }
 
 export const signOut = async () => {
