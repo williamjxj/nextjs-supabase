@@ -95,14 +95,10 @@ export async function POST(request: NextRequest) {
           // Implement fallback authentication similar to Stripe checkout
           const {
             data: { user },
-            error: authError,
           } = await supabase.auth.getUser()
-
-          // PayPal capture auth check completed
 
           // Strategy: Use server-side user if available, otherwise use client-provided user ID
           let userId = user?.id
-          let authMethod = 'server-auth'
 
           if (!user && clientUserId) {
             // Fallback: Verify client-provided user ID exists by checking profiles table
@@ -114,20 +110,10 @@ export async function POST(request: NextRequest) {
 
             if (!userCheckError && userProfile) {
               userId = clientUserId
-              authMethod = 'client-trusted'
-              // Using client-provided user ID
             } else {
               // If no profile, still trust client auth (user might be new)
               userId = clientUserId
-              authMethod = 'client-fallback'
-              // Trusting client auth for new user
             }
-          } else if (!user && !clientUserId) {
-            console.error('PayPal capture: No user found in session or client')
-            // Don't fail the transaction, but log the issue
-            console.warn(
-              '⚠️ PayPal capture completing without user association'
-            )
           }
 
           // Authentication successful

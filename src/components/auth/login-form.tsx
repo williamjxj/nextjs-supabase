@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,6 @@ import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { LoginFormData } from '@/types/auth'
 import { SocialAuthSection } from './social-auth'
-import { testConnection } from '@/lib/supabase/auth'
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -34,7 +33,7 @@ export const LoginForm = ({
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn, signInWithSocial } = useAuth()
+  const { signIn } = useAuth()
   const { addToast } = useToast()
 
   // Handle authentication errors from URL params
@@ -76,14 +75,6 @@ export const LoginForm = ({
     setIsLoading(true)
 
     try {
-      // Test connection first
-      const connectionOk = await testConnection()
-      if (!connectionOk) {
-        throw new Error(
-          'Unable to connect to authentication service. Please check your internet connection and try again.'
-        )
-      }
-
       await signIn(formData.email, formData.password)
       addToast({
         type: 'success',

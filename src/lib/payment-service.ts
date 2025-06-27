@@ -3,7 +3,6 @@ import {
   SubscriptionPlanType,
   SUBSCRIPTION_PLANS,
 } from '@/lib/subscription-config'
-import { createUserSubscription } from '@/lib/supabase/subscriptions-simplified'
 
 export interface PaymentResult {
   success: boolean
@@ -87,19 +86,13 @@ export class PaymentService {
         .single()
 
       if (error) {
-        console.error('Error creating subscription:', error)
         return { success: false, error: 'Failed to create subscription record' }
       }
-
-      console.log(
-        `✅ Subscription created: ${subscription.id} for user ${data.userId}`
-      )
       return {
         success: true,
         subscriptionId: subscription.id,
       }
     } catch (error) {
-      console.error('Error in createSubscription:', error)
       return { success: false, error: 'Internal server error' }
     }
   }
@@ -135,7 +128,6 @@ export class PaymentService {
         .single()
 
       if (error) {
-        console.error('Error creating purchase:', error)
         return { success: false, error: 'Failed to create purchase record' }
       }
 
@@ -147,7 +139,6 @@ export class PaymentService {
         purchaseId: purchase.id,
       }
     } catch (error) {
-      console.error('Error in createPurchase:', error)
       return { success: false, error: 'Internal server error' }
     }
   }
@@ -186,7 +177,6 @@ export class PaymentService {
       const { error } = await query
 
       if (error) {
-        console.error('Error updating subscription status:', error)
         return { success: false, error: 'Failed to update subscription status' }
       }
 
@@ -195,7 +185,6 @@ export class PaymentService {
       )
       return { success: true }
     } catch (error) {
-      console.error('Error in updateSubscriptionStatus:', error)
       return { success: false, error: 'Internal server error' }
     }
   }

@@ -14,7 +14,6 @@ export const ensureUserProfile = async (user: AuthUser): Promise<void> => {
       .single()
 
     if (existingProfile) {
-      console.log('✅ Profile already exists for user:', user.id)
       return
     }
 
@@ -43,7 +42,6 @@ export const ensureUserProfile = async (user: AuthUser): Promise<void> => {
       // Don't throw error - let the user continue with auth
     }
   } catch (error) {
-    console.error('❌ Error in ensureUserProfile:', error)
     // Don't throw error - let the user continue with auth
   }
 }
@@ -91,65 +89,17 @@ export const signUp = async (
 
 export const signOut = async () => {
   try {
-    // Attempt the signOut with timeout for local dev
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(
-        () => reject(new Error('Signout timeout after 2 seconds')),
-        2000
-      )
-    })
-
-    const signOutPromise = supabase.auth.signOut()
-
-    try {
-      const { error } = (await Promise.race([
-        signOutPromise,
-        timeoutPromise,
-      ])) as any
-
-      if (error) {
-        throw error
-      }
-    } catch (timeoutError) {
-      // If API times out, manually clear session
-      if (typeof window !== 'undefined') {
-        const keys = Object.keys(localStorage).filter(
-          key => key.startsWith('sb-') || key.includes('supabase')
-        )
-        keys.forEach(key => localStorage.removeItem(key))
-
-        // Force trigger auth state change by refreshing session
-        try {
-          // Add timeout to getSession as well
-          const getSessionPromise = supabase.auth.getSession()
-          const sessionTimeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('getSession timeout')), 1000)
-          })
-
-          const { data: session } = (await Promise.race([
-            getSessionPromise,
-            sessionTimeoutPromise,
-          ])) as any
-
-          // If getSession still returns a session, try refreshSession
-          if (session) {
-            const refreshPromise = supabase.auth.refreshSession()
-            const refreshTimeoutPromise = new Promise((_, reject) => {
-              setTimeout(
-                () => reject(new Error('refreshSession timeout')),
-                1000
-              )
-            })
-            await Promise.race([refreshPromise, refreshTimeoutPromise])
-          }
-        } catch (refreshError) {
-          // If all else fails, rely on fallback mechanisms
-        }
-      }
-      // Don't throw timeout error since we cleared local session
-    }
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
   } catch (error) {
-    throw error
+    // If signOut fails, manually clear local storage
+    if (typeof window !== 'undefined') {
+      const keys = Object.keys(localStorage).filter(
+        key => key.startsWith('sb-') || key.includes('supabase')
+      )
+      keys.forEach(key => localStorage.removeItem(key))
+    }
+    // Don't throw error - allow signout to complete
   }
 }
 

@@ -32,8 +32,8 @@ export class ErrorBoundary extends React.Component<
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo)
+  componentDidCatch() {
+    // Error caught by boundary - could log to external service in production
   }
 
   resetError = () => {

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient()
 
@@ -14,19 +14,12 @@ export async function GET(request: NextRequest) {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
-    console.log('🔑 User result:', {
-      hasUser: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-      authError: authError?.message,
-    })
 
     // Use session data if available, fallback to user data
     const finalUser = session?.user || user
     const finalError = sessionError || authError
 
     if (finalError) {
-      console.error('❌ Authentication failed:', finalError.message)
       return NextResponse.json(
         { error: 'Authentication failed', details: finalError.message },
         { status: 401 }

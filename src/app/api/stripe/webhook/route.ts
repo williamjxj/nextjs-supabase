@@ -32,7 +32,6 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err) {
-    console.log('Webhook signature verification failed:', err)
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
       { status: 400 }
@@ -58,12 +57,11 @@ export async function POST(req: Request) {
         await handlePaymentFailed(event.data.object as any)
         break
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+      // Unhandled event type
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook error:', error)
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
@@ -75,10 +73,6 @@ async function handleSubscriptionChange(subscription: any) {
   const customerId = subscription.customer
   const subscriptionId = subscription.id
   const status = subscription.status
-
-  console.log(
-    `Processing subscription ${subscriptionId} for customer ${customerId}`
-  )
 
   // Try to find user_id from the subscription metadata first
   let userId = subscription.metadata?.userId
@@ -93,12 +87,11 @@ async function handleSubscriptionChange(subscription: any) {
         userId = (customer as any).metadata?.supabaseUUID
       }
     } catch (error) {
-      console.error('Error retrieving customer:', error)
+      // Error retrieving customer
     }
   }
 
   if (!userId) {
-    console.error(`No user ID found for subscription ${subscriptionId}`)
     return
   }
 
@@ -120,14 +113,6 @@ async function handleSubscriptionChange(subscription: any) {
   planType = planType || 'standard'
   billingInterval = billingInterval || 'monthly'
 
-  console.log('💾 Processing subscription with details:', {
-    userId,
-    planType,
-    billingInterval,
-    subscriptionId,
-    status,
-  })
-
   // Use unified payment service for subscription creation/update
   if (status === 'active') {
     const result = await paymentService.createSubscription({
@@ -140,10 +125,6 @@ async function handleSubscriptionChange(subscription: any) {
     })
 
     if (!result.success) {
-      console.error(
-        '❌ Error creating subscription via payment service:',
-        result.error
-      )
       throw new Error(result.error)
     }
   } else {
@@ -155,18 +136,13 @@ async function handleSubscriptionChange(subscription: any) {
     )
 
     if (!result.success) {
-      console.error('❌ Error updating subscription status:', result.error)
       throw new Error(result.error)
     }
   }
-
-  console.log('✅ Subscription successfully processed via payment service')
 }
 
 async function handleSubscriptionCancellation(subscription: any) {
   const subscriptionId = subscription.id
-
-  console.log(`Processing cancellation for subscription ${subscriptionId}`)
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -181,7 +157,6 @@ async function handleSubscriptionCancellation(subscription: any) {
     .eq('stripe_subscription_id', subscriptionId)
 
   if (error) {
-    console.error('Error cancelling subscription:', error)
     throw error
   }
 }
@@ -190,8 +165,6 @@ async function handlePaymentSucceeded(invoice: any) {
   const subscriptionId = invoice.subscription
 
   if (subscriptionId) {
-    console.log(`Payment succeeded for subscription ${subscriptionId}`)
-
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -205,7 +178,6 @@ async function handlePaymentSucceeded(invoice: any) {
       .eq('stripe_subscription_id', subscriptionId)
 
     if (error) {
-      console.error('Error updating subscription after payment:', error)
       throw error
     }
   }
@@ -215,8 +187,6 @@ async function handlePaymentFailed(invoice: any) {
   const subscriptionId = invoice.subscription
 
   if (subscriptionId) {
-    console.log(`Payment failed for subscription ${subscriptionId}`)
-
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -230,35 +200,26 @@ async function handlePaymentFailed(invoice: any) {
       .eq('stripe_subscription_id', subscriptionId)
 
     if (error) {
-      console.error('Error updating subscription after payment failure:', error)
       throw error
     }
   }
 }
 
 async function handleCheckoutSessionCompleted(session: any) {
-  console.log(`Processing checkout session completed: ${session.id}`)
-
   // Handle subscription checkout sessions
   if (session.mode === 'subscription') {
-    console.log(`Processing subscription checkout session: ${session.id}`)
-
     // Get metadata from session
     const userId = session.metadata?.userId
     const planType = session.metadata?.planType || 'standard'
     const billingInterval = session.metadata?.billingInterval || 'monthly'
 
     if (!userId) {
-      console.error(
-        `No userId in metadata for subscription session ${session.id}`
-      )
       return
     }
 
     // Get subscription details from Stripe
     const subscriptionId = session.subscription
     if (!subscriptionId) {
-      console.error(`No subscription ID found for session ${session.id}`)
       return
     }
 
@@ -278,10 +239,6 @@ async function handleCheckoutSessionCompleted(session: any) {
       // Process the subscription using the same logic as subscription updates
       await handleSubscriptionChange(subscription)
     } catch (error) {
-      console.error(
-        'Error retrieving subscription for completed checkout:',
-        error
-      )
       throw error
     }
 
@@ -290,7 +247,6 @@ async function handleCheckoutSessionCompleted(session: any) {
 
   // Handle one-time payments (image purchases) - existing logic
   if (session.mode !== 'payment') {
-    console.log(`Skipping non-payment checkout session: ${session.id}`)
     return
   }
 
@@ -300,7 +256,6 @@ async function handleCheckoutSessionCompleted(session: any) {
   const userId = session.metadata?.userId
 
   if (!imageId) {
-    console.error(`No imageId in metadata for session ${session.id}`)
     return
   }
 
@@ -316,7 +271,6 @@ async function handleCheckoutSessionCompleted(session: any) {
     .single()
 
   if (existingPurchase) {
-    console.log(`Purchase already exists for session ${session.id}`)
     return
   }
 
@@ -332,9 +286,6 @@ async function handleCheckoutSessionCompleted(session: any) {
   })
 
   if (!result.success) {
-    console.error('Error creating purchase via payment service:', result.error)
     throw new Error(result.error)
   }
-
-  console.log(`Purchase record created successfully for session ${session.id}`)
 }

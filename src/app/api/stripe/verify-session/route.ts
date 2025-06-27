@@ -11,10 +11,6 @@ export async function POST(request: NextRequest) {
       // Test the client with a simple query
       await supabaseAdmin.from('profiles').select('count').limit(1)
     } catch (serviceRoleError) {
-      console.warn(
-        'Service role client failed, using regular client:',
-        serviceRoleError
-      )
       // Fallback to regular client (this will have RLS restrictions)
       const { createClient } = await import('@/lib/supabase/server')
       supabaseAdmin = await createClient()

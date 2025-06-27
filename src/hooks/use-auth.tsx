@@ -395,10 +395,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null)
       }
     } catch (error) {
-      // Only log authentication errors, not subscription errors
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-      console.warn('Manual refresh error:', errorMessage)
       // On error, clear the state to ensure consistency
       setUser(null)
     } finally {
