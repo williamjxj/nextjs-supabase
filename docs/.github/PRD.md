@@ -4,36 +4,77 @@
 
 ### 1️⃣ Product Overview
 
-**Product Name:** NextJS Supabase Gallery  
-**Version:** 1.0  
-**Date:** May 28, 2025
+**Product Name:** NextJS Supabase Gallery
+**Version:** 2.0
+**Date:** December 2024
 
-A modern web application for image management built with Next.js and Supabase, providing users with seamless image upload, storage, and gallery functionality.
+A modern web application for image management built with Next.js and Supabase, featuring comprehensive subscription management, dual payment processing (Stripe/PayPal), and advanced gallery functionality with purchase/subscription-based access control.
 
 ### 2️⃣ Objectives
 
-- Create a simple, intuitive image gallery application
-- Demonstrate integration between Next.js and Supabase
-- Provide secure user authentication and data management
-- Deploy a production-ready application
+- Create a comprehensive image gallery with subscription-based access
+- Implement dual payment processing (Stripe and PayPal)
+- Provide secure user authentication with social login options
+- Enable individual image purchases and subscription plans
+- Demonstrate advanced Next.js and Supabase integration
+- Deploy a production-ready SaaS application
 
 ### 3️⃣ Target Users
 
-- Developers learning Next.js and Supabase integration
-- Users needing a simple image storage and gallery solution
-- Portfolio showcase requirements
+**Primary Users:**
+- Professional photographers selling digital content
+- Content creators monetizing their image libraries
+- Stock photography platforms and agencies
+- Digital artists and designers
+
+**Secondary Users:**
+- Photography enthusiasts showcasing portfolios
+- Small businesses with premium content offerings
+- Educational platforms with subscription-based resources
+- Developers learning SaaS and payment integration
 
 ### 4️⃣ Core Features
 
-#### 🔹 4.1 Image Upload (Priority: High)
+#### 🔹 4.1 Authentication & User Management (Priority: High)
 
-- **Description:** Users can upload images to Supabase storage
+- **Description:** Comprehensive user authentication with multiple providers
+- **Acceptance Criteria:**
+  - Email/password authentication
+  - Social login (Google, GitHub, Facebook)
+  - User profile management
+  - Secure session handling
+  - Cross-tab authentication sync
+
+#### 🔹 4.2 Image Upload & Management (Priority: High)
+
+- **Description:** Users can upload and manage images with metadata
 - **Acceptance Criteria:**
   - Support common image formats (JPG, PNG, GIF, WEBP)
   - Display upload progress indicator
   - Show thumbnail preview upon successful upload
   - File size validation (max 10MB)
+  - Image metadata extraction (dimensions, file size)
   - Error handling for failed uploads
+
+#### 🔹 4.3 Subscription Management (Priority: High)
+
+- **Description:** Tiered subscription plans with different access levels
+- **Acceptance Criteria:**
+  - Multiple subscription tiers (Standard, Premium, Commercial)
+  - Monthly and yearly billing options
+  - Subscription status tracking
+  - Access control based on subscription level
+  - Subscription cancellation and reactivation
+
+#### 🔹 4.4 Payment Processing (Priority: High)
+
+- **Description:** Dual payment processing for subscriptions and individual purchases
+- **Acceptance Criteria:**
+  - Stripe integration for subscriptions and one-time payments
+  - PayPal integration for subscriptions and one-time payments
+  - Secure payment handling with webhooks
+  - Purchase history and receipts
+  - Failed payment handling and retry logic
 
 #### 4.2 Data Persistence (Priority: High)
 

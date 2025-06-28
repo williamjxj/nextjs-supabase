@@ -5,6 +5,13 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
 
+// Utility function to clean up PayPal localStorage
+const cleanupPayPalStorage = () => {
+  localStorage.removeItem('paypal_plan_type')
+  localStorage.removeItem('paypal_billing_interval')
+  localStorage.removeItem('paypal_user_id')
+}
+
 export default function PayPalSubscriptionHandler() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -37,10 +44,8 @@ export default function PayPalSubscriptionHandler() {
           'Development Mode'
         )
 
-        // Clean up any localStorage
-        localStorage.removeItem('paypal_plan_type')
-        localStorage.removeItem('paypal_billing_interval')
-        localStorage.removeItem('paypal_user_id')
+        // Clean up localStorage
+        cleanupPayPalStorage()
 
         // Redirect to subscription page after a short delay
         setTimeout(() => {
@@ -113,9 +118,7 @@ export default function PayPalSubscriptionHandler() {
         )
 
         // Clean up localStorage
-        localStorage.removeItem('paypal_plan_type')
-        localStorage.removeItem('paypal_billing_interval')
-        localStorage.removeItem('paypal_user_id')
+        cleanupPayPalStorage()
 
         // Redirect to subscription page after a short delay
         setTimeout(() => {

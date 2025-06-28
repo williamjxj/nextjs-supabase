@@ -255,11 +255,4 @@ export function validateRequired(
   }
 }
 
-/**
- * Rate limiting error
- */
-export class RateLimitError extends ApplicationError {
-  constructor(message: string = 'Rate limit exceeded') {
-    super(message, 429, 'RATE_LIMIT_EXCEEDED')
-  }
-}
+// Rate limiting can be handled with ApplicationError directly if needed

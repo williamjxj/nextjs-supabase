@@ -74,7 +74,6 @@ export default function StripeSubscriptionHandler() {
           router.push('/account')
         }, 2000)
       } catch (error) {
-        console.error('❌ Stripe subscription verification error:', error)
         showToast(
           'Payment received, but verification failed. Please refresh the page.',
           'warning',

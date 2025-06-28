@@ -20,8 +20,7 @@ export const API_ROUTES = {
 
 export const STORAGE = {
   BUCKET_NAME: 'images',
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  // File validation constants are handled in file-validation.ts using env vars
 } as const
 
 export const UI = {

@@ -1,33 +1,38 @@
-# 🔧 Stripe Webhook Setup Guide
+# 🔗 Production Webhook Setup Guide
 
-## 🔍 Current Issue Analysis
+## 🎯 **Webhook Configuration for Production**
 
-Your subscription checkout is completing successfully, but the subscription record isn't being created in the database because **Stripe webhooks are not reaching your local development server**.
+This guide covers setting up webhooks for both Stripe and PayPal in production environments to handle subscription events and payment processing.
 
-### Logs Show:
+## 📋 **Prerequisites**
 
-- ✅ Stripe checkout session created successfully
-- ✅ User redirected to success page
-- ❌ No webhook events received
-- ❌ No subscription record created in database
+- Production Stripe account with API keys
+- Production PayPal business account (optional)
+- Deployed application with HTTPS endpoints
+- Database with proper subscription tables
 
-## 🛠️ Solution Options
+## 🔧 **Stripe Webhook Setup**
 
-### Option 1: Use Stripe CLI (Recommended for Development)
+### Step 1: Create Webhook Endpoint in Stripe Dashboard
 
-#### Step 1: Install Stripe CLI
+1. **Login to Stripe Dashboard**
+   - Go to [https://dashboard.stripe.com](https://dashboard.stripe.com)
+   - Navigate to **Developers** → **Webhooks**
 
-```bash
-# macOS
-brew install stripe/stripe-cli/stripe
+2. **Add Endpoint**
+   - Click **"Add endpoint"**
+   - Enter your production URL: `https://yourdomain.com/api/stripe/webhook`
+   - Select events to listen for:
+     - `checkout.session.completed`
+     - `customer.subscription.created`
+     - `customer.subscription.updated`
+     - `customer.subscription.deleted`
+     - `invoice.payment_succeeded`
+     - `invoice.payment_failed`
 
-# Or download from: https://github.com/stripe/stripe-cli/releases
-```
-
-#### Step 2: Login to Stripe
-
-```bash
-stripe login
+3. **Get Webhook Secret**
+   - Copy the webhook signing secret (starts with `whsec_`)
+   - Add to your environment variables as `STRIPE_WEBHOOK_SECRET`
 ```
 
 #### Step 3: Forward Webhooks to Local Server

@@ -1,17 +1,20 @@
 # 🔍 Comprehensive Project Analysis & Recommendations
 
-## ✅ Test Code Cleanup Status
+## ✅ Code Cleanup Status
 
 ### Removed Test/Debug Components:
 
 - ❌ `src/app/auth-debug/page.tsx` - OAuth testing page
 - ❌ `src/app/auth-test/page.tsx` - Cross-tab auth testing page
+- ❌ All test API routes (`/api/test/*`)
+- ❌ Debug utilities and console logs
+- ❌ Redundant image card components
 
-### Remaining Test Scripts (Keep for Development):
+### Remaining Development Scripts:
 
-- ✅ `scripts/test-subscription-integration.js` - Useful for testing subscription logic
-- ✅ `scripts/test-migration-sql.js` - Useful for database migration testing
-- ✅ `scripts/test-sql-syntax.js` - Useful for SQL validation
+- ✅ `scripts/apply-subscription-migration.js` - Database migration utility
+- ✅ `scripts/query-tables.sh` - Database inspection tool
+- ✅ `scripts/get-storage.sh` - Storage bucket inspection
 
 ## 📊 Code Quality Assessment
 
