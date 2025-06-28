@@ -28,13 +28,17 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Environment variables
-# Commit: .env (cloud default), .env.production, .env.example
-# Never commit: .env.docker (local Docker Supabase overrides)
-.env.docker
-.env.docker.*
+# Never commit any .env files with secrets
+.env
+.env.*
 .env.local
 .env.local.*
+.env.production
 .env.production.*
+.env.docker
+.env.docker.*
+
+# Only commit .env.example (template without secrets)
 
 # vercel
 .vercel
