@@ -16,10 +16,12 @@ This guide covers setting up webhooks for both Stripe and PayPal in production e
 ### Step 1: Create Webhook Endpoint in Stripe Dashboard
 
 1. **Login to Stripe Dashboard**
+
    - Go to [https://dashboard.stripe.com](https://dashboard.stripe.com)
    - Navigate to **Developers** → **Webhooks**
 
 2. **Add Endpoint**
+
    - Click **"Add endpoint"**
    - Enter your production URL: `https://yourdomain.com/api/stripe/webhook`
    - Select events to listen for:
@@ -33,7 +35,8 @@ This guide covers setting up webhooks for both Stripe and PayPal in production e
 3. **Get Webhook Secret**
    - Copy the webhook signing secret (starts with `whsec_`)
    - Add to your environment variables as `STRIPE_WEBHOOK_SECRET`
-```
+
+````
 
 #### Step 3: Forward Webhooks to Local Server
 
@@ -43,7 +46,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 # This will output a webhook signing secret like:
 # whsec_1234567890abcdef...
-```
+````
 
 #### Step 4: Update Environment Variable
 

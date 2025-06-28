@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Calendar,
@@ -18,7 +18,7 @@ import PayPalSubscriptionHandler from '@/components/paypal/paypal-subscription-h
 import StripeSubscriptionHandler from '@/components/stripe/stripe-subscription-handler'
 import Link from 'next/link'
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { showToast } = useToast()
@@ -378,5 +378,21 @@ export default function SubscriptionPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function SubscriptionLoadingFallback() {
+  return (
+    <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+      <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+    </div>
+  )
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={<SubscriptionLoadingFallback />}>
+      <SubscriptionContent />
+    </Suspense>
   )
 }

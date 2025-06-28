@@ -22,12 +22,14 @@ A modern web application for image management built with Next.js and Supabase, f
 ### 3️⃣ Target Users
 
 **Primary Users:**
+
 - Professional photographers selling digital content
 - Content creators monetizing their image libraries
 - Stock photography platforms and agencies
 - Digital artists and designers
 
 **Secondary Users:**
+
 - Photography enthusiasts showcasing portfolios
 - Small businesses with premium content offerings
 - Educational platforms with subscription-based resources
