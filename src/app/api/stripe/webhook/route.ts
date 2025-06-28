@@ -9,7 +9,10 @@ export async function POST(req: Request) {
   const body = await req.text()
   const signature = (await headers()).get('stripe-signature')
 
+  console.log(`🔔 Stripe webhook received: ${req.url}`)
+
   if (!body || body.trim() === '') {
+    console.log('❌ No webhook payload provided')
     return NextResponse.json(
       { error: 'No webhook payload provided' },
       { status: 400 }
@@ -17,6 +20,7 @@ export async function POST(req: Request) {
   }
 
   if (!signature) {
+    console.log('❌ Missing Stripe signature')
     return NextResponse.json(
       { error: 'Missing Stripe signature' },
       { status: 400 }
@@ -31,7 +35,11 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
+    console.log(
+      `✅ Webhook signature verified for event: ${event.type} [${event.id}]`
+    )
   } catch (err) {
+    console.log(`❌ Webhook signature verification failed:`, err)
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
       { status: 400 }
@@ -39,6 +47,8 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.log(`🔄 Processing event: ${event.type} [${event.id}]`)
+
     switch (event.type) {
       case 'checkout.session.completed':
         await handleCheckoutSessionCompleted(event.data.object as any)
@@ -57,11 +67,16 @@ export async function POST(req: Request) {
         await handlePaymentFailed(event.data.object as any)
         break
       default:
-      // Unhandled event type
+        console.log(`⚠️ Unhandled event type: ${event.type} [${event.id}]`)
     }
 
+    console.log(`✅ Successfully processed event: ${event.type} [${event.id}]`)
     return NextResponse.json({ received: true })
   } catch (error) {
+    console.error(
+      `💥 Webhook handler failed for event ${event.type} [${event.id}]:`,
+      error
+    )
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
@@ -70,28 +85,52 @@ export async function POST(req: Request) {
 }
 
 async function handleSubscriptionChange(subscription: any) {
+  console.log(
+    `🔄 handleSubscriptionChange called for subscription: ${subscription.id}`
+  )
+
   const customerId = subscription.customer
   const subscriptionId = subscription.id
   const status = subscription.status
+
+  console.log(`📋 Subscription details:`, {
+    customerId,
+    subscriptionId,
+    status,
+    metadata: subscription.metadata,
+  })
 
   // Try to find user_id from the subscription metadata first
   let userId = subscription.metadata?.userId
   let planType = subscription.metadata?.planType
   let billingInterval = subscription.metadata?.billingInterval
 
+  console.log(`🔍 Initial metadata extraction:`, {
+    userId,
+    planType,
+    billingInterval,
+  })
+
   // If no userId in metadata, try to get it from the customer
   if (!userId) {
+    console.log(
+      `🔍 No userId in subscription metadata, checking customer metadata...`
+    )
     try {
       const customer = await stripe.customers.retrieve(customerId)
       if (customer && !customer.deleted) {
         userId = (customer as any).metadata?.supabaseUUID
+        console.log(`✅ Found userId in customer metadata: ${userId}`)
       }
     } catch (error) {
-      // Error retrieving customer
+      console.log(`❌ Error retrieving customer:`, error)
     }
   }
 
   if (!userId) {
+    console.log(
+      `❌ No userId found in subscription or customer metadata, skipping...`
+    )
     return
   }
 
@@ -115,19 +154,26 @@ async function handleSubscriptionChange(subscription: any) {
 
   // Use unified payment service for subscription creation/update
   if (status === 'active') {
-    const result = await paymentService.createSubscription({
+    console.log(`✅ Creating active subscription for user: ${userId}`)
+    const subscriptionData = {
       userId,
       userEmail: '', // We don't have email in webhook, but it's not critical
       planType: planType as any,
       billingInterval: billingInterval as any,
-      paymentProvider: 'stripe',
+      paymentProvider: 'stripe' as const,
       externalSubscriptionId: subscriptionId,
-    })
+    }
+    console.log(`📋 Subscription creation data:`, subscriptionData)
+
+    const result = await paymentService.createSubscription(subscriptionData)
 
     if (!result.success) {
+      console.log(`❌ Failed to create subscription:`, result.error)
       throw new Error(result.error)
     }
+    console.log(`✅ Successfully created subscription:`, result.subscriptionId)
   } else {
+    console.log(`🔄 Updating subscription status to: ${status}`)
     // Handle status updates (cancelled, expired, etc.)
     const result = await paymentService.updateSubscriptionStatus(
       userId,
@@ -136,8 +182,10 @@ async function handleSubscriptionChange(subscription: any) {
     )
 
     if (!result.success) {
+      console.log(`❌ Failed to update subscription status:`, result.error)
       throw new Error(result.error)
     }
+    console.log(`✅ Successfully updated subscription status`)
   }
 }
 
@@ -206,27 +254,54 @@ async function handlePaymentFailed(invoice: any) {
 }
 
 async function handleCheckoutSessionCompleted(session: any) {
+  console.log(
+    `🔄 handleCheckoutSessionCompleted called for session: ${session.id}`
+  )
+  console.log(`📋 Session details:`, {
+    mode: session.mode,
+    metadata: session.metadata,
+    subscription: session.subscription,
+  })
+
   // Handle subscription checkout sessions
   if (session.mode === 'subscription') {
+    console.log(`💳 Processing subscription checkout session`)
+
     // Get metadata from session
     const userId = session.metadata?.userId
     const planType = session.metadata?.planType || 'standard'
     const billingInterval = session.metadata?.billingInterval || 'monthly'
 
+    console.log(`🔍 Extracted session metadata:`, {
+      userId,
+      planType,
+      billingInterval,
+    })
+
     if (!userId) {
+      console.log(`❌ No userId in session metadata, skipping...`)
       return
     }
 
     // Get subscription details from Stripe
     const subscriptionId = session.subscription
     if (!subscriptionId) {
+      console.log(`❌ No subscription ID in session, skipping...`)
       return
     }
+
+    console.log(`🔍 Retrieving subscription details for: ${subscriptionId}`)
 
     try {
       const subscription = await stripe.subscriptions.retrieve(
         subscriptionId as string
       )
+
+      console.log(`✅ Retrieved subscription:`, {
+        id: subscription.id,
+        status: subscription.status,
+        metadata: subscription.metadata,
+      })
 
       // Add the metadata to the subscription for processing
       subscription.metadata = {
@@ -236,9 +311,11 @@ async function handleCheckoutSessionCompleted(session: any) {
         billingInterval,
       }
 
+      console.log(`🔄 Processing subscription with enhanced metadata`)
       // Process the subscription using the same logic as subscription updates
       await handleSubscriptionChange(subscription)
     } catch (error) {
+      console.log(`❌ Error retrieving subscription:`, error)
       throw error
     }
 

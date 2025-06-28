@@ -47,6 +47,11 @@ export class PaymentService {
     try {
       // Use service role client for webhook operations to bypass RLS
       const supabase = createServiceRoleClient()
+      console.log(
+        `🔍 Service role key being used:`,
+        process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + '...'
+      )
+
       const plan = SUBSCRIPTION_PLANS[data.planType]
       if (!plan) {
         return { success: false, error: `Invalid plan type: ${data.planType}` }
@@ -77,16 +82,98 @@ export class PaymentService {
         features: plan.features,
       }
 
-      const { data: subscription, error } = await supabase
+      console.log(
+        `🔍 Attempting to create subscription with data:`,
+        subscriptionData
+      )
+
+      // Check if user already has a subscription
+      const { data: existingSubscription } = await supabase
         .from('subscriptions')
-        .upsert(subscriptionData, {
-          onConflict: 'user_id',
-        })
-        .select()
+        .select('id')
+        .eq('user_id', data.userId)
         .single()
 
+      let subscription, error
+
+      if (existingSubscription) {
+        console.log(
+          `🔄 Updating existing subscription for user: ${data.userId}`
+        )
+        // Update existing subscription
+        const result = await supabase
+          .from('subscriptions')
+          .update(subscriptionData)
+          .eq('user_id', data.userId)
+          .select()
+          .single()
+
+        subscription = result.data
+        error = result.error
+      } else {
+        console.log(`➕ Creating new subscription for user: ${data.userId}`)
+        // Create new subscription using raw SQL to bypass RLS
+        try {
+          const { data: insertResult, error: insertError } = await supabase.rpc(
+            'create_subscription_webhook',
+            {
+              p_user_id: data.userId,
+              p_plan_type: data.planType,
+              p_price_monthly: plan.priceMonthly,
+              p_price_yearly: plan.priceYearly,
+              p_status: 'active',
+              p_billing_interval: data.billingInterval,
+              p_stripe_subscription_id: data.externalSubscriptionId,
+              p_current_period_start: subscriptionData.current_period_start,
+              p_current_period_end: subscriptionData.current_period_end,
+              p_features: JSON.stringify(plan.features),
+            }
+          )
+
+          if (insertError) {
+            console.log(
+              `⚠️ RPC function not available, trying direct insert:`,
+              insertError
+            )
+            // Fallback to direct insert
+            const result = await supabase
+              .from('subscriptions')
+              .insert(subscriptionData)
+              .select()
+              .single()
+
+            subscription = result.data
+            error = result.error
+          } else {
+            subscription = insertResult
+            error = null
+          }
+        } catch (rpcError) {
+          console.log(`⚠️ RPC approach failed, using direct insert:`, rpcError)
+          // Fallback to direct insert
+          const result = await supabase
+            .from('subscriptions')
+            .insert(subscriptionData)
+            .select()
+            .single()
+
+          subscription = result.data
+          error = result.error
+        }
+      }
+
       if (error) {
-        return { success: false, error: 'Failed to create subscription record' }
+        console.error(`❌ Database error creating subscription:`, error)
+        console.error(`❌ Error details:`, {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        })
+        return {
+          success: false,
+          error: `Failed to create subscription record: ${error.message} (Code: ${error.code})`,
+        }
       }
       return {
         success: true,
