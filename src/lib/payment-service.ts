@@ -73,8 +73,13 @@ export class PaymentService {
         price_yearly: plan.priceYearly,
         status: 'active' as const,
         billing_interval: data.billingInterval,
+        payment_provider: data.paymentProvider,
         stripe_subscription_id:
           data.paymentProvider === 'stripe'
+            ? data.externalSubscriptionId
+            : null,
+        paypal_subscription_id:
+          data.paymentProvider === 'paypal'
             ? data.externalSubscriptionId
             : null,
         current_period_start: new Date().toISOString(),

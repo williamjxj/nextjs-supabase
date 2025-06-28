@@ -168,8 +168,9 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'subscription',
       success_url:
-        successUrl || `${request.nextUrl.origin}/account?success=true`,
-      cancel_url: cancelUrl || `${request.nextUrl.origin}/membership`,
+        successUrl ||
+        `${request.nextUrl.origin}/account/subscription?success=true`,
+      cancel_url: cancelUrl || `${request.nextUrl.origin}/pricing`,
       metadata: {
         userId: user.id,
       },

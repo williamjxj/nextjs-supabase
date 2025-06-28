@@ -70,7 +70,7 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
-    label: 'Pricing',
+    label: 'Membership',
     href: '/membership',
     requireAuth: true,
     icon: (
@@ -113,12 +113,12 @@ export const Navigation = ({
   const filteredItems = React.useMemo(() => {
     return navigationItems.filter(item => {
       if (!item.requireAuth) {
-        return true // Always show non-auth items like Home
+        return true // Always show non-auth items like Home, Membership
       }
-      // For auth-required items, show them if authenticated or show as disabled if not
-      return true // Always show all items, let the component handle disabled state
+      // For auth-required items, only show them if authenticated
+      return isAuthenticated
     })
-  }, [])
+  }, [isAuthenticated])
 
   const containerClasses = cn(
     'flex',
@@ -180,8 +180,8 @@ export const MobileNavigation = () => {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'p-2 rounded-full transition-all duration-200',
-          'hover:bg-gray-100 hover:cursor-pointer hover:scale-110',
-          isOpen && 'bg-gray-100'
+          'hover:bg-gray-100 dark:hover:bg-gray-800 hover:cursor-pointer hover:scale-110',
+          isOpen && 'bg-gray-100 dark:bg-gray-800'
         )}
         aria-label='Toggle navigation menu'
       >
@@ -211,7 +211,7 @@ export const MobileNavigation = () => {
       </button>
 
       {isOpen && (
-        <div className='absolute top-12 right-0 bg-white border border-gray-200 rounded-xl shadow-xl p-4 min-w-48 z-50 animate-in slide-in-from-top-2 duration-200'>
+        <div className='absolute top-12 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-4 min-w-48 z-50 animate-in slide-in-from-top-2 duration-200'>
           <Navigation orientation='vertical' className='space-y-1' />
         </div>
       )}

@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
         billing_interval: billingInterval,
         subscription_type: 'crypto',
       },
-      redirect_url: `${process.env.APP_URL}/account/subscriptions?success=true&provider=crypto`,
-      cancel_url: `${process.env.APP_URL}/membership?cancelled=true&provider=crypto`,
+      redirect_url: `${process.env.APP_URL}/account/subscription?success=true&provider=crypto`,
+      cancel_url: `${process.env.APP_URL}/pricing?cancelled=true&provider=crypto`,
     }
 
     let charge

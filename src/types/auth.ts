@@ -11,7 +11,9 @@ export interface Subscription {
   status: 'active' | 'cancelled' | 'expired'
   current_period_start?: string
   current_period_end: string
+  payment_provider?: 'stripe' | 'paypal' | 'crypto'
   stripe_subscription_id?: string
+  paypal_subscription_id?: string
   features: string[]
   price_monthly: number
   price_yearly: number

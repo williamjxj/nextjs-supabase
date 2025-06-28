@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User, CreditCard, Image, Settings, LogOut } from 'lucide-react'
+import { User, CreditCard, Settings, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useSubscriptionAccess } from '@/hooks/use-subscription-access'
+import { logoutAndRedirect } from '@/lib/auth/logout'
 
 const accountNavItems = [
   {
@@ -16,14 +17,9 @@ const accountNavItems = [
     icon: User,
   },
   {
-    name: 'Subscriptions',
-    href: '/account/subscriptions',
+    name: 'Subscription',
+    href: '/account/subscription',
     icon: CreditCard,
-  },
-  {
-    name: 'My Images',
-    href: '/account/images',
-    icon: Image,
   },
   {
     name: 'Settings',
@@ -40,9 +36,7 @@ export default function AccountLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [username, setUsername] = useState<string | null>(null)
-  const [email, setEmail] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const { currentTier } = useSubscriptionAccess()
 
   const subscription = user?.subscription
@@ -56,40 +50,25 @@ export default function AccountLayout({
   }
 
   useEffect(() => {
-    async function getUser() {
-      const { data, error } = await supabase.auth.getUser()
-
-      if (error || !data.user) {
-        // If not logged in, redirect to login
-        router.push('/login')
-        return
-      }
-
-      setEmail(data.user.email || null)
-
-      // Get full_name from profile if available
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', data.user.id)
-        .single()
-
-      if (profile?.full_name) {
-        setUsername(profile.full_name)
-      } else {
-        // Use email as fallback
-        setUsername(data.user.email?.split('@')[0] || 'User')
-      }
-
-      setLoading(false)
+    if (!loading && !user) {
+      router.push('/login')
+      return
     }
 
-    getUser()
-  }, [router])
+    if (user) {
+      // Set username from user data
+      const fullName = user.user_metadata?.full_name || user.user_metadata?.name
+      if (fullName) {
+        setUsername(fullName)
+      } else {
+        setUsername(user.email?.split('@')[0] || 'User')
+      }
+    }
+  }, [user, loading, router])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    console.log('🔍 Account layout logout initiated')
+    await logoutAndRedirect()
   }
 
   if (loading) {
@@ -116,7 +95,7 @@ export default function AccountLayout({
                   {username || 'User'}
                 </h2>
                 <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  {email || ''}
+                  {user?.email || ''}
                 </p>
 
                 {/* Subscription Badge */}

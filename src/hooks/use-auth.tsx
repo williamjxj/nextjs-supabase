@@ -31,11 +31,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setMounted(true)
   }, [])
 
-  // Helper function to enrich user with subscription data
+  // Helper function to enrich user with subscription data (optimized for speed)
   const enrichUserWithSubscription = async (
     baseUser: User
   ): Promise<AuthUser> => {
     try {
+      console.log('🔍 Starting subscription enrichment...')
+      const enrichStartTime = performance.now()
+
       // Only try to fetch subscription data for authenticated users
       if (!baseUser?.id) {
         return {
@@ -46,42 +49,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as AuthUser
       }
 
-      // Ensure user profile exists (critical for OAuth users)
-      try {
-        await authService.ensureUserProfile(baseUser as AuthUser)
-      } catch (profileError) {
-        console.warn('Failed to ensure user profile:', profileError)
-        // Continue with subscription enrichment even if profile creation fails
-      }
+      // Skip profile creation during login for speed - it's handled in background
+      // Profile creation is non-critical for login flow
 
-      // Fetch user subscription with enhanced query
+      // Optimized subscription query - only fetch essential fields
       const { data: userSubscriptions, error } = await supabase
         .from('subscriptions')
-        .select(
-          `
-          *,
-          features,
-          created_at,
-          updated_at,
-          current_period_end
-        `
-        )
+        .select('id, user_id, plan_type, status, current_period_end, features')
         .eq('user_id', baseUser.id)
-        .in('status', ['active'])
+        .eq('status', 'active') // Use eq instead of in for better performance
         .order('created_at', { ascending: false })
         .limit(1)
+        .single() // Use single() since we only expect one active subscription
 
-      if (error) {
-        // Log subscription fetch errors, but don't throw - continue with null subscription
-        console.warn(
-          'Error fetching user subscription (continuing with null):',
-          error
-        )
+      console.log(
+        `🔍 Subscription query took: ${performance.now() - enrichStartTime}ms`
+      )
+
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = no rows found
+        console.warn('Error fetching user subscription:', error)
       }
 
-      const subscription = userSubscriptions?.[0] || null
+      const subscription = error?.code === 'PGRST116' ? null : userSubscriptions
       const hasActiveSubscription =
-        subscription && ['active'].includes(subscription.status)
+        subscription && subscription.status === 'active'
 
       // Enhanced subscription data
       const enrichedUser = {
@@ -95,9 +87,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isTrialing: false, // Based on current status model
       } as AuthUser
 
+      console.log(
+        `🔍 Total subscription enrichment took: ${performance.now() - enrichStartTime}ms`
+      )
       return enrichedUser
     } catch (error) {
-      // Don't log as error since this is expected for unauthenticated users
       console.warn(
         'Could not enrich user with subscription data:',
         error instanceof Error ? error.message : 'Unknown error'
@@ -293,25 +287,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     setLoading(true)
     try {
+      console.log('🔍 Starting fast login process...')
+      const startTime = performance.now()
+
       const result = await authService.signIn(email, password)
+      console.log(
+        `🔍 Auth service signIn took: ${performance.now() - startTime}ms`
+      )
 
-      // Ensure the session is properly synchronized
       if (result.user) {
-        const enrichedUser = await enrichUserWithSubscription(result.user)
-        setUser(enrichedUser)
+        // Set user immediately for fast UI update
+        setUser(result.user)
+        console.log('🔍 User set immediately for fast UI')
 
-        // Force a session refresh to ensure cross-tab sync
-        await supabase.auth.refreshSession()
+        // Enrich user with subscription data in background (non-blocking)
+        setTimeout(async () => {
+          try {
+            const enrichedUser = await enrichUserWithSubscription(result.user)
+            setUser(enrichedUser)
+            console.log('🔍 User enriched with subscription data in background')
+          } catch (error) {
+            console.warn('🔍 Background subscription enrichment failed:', error)
+            // Don't throw - user is already logged in
+          }
+        }, 0)
       }
 
-      // Additional delayed refresh for cross-tab consistency
-      setTimeout(async () => {
-        try {
-          await refreshAuthState()
-        } catch (error) {
-          // Delayed auth refresh failed - continue silently
-        }
-      }, 500)
+      console.log(
+        `🔍 Total login process took: ${performance.now() - startTime}ms`
+      )
     } catch (error) {
       console.error('signIn error:', error)
       throw error
@@ -333,17 +337,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
+      console.log('🔍 Starting signOut process...')
+
+      // Clear user state immediately
+      setUser(null)
+      setLoading(false)
+
+      // Call Supabase signOut
       await authService.signOut()
 
-      // Fallback to ensure user state is cleared
-      setTimeout(() => {
-        if (user) {
-          setUser(null)
-          setLoading(false)
-        }
-      }, 100)
+      // Force clear all Supabase-related localStorage
+      if (typeof window !== 'undefined') {
+        const keys = Object.keys(localStorage).filter(
+          key => key.startsWith('sb-') || key.includes('supabase')
+        )
+        keys.forEach(key => {
+          console.log('🔍 Clearing localStorage key:', key)
+          localStorage.removeItem(key)
+        })
+
+        // Also clear sessionStorage
+        const sessionKeys = Object.keys(sessionStorage).filter(
+          key => key.startsWith('sb-') || key.includes('supabase')
+        )
+        sessionKeys.forEach(key => {
+          console.log('🔍 Clearing sessionStorage key:', key)
+          sessionStorage.removeItem(key)
+        })
+      }
+
+      console.log('🔍 SignOut completed successfully')
     } catch (error) {
-      throw error
+      console.error('🔍 SignOut error:', error)
+      // Even if signOut fails, clear the user state and storage
+      setUser(null)
+      setLoading(false)
+
+      // Force clear storage even on error
+      if (typeof window !== 'undefined') {
+        const keys = Object.keys(localStorage).filter(
+          key => key.startsWith('sb-') || key.includes('supabase')
+        )
+        keys.forEach(key => localStorage.removeItem(key))
+
+        const sessionKeys = Object.keys(sessionStorage).filter(
+          key => key.startsWith('sb-') || key.includes('supabase')
+        )
+        sessionKeys.forEach(key => sessionStorage.removeItem(key))
+      }
+
+      // Don't throw error - allow signout to complete
     }
   }
 
@@ -370,8 +413,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Force session refresh to sync client and server
       await supabase.auth.refreshSession()
 
-      // Wait a moment for the refresh to complete
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Remove unnecessary delay
 
       // First try to get the session
       const session = await authService.getSession()
@@ -457,19 +499,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.warn('Session sync error:', error)
       return false
     }
-  }
-
-  const value: AuthState = {
-    user,
-    loading,
-    mounted,
-    signIn,
-    signUp,
-    signOut,
-    signInWithSocial, // Added for social sign-in
-    hasSubscriptionAccess,
-    refreshAuthState, // Auth state refresh function
-    syncAuthSession, // Added for session synchronization
   }
 
   return (
