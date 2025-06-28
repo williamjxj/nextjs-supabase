@@ -30,9 +30,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     // Apply theme to document
     const root = document.documentElement
-    
+
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+        .matches
+        ? 'dark'
+        : 'light'
       setResolvedTheme(systemTheme)
       root.classList.toggle('dark', systemTheme === 'dark')
     } else {

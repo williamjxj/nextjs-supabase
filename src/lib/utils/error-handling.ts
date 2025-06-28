@@ -205,10 +205,17 @@ export function logError(error: Error, context?: Record<string, any>): void {
   }
 
   if (process.env.NODE_ENV === 'development') {
-    console.error('🚨 Error Log:', errorLog)
+    console.error('Error:', errorLog)
   } else {
-    // In production, you might want to send to an external service
-    console.error(JSON.stringify(errorLog))
+    // In production, send to external logging service
+    // For now, log minimal info to avoid exposing sensitive data
+    console.error(
+      JSON.stringify({
+        message: error.message,
+        name: error.name,
+        timestamp: errorLog.timestamp,
+      })
+    )
   }
 }
 

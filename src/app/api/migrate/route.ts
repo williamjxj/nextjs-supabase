@@ -124,7 +124,6 @@ CREATE POLICY "Anyone can view active subscription plans"
       data: data,
     })
   } catch (error) {
-    console.error('Error in migrate API:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error },
       { status: 500 }

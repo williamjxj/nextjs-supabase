@@ -20,8 +20,7 @@ function PayPalCheckoutPage() {
 
   const amountValue = (parseInt(amount) / 100).toFixed(2)
 
-  const createOrder = (data: any, actions: any) => {
-    console.log('Creating PayPal order for amount:', amountValue)
+  const createOrder = () => {
     return fetch('/api/paypal/checkout', {
       method: 'POST',
       headers: {
@@ -64,8 +63,7 @@ function PayPalCheckoutPage() {
       })
   }
 
-  const onApprove = (data: any, actions: any) => {
-    console.log('PayPal order approved:', data.orderID)
+  const onApprove = (data: any) => {
     return fetch(`/api/paypal/capture`, {
       // Assuming a capture endpoint
       method: 'POST',
@@ -86,8 +84,6 @@ function PayPalCheckoutPage() {
         return response.json()
       })
       .then(details => {
-        console.log('Payment captured:', details)
-
         // Extract the capture ID for the purchase lookup
         const captureId =
           details.purchase_units?.[0]?.payments?.captures?.[0]?.id

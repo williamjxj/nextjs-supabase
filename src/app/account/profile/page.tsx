@@ -3,14 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
-import { 
-  User, 
-  Mail, 
-  Calendar, 
-  ArrowLeft,
-  Save,
-  Camera
-} from 'lucide-react'
+import { User, Mail, Calendar, ArrowLeft, Save, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
@@ -84,7 +77,9 @@ export default function ProfilePage() {
             </Button>
           </Link>
           <div>
-            <h1 className='text-3xl font-bold text-gray-900'>Profile Settings</h1>
+            <h1 className='text-3xl font-bold text-gray-900'>
+              Profile Settings
+            </h1>
             <p className='text-gray-600'>Manage your personal information</p>
           </div>
         </div>
@@ -93,8 +88,10 @@ export default function ProfilePage() {
           {/* Profile Form */}
           <div className='lg:col-span-2'>
             <Card className='p-6'>
-              <h2 className='text-xl font-semibold text-gray-900 mb-6'>Personal Information</h2>
-              
+              <h2 className='text-xl font-semibold text-gray-900 mb-6'>
+                Personal Information
+              </h2>
+
               <div className='space-y-6'>
                 {/* Avatar */}
                 <div className='flex items-center gap-6'>
@@ -120,7 +117,9 @@ export default function ProfilePage() {
                   <input
                     type='text'
                     value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    onChange={e =>
+                      setFormData({ ...formData, fullName: e.target.value })
+                    }
                     className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     placeholder='Enter your full name'
                   />
@@ -155,8 +154,8 @@ export default function ProfilePage() {
 
                 {/* Save Button */}
                 <div className='pt-4 border-t'>
-                  <Button 
-                    onClick={handleSave} 
+                  <Button
+                    onClick={handleSave}
                     disabled={saving}
                     className='w-full sm:w-auto'
                   >
@@ -180,7 +179,9 @@ export default function ProfilePage() {
           {/* Sidebar */}
           <div className='space-y-6'>
             <Card className='p-6'>
-              <h3 className='text-lg font-semibold text-gray-900 mb-4'>Account Info</h3>
+              <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+                Account Info
+              </h3>
               <div className='space-y-3'>
                 <div className='flex items-center gap-3'>
                   <Mail className='w-4 h-4 text-gray-500' />
@@ -193,14 +194,18 @@ export default function ProfilePage() {
                   <User className='w-4 h-4 text-gray-500' />
                   <div>
                     <p className='text-sm font-medium text-gray-900'>User ID</p>
-                    <p className='text-sm text-gray-600 font-mono'>{user.id.slice(0, 8)}...</p>
+                    <p className='text-sm text-gray-600 font-mono'>
+                      {user.id.slice(0, 8)}...
+                    </p>
                   </div>
                 </div>
               </div>
             </Card>
 
             <Card className='p-6'>
-              <h3 className='text-lg font-semibold text-gray-900 mb-4'>Need Help?</h3>
+              <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+                Need Help?
+              </h3>
               <p className='text-gray-600 mb-4'>
                 Contact support for account-related questions.
               </p>

@@ -181,10 +181,8 @@ export async function POST(request: NextRequest) {
       }),
     })
 
-    console.log('✅ Stripe session created:', session.id)
     return NextResponse.json({ sessionId: session.id })
   } catch (error) {
-    console.error('💥 Error creating subscription checkout:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

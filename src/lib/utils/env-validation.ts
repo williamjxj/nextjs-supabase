@@ -116,46 +116,16 @@ export function validateEnvironment(
   }
 }
 
-export function getEnvironmentReport(): void {
+export function getEnvironmentReport(): EnvironmentConfig {
   const config = validateEnvironment(true)
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔧 Environment Configuration Report')
-    console.log('===================================')
-
-    // Services status
-    console.log('\n📊 Services Status:')
-    Object.entries(config.services).forEach(([service, isEnabled]) => {
-      const status = isEnabled ? '✅ Enabled' : '❌ Disabled'
-      console.log(`  ${service}: ${status}`)
-    })
-
-    // Errors
-    if (config.errors.length > 0) {
-      console.log('\n❌ Errors:')
-      config.errors.forEach(error => console.log(`  - ${error}`))
-    }
-
-    // Warnings
-    if (config.warnings.length > 0) {
-      console.log('\n⚠️  Warnings:')
-      config.warnings.forEach(warning => console.log(`  - ${warning}`))
-    }
-
-    // Overall status
-    console.log(
-      `\n🏁 Overall Status: ${config.isValid ? '✅ Valid' : '❌ Invalid'}`
-    )
-    console.log('===================================\n')
-  }
+  // Environment report available for debugging when needed
+  return config
 }
 
 // Environment-specific configurations
 export const ENV_CONFIG = {
   isDevelopment: process.env.NODE_ENV === 'development',
   isProduction: process.env.NODE_ENV === 'production',
-  isDebugMode: process.env.DEBUG_MODE === 'true',
-  logLevel: process.env.LOG_LEVEL || 'info',
   apiRateLimit: {
     perMinute: parseInt(process.env.API_RATE_LIMIT_PER_MINUTE || '100'),
     perHour: parseInt(process.env.API_RATE_LIMIT_PER_HOUR || '1000'),
@@ -191,10 +161,4 @@ export const PAYMENT_CONFIG = {
   },
 }
 
-// Auto-run environment check in development
-if (ENV_CONFIG.isDevelopment && typeof window === 'undefined') {
-  // Only run on server side in development
-  setTimeout(() => {
-    getEnvironmentReport()
-  }, 1000)
-}
+// Environment check available via getEnvironmentReport() function when needed

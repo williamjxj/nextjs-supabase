@@ -73,7 +73,6 @@ async function createPayPalProduct(
           (detail: any) => detail.issue === 'DUPLICATE_RESOURCE_IDENTIFIER'
         ))
     ) {
-      console.log(`✅ PayPal product already exists: gallery_${planType}`)
       return { id: `gallery_${planType}` }
     }
     throw new Error(`Failed to create PayPal product: ${JSON.stringify(error)}`)
@@ -146,8 +145,6 @@ async function createPayPalPlan(
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🎯 PayPal subscription checkout started (fallback route)')
-
     const body = await request.json()
     const { planType, billingInterval = 'monthly', userId, userEmail } = body
 
@@ -168,11 +165,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(
-      '🔄 Using fallback authentication with client-provided user:',
-      userId
-    )
-
     const plan = SUBSCRIPTION_PLANS[planType as SubscriptionPlanType]
     const amount =
       billingInterval === 'yearly' ? plan.priceYearly : plan.priceMonthly
@@ -181,15 +173,9 @@ export async function POST(request: NextRequest) {
     let accessToken
     try {
       accessToken = await getPayPalAccessToken()
-      console.log('✅ PayPal access token obtained')
     } catch (tokenError) {
-      console.error('❌ PayPal token error:', tokenError)
-
       if (process.env.NODE_ENV === 'development') {
         // In development, provide a mock response if PayPal isn't configured
-        console.log(
-          '🔧 Development mode: PayPal not configured, returning mock'
-        )
         return NextResponse.json({
           approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
           message: 'PayPal not configured - using development mock',
@@ -212,31 +198,18 @@ export async function POST(request: NextRequest) {
     // Create or get PayPal product and plan dynamically
     let paypalPlan
     try {
-      console.log('🛒 Creating PayPal product and plan...', {
-        planType,
-        billingInterval,
-        amount,
-      })
-
       // First, ensure the product exists
-      console.log('📦 Creating/verifying PayPal product...')
       await createPayPalProduct(accessToken, planType)
-      console.log('✅ PayPal product ready')
 
       // Then create the plan
-      console.log('📋 Creating PayPal plan...')
       paypalPlan = await createPayPalPlan(
         accessToken,
         planType,
         billingInterval
       )
-      console.log('✅ PayPal plan created:', paypalPlan.id)
     } catch (planError) {
-      console.error('❌ Error creating PayPal plan:', planError)
-
       if (process.env.NODE_ENV === 'development') {
         // In development, provide a mock response if plan creation fails
-        console.log('🔧 Development mode: Plan creation failed, returning mock')
         return NextResponse.json({
           approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
           message: 'PayPal plan creation failed - using development mock',
@@ -277,12 +250,6 @@ export async function POST(request: NextRequest) {
       custom_id: userId, // Store user ID for webhook processing
     }
 
-    console.log('💳 Creating PayPal subscription...', {
-      planId: paypalPlan.id,
-      userId,
-      amount,
-    })
-
     const subscriptionResponse = await fetch(
       `${PAYPAL_BASE_URL}/v1/billing/subscriptions`,
       {
@@ -299,12 +266,8 @@ export async function POST(request: NextRequest) {
 
     if (!subscriptionResponse.ok) {
       const error = await subscriptionResponse.json()
-      console.error('❌ PayPal subscription creation failed:', error)
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '🔧 Development mode: Subscription creation failed, returning mock'
-        )
         return NextResponse.json({
           approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
           message:
@@ -325,7 +288,6 @@ export async function POST(request: NextRequest) {
     }
 
     const subscription = await subscriptionResponse.json()
-    console.log('✅ PayPal subscription created:', subscription.id)
 
     // Find the approval URL
     const approvalLink = subscription.links?.find(
@@ -335,8 +297,6 @@ export async function POST(request: NextRequest) {
     if (!approvalLink) {
       throw new Error('No approval URL found in PayPal response')
     }
-
-    console.log('🔗 PayPal approval URL:', approvalLink.href)
 
     return NextResponse.json({
       approvalUrl: approvalLink.href,

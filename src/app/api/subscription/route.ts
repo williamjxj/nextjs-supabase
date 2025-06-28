@@ -38,12 +38,9 @@ export async function GET() {
       )
     }
 
-    console.log('📊 Found subscriptions:', subscriptions)
-
     const dbSubscription = subscriptions?.[0]
 
     if (dbSubscription) {
-      console.log('✅ Active subscription found:', dbSubscription)
       // Return subscription data from database
       return NextResponse.json({
         subscription: {
@@ -99,8 +96,6 @@ export async function GET() {
     )
     const product = await stripe.products.retrieve(price.product as string)
 
-    console.log('✅ Stripe subscription found:', subscription.id)
-
     return NextResponse.json({
       subscription: {
         id: subscription.id,
@@ -115,7 +110,6 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('💥 Error fetching subscription:', error)
     return NextResponse.json(
       { error: 'Failed to fetch subscription' },
       { status: 500 }

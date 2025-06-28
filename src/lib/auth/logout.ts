@@ -7,8 +7,6 @@ import { supabase } from '@/lib/supabase/client'
 
 export const forceLogout = async (): Promise<void> => {
   try {
-    console.log('🔍 Starting comprehensive logout...')
-
     // Step 1: Clear user state immediately (if in React context)
     // This will be handled by the calling component
 
@@ -16,20 +14,18 @@ export const forceLogout = async (): Promise<void> => {
     try {
       const { error } = await supabase.auth.signOut()
       if (error) {
-        console.warn('🔍 Supabase signOut error:', error)
-      } else {
-        console.log('🔍 Supabase signOut successful')
+        // Handle error silently
       }
     } catch (supabaseError) {
-      console.warn('🔍 Supabase signOut exception:', supabaseError)
+      // Handle error silently
     }
 
     // Step 3: Clear all browser storage
     if (typeof window !== 'undefined') {
       // Clear localStorage
       const localKeys = Object.keys(localStorage).filter(
-        key => 
-          key.startsWith('sb-') || 
+        key =>
+          key.startsWith('sb-') ||
           key.includes('supabase') ||
           key.includes('auth') ||
           key.includes('session')
@@ -41,8 +37,8 @@ export const forceLogout = async (): Promise<void> => {
 
       // Clear sessionStorage
       const sessionKeys = Object.keys(sessionStorage).filter(
-        key => 
-          key.startsWith('sb-') || 
+        key =>
+          key.startsWith('sb-') ||
           key.includes('supabase') ||
           key.includes('auth') ||
           key.includes('session')
@@ -53,9 +49,12 @@ export const forceLogout = async (): Promise<void> => {
       })
 
       // Clear any auth-related cookies by setting them to expire
-      document.cookie = 'sb-access-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      document.cookie = 'sb-refresh-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      document.cookie = 'supabase-auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      document.cookie =
+        'sb-access-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      document.cookie =
+        'sb-refresh-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      document.cookie =
+        'supabase-auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
     }
 
     // Step 4: Call server-side logout API
@@ -66,14 +65,9 @@ export const forceLogout = async (): Promise<void> => {
           'Content-Type': 'application/json',
         },
       })
-      
-      if (response.ok) {
-        console.log('🔍 Server-side logout successful')
-      } else {
-        console.warn('🔍 Server-side logout failed:', response.status)
-      }
+      // Handle response silently
     } catch (apiError) {
-      console.warn('🔍 Server-side logout API error:', apiError)
+      // Handle error silently
     }
 
     console.log('🔍 Comprehensive logout completed')
@@ -88,7 +82,7 @@ export const forceLogout = async (): Promise<void> => {
  */
 export const logoutAndRedirect = async (): Promise<void> => {
   await forceLogout()
-  
+
   // Force complete page reload to clear all React state
   if (typeof window !== 'undefined') {
     window.location.replace('/')
@@ -100,15 +94,15 @@ export const logoutAndRedirect = async (): Promise<void> => {
  */
 export const hasAuthTokens = (): boolean => {
   if (typeof window === 'undefined') return false
-  
+
   const hasLocalStorage = Object.keys(localStorage).some(
     key => key.startsWith('sb-') || key.includes('supabase')
   )
-  
+
   const hasSessionStorage = Object.keys(sessionStorage).some(
     key => key.startsWith('sb-') || key.includes('supabase')
   )
-  
+
   return hasLocalStorage || hasSessionStorage
 }
 
@@ -116,20 +110,18 @@ export const hasAuthTokens = (): boolean => {
  * Emergency logout - clears everything without API calls
  */
 export const emergencyLogout = (): void => {
-  console.log('🔍 Emergency logout initiated')
-  
   if (typeof window !== 'undefined') {
     // Clear all storage
     localStorage.clear()
     sessionStorage.clear()
-    
+
     // Clear cookies
-    document.cookie.split(";").forEach(cookie => {
-      const eqPos = cookie.indexOf("=")
+    document.cookie.split(';').forEach(cookie => {
+      const eqPos = cookie.indexOf('=')
       const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie
-      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/"
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
     })
-    
+
     // Force reload
     window.location.replace('/')
   }

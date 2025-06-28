@@ -224,7 +224,6 @@ export function ProfileDropdown() {
                 <button
                   onClick={async () => {
                     setIsOpen(false)
-                    console.log('🔍 Profile dropdown logout initiated')
                     await logoutAndRedirect()
                   }}
                   className='flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full'

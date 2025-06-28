@@ -31,14 +31,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setMounted(true)
   }, [])
 
-  // Helper function to enrich user with subscription data (optimized for speed)
+  // Helper function to enrich user with subscription data
   const enrichUserWithSubscription = async (
     baseUser: User
   ): Promise<AuthUser> => {
     try {
-      console.log('🔍 Starting subscription enrichment...')
-      const enrichStartTime = performance.now()
-
       // Only try to fetch subscription data for authenticated users
       if (!baseUser?.id) {
         return {
@@ -49,26 +46,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as AuthUser
       }
 
-      // Skip profile creation during login for speed - it's handled in background
-      // Profile creation is non-critical for login flow
-
       // Optimized subscription query - only fetch essential fields
       const { data: userSubscriptions, error } = await supabase
         .from('subscriptions')
         .select('id, user_id, plan_type, status, current_period_end, features')
         .eq('user_id', baseUser.id)
-        .eq('status', 'active') // Use eq instead of in for better performance
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single() // Use single() since we only expect one active subscription
-
-      console.log(
-        `🔍 Subscription query took: ${performance.now() - enrichStartTime}ms`
-      )
+        .single()
 
       if (error && error.code !== 'PGRST116') {
-        // PGRST116 = no rows found
-        console.warn('Error fetching user subscription:', error)
+        // PGRST116 = no rows found - this is expected for users without subscriptions
       }
 
       const subscription = error?.code === 'PGRST116' ? null : userSubscriptions
@@ -82,20 +71,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         hasActiveSubscription,
         subscriptionTier: subscription?.plan_type || null,
         subscriptionFeatures: subscription?.features || [],
-        subscriptionUsage: {}, // Usage tracking to be implemented
+        subscriptionUsage: {},
         subscriptionExpiresAt: subscription?.current_period_end || null,
-        isTrialing: false, // Based on current status model
+        isTrialing: false,
       } as AuthUser
 
-      console.log(
-        `🔍 Total subscription enrichment took: ${performance.now() - enrichStartTime}ms`
-      )
       return enrichedUser
     } catch (error) {
-      console.warn(
-        'Could not enrich user with subscription data:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
       return {
         ...baseUser,
         subscription: null,
@@ -287,37 +269,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     setLoading(true)
     try {
-      console.log('🔍 Starting fast login process...')
-      const startTime = performance.now()
-
       const result = await authService.signIn(email, password)
-      console.log(
-        `🔍 Auth service signIn took: ${performance.now() - startTime}ms`
-      )
 
       if (result.user) {
         // Set user immediately for fast UI update
         setUser(result.user)
-        console.log('🔍 User set immediately for fast UI')
 
         // Enrich user with subscription data in background (non-blocking)
         setTimeout(async () => {
           try {
             const enrichedUser = await enrichUserWithSubscription(result.user)
             setUser(enrichedUser)
-            console.log('🔍 User enriched with subscription data in background')
           } catch (error) {
-            console.warn('🔍 Background subscription enrichment failed:', error)
             // Don't throw - user is already logged in
           }
         }, 0)
       }
-
-      console.log(
-        `🔍 Total login process took: ${performance.now() - startTime}ms`
-      )
     } catch (error) {
-      console.error('signIn error:', error)
       throw error
     } finally {
       setLoading(false)

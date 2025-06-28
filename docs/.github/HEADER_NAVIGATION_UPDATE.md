@@ -3,6 +3,7 @@
 ## ✅ **New Features Added**
 
 ### 1. **Profile Dropdown Menu**
+
 - **Location**: Top-right corner of header (when logged in)
 - **Features**:
   - User avatar and email display
@@ -12,10 +13,11 @@
   - Sign out option
 
 ### 2. **Theme Toggle**
+
 - **Location**: Top-right corner of header (always visible)
 - **Options**:
   - Light mode
-  - Dark mode  
+  - Dark mode
   - System (follows OS preference)
 - **Features**:
   - Dropdown with visual icons
@@ -25,13 +27,15 @@
 ## 🎨 **Profile Dropdown Contents**
 
 ### **User Information Section**
+
 - User avatar (blue circle with user icon)
 - Display name or email prefix
 - Full email address
 - Member since date
 
 ### **Subscription Section**
-- **If subscribed**: 
+
+- **If subscribed**:
   - Plan name (Standard/Premium/Commercial)
   - Status and billing interval
   - Current price per month/year
@@ -41,19 +45,22 @@
   - Link to pricing page
 
 ### **Quick Actions**
+
 - Account Dashboard
-- Manage Subscription  
+- Manage Subscription
 - Settings
 - Sign Out (red styling)
 
 ## 🌙 **Theme System**
 
 ### **Theme Options**
+
 - **Light**: Traditional light theme
 - **Dark**: Dark theme with proper contrast
 - **System**: Automatically follows OS preference
 
 ### **Implementation**
+
 - React Context for theme state
 - localStorage persistence
 - CSS custom properties for colors
@@ -63,16 +70,19 @@
 ## 🔧 **Technical Implementation**
 
 ### **New Components**
+
 - `ProfileDropdown` - Comprehensive user menu
 - `ThemeToggle` - Theme selection dropdown
 - `ThemeProvider` - Theme context and state management
 
 ### **Updated Components**
+
 - `Header` - Integrated new components
 - `Layout` - Added theme provider
 - `Navigation` - Dark mode support
 
 ### **Features**
+
 - **Responsive Design**: Works on mobile and desktop
 - **Loading States**: Proper loading indicators
 - **Dark Mode Support**: All components support dark theme
@@ -81,18 +91,21 @@
 ## 🎯 **User Experience**
 
 ### **For Authenticated Users**
+
 1. **Profile Dropdown** shows:
    - User info and subscription status
    - Quick access to account management
    - Easy sign out
 
 ### **For All Users**
+
 1. **Theme Toggle** allows:
    - Personal preference selection
    - System theme following
    - Persistent settings
 
 ### **Visual Improvements**
+
 - Clean, modern dropdown design
 - Proper spacing and typography
 - Consistent with existing design system
@@ -109,12 +122,14 @@
 ## 📱 **How to Use**
 
 ### **Profile Dropdown**
+
 1. Click your profile icon/name in the top-right
 2. View subscription status and user info
 3. Click any menu item to navigate
 4. Click outside to close
 
 ### **Theme Toggle**
+
 1. Click the theme button (sun/moon/monitor icon)
 2. Select Light, Dark, or System
 3. Theme applies immediately and persists

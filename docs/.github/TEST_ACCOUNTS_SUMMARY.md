@@ -12,17 +12,17 @@ All test accounts have been created with proper authentication and profile recor
 
 ### Complete Account List
 
-| Email | Name | User ID | Status |
-|-------|------|---------|--------|
-| test1@example.com | test1 | a871fbc2-fac6-490e-9801-ad77c2509eab | ✅ Ready |
-| test2@example.com | test2 | 7466d03a-fc70-4ad2-aff9-23f13affd1dd | ✅ Ready |
-| test3@example.com | test3 | 6ab5b38c-d0d7-40e0-aad8-388dff68fc89 | ✅ Ready |
-| test4@example.com | test4 | dbb0e731-2c74-42b9-bca4-4d097af602d0 | ✅ Ready |
-| test5@example.com | test5 | b6c8b0ff-741c-4596-ae82-87a03e125b8d | ✅ Ready |
-| test6@example.com | test6 | 02ac1d9e-5aaf-49e5-afe1-fa322c24fe37 | ✅ Ready |
-| test7@example.com | test7 | a2372b72-2c24-4419-ac74-9dff8dfc8aef | ✅ Ready |
-| test8@example.com | test8 | e0d1f3aa-4057-44ec-a623-4c7e38c970f3 | ✅ Ready |
-| test9@example.com | test9 | d40691ed-a332-4837-a5ec-ea38631678c7 | ✅ Ready |
+| Email              | Name   | User ID                              | Status   |
+| ------------------ | ------ | ------------------------------------ | -------- |
+| test1@example.com  | test1  | a871fbc2-fac6-490e-9801-ad77c2509eab | ✅ Ready |
+| test2@example.com  | test2  | 7466d03a-fc70-4ad2-aff9-23f13affd1dd | ✅ Ready |
+| test3@example.com  | test3  | 6ab5b38c-d0d7-40e0-aad8-388dff68fc89 | ✅ Ready |
+| test4@example.com  | test4  | dbb0e731-2c74-42b9-bca4-4d097af602d0 | ✅ Ready |
+| test5@example.com  | test5  | b6c8b0ff-741c-4596-ae82-87a03e125b8d | ✅ Ready |
+| test6@example.com  | test6  | 02ac1d9e-5aaf-49e5-afe1-fa322c24fe37 | ✅ Ready |
+| test7@example.com  | test7  | a2372b72-2c24-4419-ac74-9dff8dfc8aef | ✅ Ready |
+| test8@example.com  | test8  | e0d1f3aa-4057-44ec-a623-4c7e38c970f3 | ✅ Ready |
+| test9@example.com  | test9  | d40691ed-a332-4837-a5ec-ea38631678c7 | ✅ Ready |
 | test10@example.com | test10 | 232822c4-5ff5-4d5a-8c00-e9e7be7dd0e3 | ✅ Ready |
 | test11@example.com | test11 | b59f9bb4-90e5-4240-beaa-f7d7fb518cde | ✅ Ready |
 | test12@example.com | test12 | ca345cbf-0ebc-448c-a002-d2e69fc5b985 | ✅ Ready |
@@ -48,6 +48,7 @@ All test accounts have been created with proper authentication and profile recor
 ## Database Records Created
 
 Each account has:
+
 - ✅ **Auth User** in `auth.users` table
 - ✅ **Profile** in `public.profiles` table
 - ✅ **Email confirmed** (auto-confirmed)
@@ -57,21 +58,25 @@ Each account has:
 ## Management API Endpoints
 
 ### Check Account Status
+
 ```bash
 GET /api/test/fix-test-profiles
 ```
 
 ### Create New Test Accounts (if needed)
+
 ```bash
 POST /api/test/create-test-accounts
 ```
 
 ### Fix Missing Profiles
+
 ```bash
 POST /api/test/fix-test-profiles
 ```
 
 ### Cleanup All Test Accounts
+
 ```bash
 DELETE /api/test/cleanup-test-accounts
 ```

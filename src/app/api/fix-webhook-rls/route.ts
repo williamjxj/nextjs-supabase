@@ -9,8 +9,6 @@ export async function POST() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    console.log('🔧 Attempting to fix webhook RLS policies...')
-
     // Try to execute SQL directly
     const sql = `
       -- Add permissive policies for webhook operations
@@ -29,8 +27,6 @@ export async function POST() {
     const { data, error } = await supabase.rpc('exec_sql', { sql })
 
     if (error) {
-      console.error('RPC exec_sql failed:', error)
-
       // Alternative: Try to create a test subscription to see current permissions
       const testResult = await supabase
         .from('subscriptions')

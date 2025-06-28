@@ -31,8 +31,6 @@ async function getPayPalAccessToken() {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Manual PayPal subscription activation started')
-
     const supabaseAdmin = createServiceRoleClient()
     const body = await request.json()
     const { subscriptionId, userId, planType, billingInterval } = body
@@ -74,12 +72,6 @@ export async function POST(request: NextRequest) {
       }
 
       paypalSubscription = await subscriptionResponse.json()
-      console.log('✅ PayPal subscription verified:', {
-        id: paypalSubscription.id,
-        status: paypalSubscription.status,
-        plan_id: paypalSubscription.plan_id,
-      })
-
       // Only create subscription if PayPal shows it as active
       if (paypalSubscription.status !== 'ACTIVE') {
         return NextResponse.json(
@@ -89,10 +81,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-    } else {
-      console.log(
-        '🔧 Development mode: Skipping PayPal verification for test subscription'
-      )
     }
 
     const plan = SUBSCRIPTION_PLANS[planType as keyof typeof SUBSCRIPTION_PLANS]
@@ -121,8 +109,6 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
-    console.log('💾 Creating subscription record:', subscriptionData)
-
     // First, check if user already has a subscription
     const { data: existingSubscription, error: checkError } =
       await supabaseAdmin
@@ -141,7 +127,6 @@ export async function POST(request: NextRequest) {
         .select()
 
       if (updateError) {
-        console.error('❌ Error updating existing subscription:', updateError)
         return NextResponse.json(
           {
             error: 'Failed to update subscription record',
@@ -159,7 +144,6 @@ export async function POST(request: NextRequest) {
         .select()
 
       if (insertError) {
-        console.error('❌ Error creating new subscription:', insertError)
         return NextResponse.json(
           {
             error: 'Failed to create subscription record',
@@ -171,18 +155,12 @@ export async function POST(request: NextRequest) {
       data = insertData
     }
 
-    console.log(
-      '✅ PayPal subscription successfully created in database:',
-      data
-    )
-
     return NextResponse.json({
       success: true,
       message: 'PayPal subscription activated successfully',
       subscription: data[0],
     })
   } catch (error) {
-    console.error('💥 PayPal manual activation error:', error)
     return NextResponse.json(
       {
         error: 'Internal server error',

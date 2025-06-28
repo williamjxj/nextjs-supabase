@@ -148,7 +148,6 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('Upload error:', uploadError)
       return NextResponse.json(
         { error: 'Failed to upload file' },
         { status: 500 }
@@ -226,7 +225,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (dbError) {
-      console.error('Database error:', dbError)
       // Try to clean up uploaded file
       await supabase.storage.from('images').remove([storagePath])
       return NextResponse.json(

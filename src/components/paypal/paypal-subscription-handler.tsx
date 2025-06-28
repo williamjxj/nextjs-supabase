@@ -20,27 +20,13 @@ export default function PayPalSubscriptionHandler() {
       const success = searchParams.get('success')
       const isMock = searchParams.get('mock')
 
-      console.log('🔍 PayPal handler checking URL params:', {
-        payment,
-        subscriptionId,
-        success,
-        isMock,
-        allParams: Object.fromEntries(searchParams.entries()),
-      })
-
       if (!payment || payment !== 'paypal' || !success) {
-        console.log(
-          '❌ PayPal handler: Missing required parameters, skipping...'
-        )
         return
       }
 
       // For mock subscriptions, we need to handle them differently
       if (isMock === 'true') {
-        console.log('🔧 Handling mock PayPal subscription')
-
         if (!subscriptionId) {
-          console.log('❌ Mock subscription missing subscription_id')
           return
         }
 
@@ -66,9 +52,6 @@ export default function PayPalSubscriptionHandler() {
 
       // For real PayPal subscriptions, we need the subscription_id
       if (!subscriptionId) {
-        console.log(
-          '❌ PayPal handler: Missing subscription_id for real subscription'
-        )
         return
       }
 
@@ -76,11 +59,6 @@ export default function PayPalSubscriptionHandler() {
       setIsProcessing(true)
 
       try {
-        console.log('🔄 Processing PayPal subscription activation...', {
-          subscriptionId,
-          payment,
-        })
-
         // Extract plan details from URL params or localStorage
         const planType = localStorage.getItem('paypal_plan_type') || 'premium'
         const billingInterval =
@@ -90,25 +68,7 @@ export default function PayPalSubscriptionHandler() {
         // Use stored user ID or fall back to current user
         const userId = storedUserId || user?.id
 
-        console.log('🔍 PayPal handler user data:', {
-          planType,
-          billingInterval,
-          storedUserId,
-          currentUserId: user?.id,
-          finalUserId: userId,
-          allLocalStorage: {
-            paypal_plan_type: localStorage.getItem('paypal_plan_type'),
-            paypal_billing_interval: localStorage.getItem(
-              'paypal_billing_interval'
-            ),
-            paypal_user_id: localStorage.getItem('paypal_user_id'),
-          },
-        })
-
         if (!userId) {
-          console.log(
-            '❌ PayPal handler: No userId found in localStorage or auth context'
-          )
           showToast(
             'User session not found. Please sign in and try again.',
             'error',
@@ -162,7 +122,6 @@ export default function PayPalSubscriptionHandler() {
           router.push('/account/subscription')
         }, 2000)
       } catch (error) {
-        console.error('❌ PayPal subscription activation error:', error)
         showToast(
           error instanceof Error
             ? error.message
