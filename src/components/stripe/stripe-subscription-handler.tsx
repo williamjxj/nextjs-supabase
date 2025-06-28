@@ -69,9 +69,9 @@ export default function StripeSubscriptionHandler() {
           )
         }
 
-        // Redirect to clean account page after a short delay
+        // Redirect to subscription page after a short delay
         setTimeout(() => {
-          router.push('/account')
+          router.push('/subscription')
         }, 2000)
       } catch (error) {
         showToast(

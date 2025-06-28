@@ -194,16 +194,7 @@ export function ProfileDropdown() {
             {/* Menu Items */}
             <div className='py-2'>
               <Link
-                href='/account'
-                onClick={() => setIsOpen(false)}
-                className='flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
-              >
-                <User className='w-4 h-4' />
-                Account Dashboard
-              </Link>
-
-              <Link
-                href='/account/subscription'
+                href='/subscription'
                 onClick={() => setIsOpen(false)}
                 className='flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
               >
@@ -212,12 +203,12 @@ export function ProfileDropdown() {
               </Link>
 
               <Link
-                href='/account/settings'
+                href='/gallery'
                 onClick={() => setIsOpen(false)}
                 className='flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
               >
-                <Settings className='w-4 h-4' />
-                Settings
+                <Crown className='w-4 h-4' />
+                Gallery
               </Link>
 
               <div className='border-t border-gray-200 dark:border-gray-700 mt-2 pt-2'>

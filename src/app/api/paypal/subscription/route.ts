@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
           payer_selected: 'PAYPAL',
           payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
         },
-        return_url: `${process.env.APP_URL}/account/subscription?success=true&payment=paypal`,
+        return_url: `${process.env.APP_URL}/subscription?success=true&payment=paypal`,
         cancel_url: `${process.env.APP_URL}/membership?cancelled=true&payment=paypal`,
       },
       custom_id: user.id, // Store user ID for webhook processing

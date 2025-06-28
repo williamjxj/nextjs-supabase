@@ -49,7 +49,7 @@ export default function PayPalSubscriptionHandler() {
 
         // Redirect to subscription page after a short delay
         setTimeout(() => {
-          router.push('/account/subscription')
+          router.push('/subscription')
         }, 2000)
 
         return
@@ -122,7 +122,7 @@ export default function PayPalSubscriptionHandler() {
 
         // Redirect to subscription page after a short delay
         setTimeout(() => {
-          router.push('/account/subscription')
+          router.push('/subscription')
         }, 2000)
       } catch (error) {
         showToast(
@@ -138,7 +138,7 @@ export default function PayPalSubscriptionHandler() {
     }
 
     handlePayPalSuccess()
-  }, [searchParams, router, showToast, isProcessing])
+  }, [searchParams, router, showToast, isProcessing, user?.id])
 
   // Don't render anything, this is just a handler
   return null

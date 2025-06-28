@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   SUBSCRIPTION_PLANS,
   SubscriptionPlanType,
+  STRIPE_PRICE_IDS,
 } from '@/lib/subscription-config'
 import {
   Check,
@@ -23,6 +24,8 @@ import {
 import { cn } from '@/lib/utils/cn'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/hooks/use-auth'
+import { SubscriptionHeaderSkeleton } from '@/components/ui/subscription-loading'
+import { SubscriptionHeader } from '@/components/subscription/subscription-header'
 import Link from 'next/link'
 
 // Payment method type
@@ -93,36 +96,72 @@ export default function PricingPage() {
 
       switch (method) {
         case 'stripe':
+          // Get the correct Stripe price ID based on plan type and billing interval
+          const priceId = STRIPE_PRICE_IDS[planType]?.[billingInterval]
+
+          if (!priceId) {
+            console.error('❌ Stripe price ID not found:', {
+              planType,
+              billingInterval,
+              available: STRIPE_PRICE_IDS,
+            })
+            throw new Error(
+              `Stripe price ID not configured for ${planType} ${billingInterval} plan`
+            )
+          }
+
+          console.log('🎯 Creating Stripe checkout session:', {
+            planType,
+            billingInterval,
+            priceId,
+          })
+
           const stripeResponse = await fetch(
-            '/api/stripe/checkout/subscription-fallback',
+            '/api/stripe/checkout/subscription',
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify({
-                planType,
-                billingInterval,
-                userId: user.id,
-                userEmail: user.email,
+                priceId,
+                successUrl: `${window.location.origin}/subscription?success=true`,
+                cancelUrl: `${window.location.origin}/membership`,
               }),
             }
           )
 
+          console.log('📡 Stripe API response status:', stripeResponse.status)
+
           if (!stripeResponse.ok) {
-            throw new Error('Failed to create Stripe checkout session')
+            const errorData = await stripeResponse.json()
+            console.error('❌ Stripe API error:', errorData)
+            throw new Error(
+              errorData.error || 'Failed to create Stripe checkout session'
+            )
           }
 
           const stripeData = await stripeResponse.json()
+          console.log('✅ Stripe session created:', stripeData.sessionId)
+
           if (stripeData.sessionId) {
+            console.log('🔄 Redirecting to Stripe checkout...')
             const stripe = (await import('@stripe/stripe-js')).loadStripe(
               process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
             )
             const stripeInstance = await stripe
             if (stripeInstance) {
-              await stripeInstance.redirectToCheckout({
+              const { error } = await stripeInstance.redirectToCheckout({
                 sessionId: stripeData.sessionId,
               })
+              if (error) {
+                console.error('❌ Stripe redirect error:', error)
+                throw new Error(error.message)
+              }
+            } else {
+              throw new Error('Failed to load Stripe')
             }
+          } else {
+            throw new Error('No session ID returned from Stripe')
           }
           break
 
@@ -265,125 +304,18 @@ export default function PricingPage() {
       <div className='container mx-auto px-4'>
         {/* Header */}
         {loadingSubscription ? (
-          <div className='text-center mb-12'>
-            <div className='animate-pulse'>
-              <div className='h-10 bg-gray-200 rounded w-64 mx-auto mb-4'></div>
-              <div className='h-6 bg-gray-200 rounded w-96 mx-auto'></div>
-            </div>
-          </div>
+          <SubscriptionHeaderSkeleton hasSubscription={!!user} />
         ) : hasActiveSubscription ? (
           /* Subscribed User Header */
-          <div className='text-center mb-12'>
-            <div className='max-w-3xl mx-auto'>
-              <div className='flex items-center justify-center gap-3 mb-4'>
-                <div className='w-12 h-12 bg-green-100 rounded-full flex items-center justify-center'>
-                  <CheckCircle className='w-6 h-6 text-green-600' />
-                </div>
-                <h1 className='text-4xl font-bold text-gray-900'>
-                  Your Current Plan
-                </h1>
-              </div>
-
-              <div className='bg-white rounded-2xl shadow-lg border border-green-200 p-6 mb-6'>
-                {/* Brief Plan Summary */}
-                <div className='flex items-center justify-between mb-4'>
-                  <div className='flex items-center gap-4'>
-                    <div className='w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg'>
-                      {user?.email?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div>
-                      <h2 className='text-xl font-bold text-gray-900'>
-                        {currentPlan?.name ||
-                          subscription.plan_type?.charAt(0).toUpperCase() +
-                            subscription.plan_type?.slice(1) ||
-                          'Standard'}{' '}
-                        Plan
-                      </h2>
-                      <div className='flex items-center gap-2'>
-                        <div className='w-2 h-2 bg-green-500 rounded-full'></div>
-                        <span className='text-sm text-green-600 font-medium capitalize'>
-                          {subscription.status} •{' '}
-                          {subscription.billing_interval || 'monthly'} billing
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className='text-right'>
-                    <p className='text-2xl font-bold text-green-600'>
-                      {(() => {
-                        const isYearly =
-                          subscription.billing_interval === 'yearly'
-                        const planType = subscription.plan_type || 'standard'
-                        const plan =
-                          SUBSCRIPTION_PLANS[
-                            planType as keyof typeof SUBSCRIPTION_PLANS
-                          ]
-
-                        // Try to get price from subscription data first, then from plan config
-                        const price = isYearly
-                          ? subscription.price_yearly || plan?.priceYearly || 99
-                          : subscription.price_monthly ||
-                            plan?.priceMonthly ||
-                            9.99
-
-                        return formatCurrency(price)
-                      })()}
-                    </p>
-                    <p className='text-sm text-gray-600'>
-                      per{' '}
-                      {subscription.billing_interval === 'yearly'
-                        ? 'year'
-                        : 'month'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Next Billing Info */}
-                {(() => {
-                  const nextBillingDate = formatDate(
-                    subscription.current_period_end
-                  )
-                  if (nextBillingDate && nextBillingDate !== 'Not available') {
-                    return (
-                      <div className='bg-gray-50 rounded-lg p-3 mb-4'>
-                        <div className='flex items-center gap-2'>
-                          <Calendar className='w-4 h-4 text-gray-600' />
-                          <span className='text-sm text-gray-700'>
-                            Next billing: {nextBillingDate}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  }
-                  return null
-                })()}
-
-                {/* Action Buttons */}
-                <div className='flex flex-col sm:flex-row items-center gap-3'>
-                  <Link
-                    href='/account/subscription'
-                    className='w-full sm:w-auto'
-                  >
-                    <button className='w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'>
-                      <Settings className='w-4 h-4' />
-                      Manage Subscription
-                    </button>
-                  </Link>
-                  <Link href='/gallery' className='w-full sm:w-auto'>
-                    <button className='w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors'>
-                      <Crown className='w-4 h-4' />
-                      Access Gallery
-                    </button>
-                  </Link>
-                </div>
-              </div>
-
-              <p className='text-gray-600'>
-                Want to change your plan? Browse the options below or manage
-                your subscription.
-              </p>
-            </div>
-          </div>
+          <Suspense
+            fallback={<SubscriptionHeaderSkeleton hasSubscription={true} />}
+          >
+            <SubscriptionHeader
+              subscription={subscription}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+            />
+          </Suspense>
         ) : (
           /* Non-subscribed User Header */
           <div className='text-center mb-12'>

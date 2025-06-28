@@ -269,8 +269,46 @@ async function handleCheckoutSessionCompleted(session: any) {
 
     // Get metadata from session
     const userId = session.metadata?.userId
-    const planType = session.metadata?.planType || 'standard'
-    const billingInterval = session.metadata?.billingInterval || 'monthly'
+    let planType = session.metadata?.planType
+    let billingInterval = session.metadata?.billingInterval
+
+    // If plan details aren't in session metadata, extract from subscription
+    if (!planType || !billingInterval) {
+      const subscriptionId = session.subscription
+      if (subscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(
+            subscriptionId as string
+          )
+
+          // Get plan details from the subscription's price ID
+          const lineItems = subscription.items?.data?.[0]
+          const priceId = lineItems?.price?.id
+
+          if (priceId) {
+            console.log(`🔍 Extracting plan details from price ID: ${priceId}`)
+            const planDetails = getPlanByPriceId(priceId)
+            if (planDetails) {
+              planType = planDetails.planType
+              billingInterval = planDetails.billingInterval
+              console.log(`✅ Detected plan from price ID:`, {
+                planType,
+                billingInterval,
+              })
+            }
+          }
+        } catch (error) {
+          console.log(
+            `⚠️ Could not retrieve subscription for plan detection:`,
+            error
+          )
+        }
+      }
+    }
+
+    // Set defaults if still not found
+    planType = planType || 'standard'
+    billingInterval = billingInterval || 'monthly'
 
     console.log(`🔍 Extracted session metadata:`, {
       userId,

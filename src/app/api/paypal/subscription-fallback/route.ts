@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
       if (process.env.NODE_ENV === 'development') {
         // In development, provide a mock response if PayPal isn't configured
         return NextResponse.json({
-          approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
+          approvalUrl: `${request.nextUrl.origin}/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
           message: 'PayPal not configured - using development mock',
           planType,
           amount: `$${amount}`,
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       if (process.env.NODE_ENV === 'development') {
         // In development, provide a mock response if plan creation fails
         return NextResponse.json({
-          approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
+          approvalUrl: `${request.nextUrl.origin}/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
           message: 'PayPal plan creation failed - using development mock',
           planType,
           amount: `$${amount}`,
@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
           payer_selected: 'PAYPAL',
           payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
         },
-        return_url: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal`,
+        return_url: `${request.nextUrl.origin}/subscription?success=true&payment=paypal`,
         cancel_url: `${request.nextUrl.origin}/pricing?cancelled=true`,
       },
       custom_id: userId, // Store user ID for webhook processing
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
 
       if (process.env.NODE_ENV === 'development') {
         return NextResponse.json({
-          approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
+          approvalUrl: `${request.nextUrl.origin}/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}&plan_type=${planType}&billing_interval=${billingInterval}&user_id=${userId}`,
           message:
             'PayPal subscription creation failed - using development mock',
           planType,
@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       return NextResponse.json({
-        approvalUrl: `${request.nextUrl.origin}/account/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}`,
+        approvalUrl: `${request.nextUrl.origin}/subscription?success=true&payment=paypal&mock=true&subscription_id=I-TEST-${Date.now()}`,
         message: 'PayPal error - using development mock',
         error: error instanceof Error ? error.message : 'Unknown error',
       })
