@@ -51,15 +51,15 @@ export const SocialAuthButton = ({
       variant='outline'
       onClick={handleSocialAuth}
       disabled={disabled || isLoading}
-      className={`w-full relative overflow-hidden transition-all duration-200 hover:scale-[1.02] ${className}`}
+      className={`w-full h-9 relative overflow-hidden transition-all duration-200 hover:scale-[1.02] ${className}`}
     >
-      <div className='flex items-center justify-center gap-3'>
+      <div className='flex items-center justify-center gap-2'>
         {isLoading ? (
-          <div className='w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin' />
+          <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
         ) : (
           icon
         )}
-        <span className='font-medium'>
+        <span className='font-medium text-sm'>
           {isLoading ? 'Connecting...' : label}
         </span>
       </div>
@@ -176,10 +176,9 @@ export const SocialAuthSection = ({
         </div>
       )}
 
-      <div className='grid grid-cols-1 gap-3'>
+      <div className='space-y-2'>
         <GoogleAuthButton disabled={disabled} />
         <GitHubAuthButton disabled={disabled} />
-        <FacebookAuthButton disabled={disabled} />
       </div>
     </div>
   )

@@ -114,21 +114,21 @@ export const LoginForm = ({
       </div>
 
       <Card className='w-full max-w-md mx-auto backdrop-blur-sm bg-white/95 border-0 shadow-2xl'>
-        <CardHeader className='space-y-4 text-center pb-8'>
-          <div className='mx-auto w-16 h-16 krea-gradient-blue rounded-2xl flex items-center justify-center mb-2'>
-            <Sparkles className='w-8 h-8 text-white' />
+        <CardHeader className='space-y-3 text-center pb-5'>
+          <div className='mx-auto w-12 h-12 krea-gradient-blue rounded-xl flex items-center justify-center mb-1'>
+            <Sparkles className='w-6 h-6 text-white' />
           </div>
-          <CardTitle className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
+          <CardTitle className='text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
             Welcome Back
           </CardTitle>
-          <CardDescription className='text-base text-gray-600'>
+          <CardDescription className='text-sm text-gray-600'>
             Sign in to access your creative gallery
           </CardDescription>
         </CardHeader>
 
-        <CardContent className='space-y-6'>
-          <form onSubmit={handleSubmit} className='space-y-5'>
-            <div className='space-y-2'>
+        <CardContent className='space-y-4'>
+          <form onSubmit={handleSubmit} className='space-y-4'>
+            <div className='space-y-1'>
               <label
                 htmlFor='email'
                 className='text-sm font-semibold text-gray-700'
@@ -136,7 +136,7 @@ export const LoginForm = ({
                 Email Address
               </label>
               <div className='relative'>
-                <Mail className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
+                <Mail className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                 <Input
                   id='email'
                   name='email'
@@ -146,12 +146,12 @@ export const LoginForm = ({
                   onChange={handleChange}
                   required
                   disabled={isLoading}
-                  className='pl-11 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200'
+                  className='pl-10 h-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all duration-200'
                 />
               </div>
             </div>
 
-            <div className='space-y-2'>
+            <div className='space-y-1'>
               <label
                 htmlFor='password'
                 className='text-sm font-semibold text-gray-700'
@@ -159,7 +159,7 @@ export const LoginForm = ({
                 Password
               </label>
               <div className='relative'>
-                <Lock className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
+                <Lock className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                 <Input
                   id='password'
                   name='password'
@@ -169,7 +169,7 @@ export const LoginForm = ({
                   onChange={handleChange}
                   required
                   disabled={isLoading}
-                  className='pl-11 pr-11 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200'
+                  className='pl-10 pr-10 h-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all duration-200'
                 />
                 <button
                   type='button'
@@ -178,9 +178,9 @@ export const LoginForm = ({
                   disabled={isLoading}
                 >
                   {showPassword ? (
-                    <EyeOff className='w-5 h-5' />
+                    <EyeOff className='w-4 h-4' />
                   ) : (
-                    <Eye className='w-5 h-5' />
+                    <Eye className='w-4 h-4' />
                   )}
                 </button>
               </div>
@@ -188,7 +188,7 @@ export const LoginForm = ({
 
             <Button
               type='submit'
-              className='w-full h-12 krea-gradient-blue text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none'
+              className='w-full h-10 krea-gradient-blue text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none'
               disabled={!isValid || isLoading}
             >
               {isLoading ? (
@@ -202,7 +202,50 @@ export const LoginForm = ({
             </Button>
           </form>
 
-          <SocialAuthSection disabled={isLoading} showDivider={true} />
+          {/* Testing Tips Section */}
+          <div className='bg-gradient-to-r from-amber-50/90 to-orange-50/90 border border-amber-200/60 rounded-lg p-3 shadow-sm'>
+            <div className='text-center'>
+              <div className='flex items-center justify-center gap-2 mb-2'>
+                <div className='w-5 h-5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center'>
+                  <span className='text-white text-xs font-bold'>🧪</span>
+                </div>
+                <h4 className='text-xs font-semibold text-gray-700'>
+                  Demo Accounts
+                </h4>
+              </div>
+              <div className='space-y-2'>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1'>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-1.5 h-1.5 bg-orange-400 rounded-full'></div>
+                    <span className='font-mono text-xs text-gray-700 font-medium'>
+                      demo1@example.com / 123456
+                    </span>
+                  </div>
+                  <span className='text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium'>
+                    No subscription
+                  </span>
+                </div>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1'>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-1.5 h-1.5 bg-green-400 rounded-full'></div>
+                    <span className='font-mono text-xs text-gray-700 font-medium'>
+                      demo2@example.com / 123456
+                    </span>
+                  </div>
+                  <span className='text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium'>
+                    Premium member
+                  </span>
+                </div>
+              </div>
+              <p className='text-xs text-gray-500 mt-2 italic'>
+                Use these accounts to test different subscription states
+              </p>
+            </div>
+          </div>
+
+          <div className='pt-2'>
+            <SocialAuthSection disabled={isLoading} showDivider={true} />
+          </div>
 
           <div className='text-center'>
             <span className='text-gray-600'>Don&apos;t have an account? </span>
