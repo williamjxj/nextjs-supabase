@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
+import { getPlanByPriceId } from '@/lib/subscription-config'
 
 async function createOrRetrieveCustomer(user: { id: string; email?: string }) {
   try {
@@ -71,10 +72,21 @@ export async function POST(request: NextRequest) {
       email: userEmail || '',
     })
 
+    // Get plan details from price ID for webhook metadata
+    const planDetails = getPlanByPriceId(priceId)
+    if (!planDetails) {
+      return NextResponse.json(
+        { error: 'Invalid price ID - plan not found' },
+        { status: 400 }
+      )
+    }
+
     console.log('🛒 Creating checkout session (client fallback)...', {
       customerId,
       priceId,
       userId,
+      planType: planDetails.planType,
+      billingInterval: planDetails.billingInterval,
     })
 
     // Create checkout session
@@ -92,6 +104,8 @@ export async function POST(request: NextRequest) {
       cancel_url: cancelUrl || `${request.nextUrl.origin}/membership`,
       metadata: {
         userId: userId,
+        planType: planDetails.planType,
+        billingInterval: planDetails.billingInterval,
       },
       ...(trialPeriodDays && {
         subscription_data: {

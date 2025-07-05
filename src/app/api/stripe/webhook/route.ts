@@ -109,6 +109,7 @@ async function handleSubscriptionChange(subscription: any) {
     userId,
     planType,
     billingInterval,
+    allMetadata: subscription.metadata,
   })
 
   // If no userId in metadata, try to get it from the customer
@@ -151,6 +152,18 @@ async function handleSubscriptionChange(subscription: any) {
   // Ensure we have defaults
   planType = planType || 'standard'
   billingInterval = billingInterval || 'monthly'
+
+  // Validate required metadata
+  if (!userId || !planType || !billingInterval) {
+    console.log(`❌ Missing required metadata:`, {
+      userId: !!userId,
+      planType: !!planType,
+      billingInterval: !!billingInterval,
+    })
+    throw new Error(
+      `Missing required metadata: userId=${!!userId}, planType=${!!planType}, billingInterval=${!!billingInterval}`
+    )
+  }
 
   // Use unified payment service for subscription creation/update
   if (status === 'active') {

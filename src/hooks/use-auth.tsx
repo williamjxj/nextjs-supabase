@@ -46,10 +46,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as AuthUser
       }
 
-      // Optimized subscription query - only fetch essential fields
+      // Use * to avoid schema mismatch issues, then filter client-side
       const { data: userSubscriptions, error } = await supabase
         .from('subscriptions')
-        .select('id, user_id, plan_type, status, current_period_end, features')
+        .select('*')
         .eq('user_id', baseUser.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
